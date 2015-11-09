@@ -20,6 +20,9 @@ io.on('connection', function(socket){
     console.log('message: ' + msg);
     io.emit('chat message', msg);
   });
+  socket.on('audioHeader', function(msg) {
+    console.log('audioHeader: '+msg);
+  });
 });
 
 http.listen(3000, function(){
