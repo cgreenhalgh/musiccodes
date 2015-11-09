@@ -5,6 +5,11 @@ var io = require('socket.io')(http);
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/public/index.html');
 });
+app.get('/*.js', function(req, res){
+  var url = require('url').parse(req.url);
+  console.log('get ' + req.url + ' -> ' + url.pathname);
+  res.sendFile(__dirname + '/public' + url.pathname);
+});
 
 io.on('connection', function(socket){
   console.log('a user connected');
