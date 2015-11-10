@@ -52,15 +52,15 @@ Client.prototype.disconnect = function() {
 Client.prototype.header = function(msg) {
   console.log('Header: '+msg);
   if (this.process!==null) {
-    var data = new Buffer(msg, 'base64');
-    this.process.stdin.write(data);
+    this.process.stdin.write(msg, 'base64');
   }
 };
 Client.prototype.data = function(msg) {
-  console.log('Data...');
+  console.log('Data: '+msg.substring(0,50)+'...');
   if (this.process!==null) {
-    var data = new Buffer(msg, 'base64');
-    this.process.stdin.write(data);
+    this.process.stdin.write(msg, 'base64');
+    //this.process.stdin.end();
+    //this.process = null;
   }
 };
 

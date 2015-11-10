@@ -17,9 +17,9 @@ function MusicCodeClient() {
   this.getMicrophoneInput();
   this.sentHeader = false;
   var self = this;
-  setInterval( function() {
-      self.sendAudio();
-    },200);
+  //setInterval( function() {
+  //    self.sendAudio();
+  //  },200);
 }
 
 function floatTo16BitPCM(output, offset, input){
@@ -91,15 +91,18 @@ function base64ArrayBuffer(arrayBuffer) {
 }
 
 MusicCodeClient.prototype.sendAudio = function() {
+  var bufs = this.buffers.splice(0, this.buffers.length);
+
   if ( !this.sentHeader ) {
     console.log( 'send header, sample rate='+audioContext.sampleRate+'Hz' );
-    var buffer = new ArrayBuffer(36);
+    var buffer = new ArrayBuffer(36 + 8);
     var view = new DataView(buffer);
 
     /* RIFF identifier */
     writeString(view, 0, 'RIFF');
-    /* RIFF chunk length - vv long */
-    view.setUint32(4, 0x7ffffffe, true);
+    /* RIFF chunk length - vv long, or perhaps zero (at least for audacity) */
+    /*view.setUint32(4, 0x7ffffffe, true);*/
+    view.setUint32(4, 0, true);
     /* RIFF type */
     writeString(view, 8, 'WAVE');
     /* format chunk identifier */
@@ -119,37 +122,53 @@ MusicCodeClient.prototype.sendAudio = function() {
     /* bits per sample */
     view.setUint16(34, 16, true);
 
+    /* data... */
+    writeString(view, 36+0, 'data');
+    /* data chunk length - vv long (not zero, at least for audacity) */
+    /*view.setUint32(4, 0x7ffffffe, true);*/
+    view.setUint32(36+4, 0x7ffffffe, true);
+
     var b64 = base64ArrayBuffer( buffer );
     console.log( 'header: '+b64 );
     socket.emit( 'audioHeader', b64 );
     this.sentHeader = true;
+
+    // discard first buffer?!
+    return;
   }
-  var bufs = this.buffers;
-  this.buffers = [];
  
   var total = 0;
   for( var i=0; i<bufs.length; i++)
     total += bufs[i].length * 2;
 
-  console.log( 'send '+bufs.length+' buffers = '+total+' bytes' );
+  if (total>0) {
+    console.log( 'send '+bufs.length+' buffers = '+total+' bytes' );
 
-  var dbuffer = new ArrayBuffer(8 + total);
-  var dview = new DataView(dbuffer);
+//    var dbuffer = new ArrayBuffer(8 + 8 + total);
+    var dbuffer = new ArrayBuffer(total);
+    var dview = new DataView(dbuffer);
 
-  /* data chunk identifier */
-  writeString(dview, 0, 'data');
-  /* data chunk length */
-  dview.setUint32(4, total, true);
+//    /* data chunk identifier */
+//    writeString(dview, 0, 'wavl');
+//    /* data chunk length */
+//    dview.setUint32(4, total + 8, true);
+//
+//    /* data chunk identifier */
+//    writeString(dview, 8 + 0, 'data');
+//    /* data chunk length */
+//    dview.setUint32(8 + 4, total, true);
 
-  var offset = 8;
-  for( var i=0; i<bufs.length; i++) {
-    floatTo16BitPCM(dview, offset, bufs[i]);
-    offset += bufs[i].length * 2;
+//    var offset = 8 + 8;
+    var offset = 0;
+    for( var i=0; i<bufs.length; i++) {
+      floatTo16BitPCM(dview, offset, bufs[i]);
+      offset += bufs[i].length * 2;
+    }
+
+    var db64 = base64ArrayBuffer( dbuffer );
+    socket.emit( 'audioData', db64 );
+    console.log( 'data: '+db64.substring(0,50)+'...' );
   }
-
-  var db64 = base64ArrayBuffer( dbuffer );
-  socket.emit( 'audioData', db64 );
-
 };
 
 MusicCodeClient.prototype.getMicrophoneInput = function() {
@@ -172,6 +191,7 @@ MusicCodeClient.prototype.onStream = function(stream) {
     //console.log( 'onaudioprocess '+e.inputBuffer.numberOfChannels+' channels, '+
     //            e.inputBuffer.length+' samples @'+e.inputBuffer.sampleRate+'Hz' );
     self.buffers.push( e.inputBuffer.getChannelData(0) );
+    self.sendAudio();
   };
   console.log( 'make and connect worker' );
   // connect inputs and outputs here
