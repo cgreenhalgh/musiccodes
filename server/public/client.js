@@ -25,8 +25,20 @@ function MusicCodeClient() {
   this.allGroups = [];
   this.openGroups = [];
   this.codes = [];
+  this.markers = [];
   socket.on('onoffset', function(note) {
     self.onoffset(note);
+  });
+  $.ajax({
+    url:"example.json",
+    dataType:"json",
+    success:function(data) {
+      self.experience = data;
+      console.log('loaded experience: '+JSON.stringify(data));
+    },
+    error:function(err) {
+      alert('Error loading experience from example.json');
+    }
   });
 }
 
@@ -237,6 +249,11 @@ MusicCodeClient.prototype.onoffset = function(note) {
     ;
   if (ni>0)
     this.codes.splice(0,ni);
+  ni=0;
+  for (; ni<this.markers.length && this.markers[ni].lastTime<note.time-10; ni++)
+    ;
+  if (ni>0)
+    this.markers.splice(0,ni);
   for (var i=0; i<this.allGroups.length; i++) {
     var group = this.allGroups[i];
     // off screen
@@ -290,7 +307,9 @@ MusicCodeClient.prototype.redraw = function(time) {
   else
     time = this.lastRedrawTime;
 
-  var xscale = d3.scale.log().domain([25,2500]).range([0,600]);
+  var width = 300;
+
+  var xscale = d3.scale.log().domain([25,2500]).range([0,300]);
   var yscale = d3.scale.linear().domain([time-30,time]).range([0,600]);
   var svg = d3.select('svg');
   var sel = svg.selectAll('rect.note').data(this.allNotes, function(d) { return d.id; });
@@ -298,7 +317,7 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('y', function(d) { return yscale(d.time); });
   sel.enter().append('rect')
       .classed('note', true)
-      .attr('width', 10)
+      .attr('width', 5)
       .attr('height', 10)
       .attr('y', function(d) { return yscale(d.time); })
       .attr('x', function(d) { return xscale(d.freq); });
@@ -345,5 +364,42 @@ MusicCodeClient.prototype.handleGroup = function(group) {
   group.code = notes;
   this.codes.push(group);
   console.log("Group: "+notes);
+
+  if (this.experience && this.experience.markers) {
+    for (var i in this.experience.markers) {
+      var marker = this.experience.markers[i];
+      if (marker.code == group.code) {
+        group.marker = marker;
+        if (!group.marker.showDetail) {
+          if (group.marker.action) {
+            console.log('open '+group.marker.action);
+            $('#viewframe').attr('src',group.marker.action);
+          }
+        } else {
+          this.markers.push(group);
+        }
+      }
+    }
+  }
+
+  var list = d3.select('#links');
+  var markers = list.selectAll('li').data(this.markers, function(d) { return d.id; });
+  var lis = markers.enter().append('li')
+      .classed('codelink', true);
+  lis.append('img')
+      .classed('codeimage', true)
+      .attr('src',function(d) { return d.marker.image; });
+  lis.append('p')      
+      .classed('codetitle', true)
+      .text(function(d) { return d.marker.title; });
+  markers.exit().remove();
 };
+
+$(document).on('click', '.codelink', function(ev) {
+  var group = d3.select(ev.target).datum();
+  if (group.marker && group.marker.action) {
+    console.log('open '+group.marker.action);
+    $('#viewframe').attr('src',group.marker.action);
+  }
+});
 
