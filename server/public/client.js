@@ -20,6 +20,9 @@ function MusicCodeClient() {
   //setInterval( function() {
   //    self.sendAudio();
   //  },200);
+  socket.on('onoffset', function(note) {
+    console.log('onoffset: '+JSON.stringify(note));
+  });
 }
 
 function floatTo16BitPCM(output, offset, input){
