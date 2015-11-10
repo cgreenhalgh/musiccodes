@@ -22,6 +22,9 @@ function MusicCodeClient() {
   //  },200);
   this.allNotes = [];
   this.notesOn = {};
+  this.allGroups = [];
+  this.openGroups = [];
+  this.codes = [];
   socket.on('onoffset', function(note) {
     self.onoffset(note);
   });
@@ -229,8 +232,66 @@ MusicCodeClient.prototype.onoffset = function(note) {
     ;
   if (ni>0)
     this.allNotes.splice(0,ni);
+  ni=0;
+  for (; ni<this.codes.length && this.codes[ni].lastTime<note.time-30; ni++)
+    ;
+  if (ni>0)
+    this.codes.splice(0,ni);
+  for (var i=0; i<this.allGroups.length; i++) {
+    var group = this.allGroups[i];
+    // off screen
+    if (group.endTime<note.time-30) {
+      this.allGroups.splice(i,1);
+      i--;
+    }
+  }
+
+  if (!note.off) {
+    if (this.closeGroupsTimeout)
+      clearTimeout(this.closeGroupsTimeout);
+    this.closeGroupsTimeout = setTimeout(function(){ self.closeGroups(); }, 2000);
+  }
+
+  var handled = false;
+  for (var i=0; i<this.openGroups.length; i++) {
+    var group = this.openGroups[i];
+    // close
+    // 1 seconds
+    if (group.lastTime<note.time-1) {
+      group.closed = true;
+      console.log("close group "+group.id);
+      this.handleGroup(group);
+      this.openGroups.splice(i,1);
+      i--;
+    } else if (!handled && !note.off) {
+      // add to group?!
+      if (note.freq >= group.lowFreq && note.freq <= group.highFreq) {
+        group.lastTime = note.time;
+        group.notes.push(note);
+        group.count++;
+        handled = true;
+        console.log("add note to group "+group.id);
+      }
+    }
+  }
+
+  if (!note.off && !handled) {
+    var group = { id: note.id, notes: [note], closed: false, time: note.time,
+        lastTime: note.time, lowFreq: note.freq/1.5, highFreq: note.freq*1.5, count: 0 };
+    this.openGroups.push(group);
+    this.allGroups.push(group);
+    console.log("add group "+group.id);
+  }
+  this.redraw(note.time);
+}
+MusicCodeClient.prototype.redraw = function(time) {
+  if (time)
+    this.lastRedrawTime = time;
+  else
+    time = this.lastRedrawTime;
+
   var xscale = d3.scale.log().domain([25,2500]).range([0,600]);
-  var yscale = d3.scale.linear().domain([note.time-30,note.time]).range([0,600]);
+  var yscale = d3.scale.linear().domain([time-30,time]).range([0,600]);
   var svg = d3.select('svg');
   var sel = svg.selectAll('rect.note').data(this.allNotes, function(d) { return d.id; });
   sel.attr('height', function(d) { return d.endTime!==undefined ? yscale(d.endTime)-yscale(d.time) : 10; })
@@ -242,4 +303,47 @@ MusicCodeClient.prototype.onoffset = function(note) {
       .attr('y', function(d) { return yscale(d.time); })
       .attr('x', function(d) { return xscale(d.freq); });
   sel.exit().remove();
+
+  var groups = svg.selectAll('rect.group').data(this.allGroups, function(d) { return d.id; });
+  groups.attr('height', function(d) { return yscale(d.lastTime+0.1)-yscale(d.time); })
+      .attr('y', function(d) { return yscale(d.time); });
+  groups.enter().append('rect')
+      .classed('group', true)
+      .attr('width', function(d) { return xscale(d.highFreq)-xscale(d.lowFreq); })
+      .attr('height', 10)
+      .attr('y', function(d) { return yscale(d.time); })
+      .attr('x', function(d) { return xscale(d.lowFreq); });
+  groups.exit().remove();
+
+  var codes = svg.selectAll('text.code').data(this.codes, function(d) { return d.id; });
+  codes.attr('y', function(d) { return yscale(d.time); });
+  codes.enter().append('text')
+      .classed('code', true)
+      .text(function(d) { return d.code; })
+      .attr('y', function(d) { return yscale(d.time); })
+      .attr('x', function(d) { return xscale(d.lowFreq); });
+  codes.exit().remove();
+
 };
+
+MusicCodeClient.prototype.closeGroups = function() {
+  for (var i=0; i<this.openGroups.length; i++) {
+    var group = this.openGroups[i];
+    // close
+    group.closed = true;
+    console.log("close group "+group.id+' on timeout');
+    this.handleGroup(group);
+  }
+  this.openGroups.splice(0, this.openGroups.length);
+  this.redraw();
+};
+
+MusicCodeClient.prototype.handleGroup = function(group) {
+  var notes = '';
+  for (var ni in group.notes) 
+    notes += group.notes[ni].note;
+  group.code = notes;
+  this.codes.push(group);
+  console.log("Group: "+notes);
+};
+
