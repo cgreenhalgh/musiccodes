@@ -20,8 +20,10 @@ function MusicCodeClient() {
   //setInterval( function() {
   //    self.sendAudio();
   //  },200);
+  this.allNotes = [];
+  this.notesOn = {};
   socket.on('onoffset', function(note) {
-    console.log('onoffset: '+JSON.stringify(note));
+    self.onoffset(note);
   });
 }
 
@@ -170,7 +172,7 @@ MusicCodeClient.prototype.sendAudio = function() {
 
     var db64 = base64ArrayBuffer( dbuffer );
     socket.emit( 'audioData', db64 );
-    console.log( 'data: '+db64.substring(0,50)+'...' );
+    //console.log( 'data: '+db64.substring(0,50)+'...' );
   }
 };
 
@@ -206,4 +208,38 @@ MusicCodeClient.prototype.onStreamError = function(e) {
   console.error('Error getting microphone input', e);
 };
 
-
+MusicCodeClient.prototype.onoffset = function(note) {
+  {
+    //var note = notes[ni];
+    note.id = ''+note.time+':'+note.note;
+    console.log('add note '+note.id);
+    if (note.off) {
+      if (this.notesOn[note.note]!==undefined) {
+        this.notesOn[note.note].endTime = note.time;
+        console.log('end note '+note.note+' from '+this.notesOn[note.note].time+' at '+this.notesOn[note.note].endTime);
+      }
+      delete this.notesOn[note.note];
+    } else {
+      this.notesOn[note.note] = note;
+      this.allNotes.push(note);
+    }
+  }
+  var ni=0;
+  for (; ni<this.allNotes.length && this.allNotes[ni].time<note.time-30; ni++)
+    ;
+  if (ni>0)
+    this.allNotes.splice(0,ni);
+  var xscale = d3.scale.log().domain([25,2500]).range([0,600]);
+  var yscale = d3.scale.linear().domain([note.time-30,note.time]).range([0,600]);
+  var svg = d3.select('svg');
+  var sel = svg.selectAll('rect.note').data(this.allNotes, function(d) { return d.id; });
+  sel.attr('height', function(d) { return d.endTime!==undefined ? yscale(d.endTime)-yscale(d.time) : 10; })
+      .attr('y', function(d) { return yscale(d.time); });
+  sel.enter().append('rect')
+      .classed('note', true)
+      .attr('width', 10)
+      .attr('height', 10)
+      .attr('y', function(d) { return yscale(d.time); })
+      .attr('x', function(d) { return xscale(d.freq); });
+  sel.exit().remove();
+};
