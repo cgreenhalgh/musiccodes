@@ -93,7 +93,6 @@ function base64ArrayBuffer(arrayBuffer) {
 MusicCodeClient.prototype.sendAudio = function() {
   if ( !this.sentHeader ) {
     console.log( 'send header, sample rate='+audioContext.sampleRate+'Hz' );
-    // TODO
     var buffer = new ArrayBuffer(36);
     var view = new DataView(buffer);
 
@@ -125,8 +124,32 @@ MusicCodeClient.prototype.sendAudio = function() {
     socket.emit( 'audioHeader', b64 );
     this.sentHeader = true;
   }
-  console.log( 'send '+self.buffers.length+' buffers' );
-  self.buffers = [];
+  var bufs = this.buffers;
+  this.buffers = [];
+ 
+  var total = 0;
+  for( var i=0; i<bufs.length; i++)
+    total += bufs[i].length * 2;
+
+  console.log( 'send '+bufs.length+' buffers = '+total+' bytes' );
+
+  var dbuffer = new ArrayBuffer(8 + total);
+  var dview = new DataView(dbuffer);
+
+  /* data chunk identifier */
+  writeString(dview, 0, 'data');
+  /* data chunk length */
+  dview.setUint32(4, total, true);
+
+  var offset = 8;
+  for( var i=0; i<bufs.length; i++) {
+    floatTo16BitPCM(dview, offset, bufs[i]);
+    offset += bufs[i].length * 2;
+  }
+
+  var db64 = base64ArrayBuffer( dbuffer );
+  socket.emit( 'audioData', db64 );
+
 };
 
 MusicCodeClient.prototype.getMicrophoneInput = function() {
