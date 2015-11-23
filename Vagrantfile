@@ -34,9 +34,13 @@ Vagrant.configure(2) do |config|
     cd silvet-linux64-v1.1
     cp silvet.* /usr/local/lib/vamp
 
+    # fix up libraries
+    ldconfig -v
+
     # vamp-live
     cd
     git clone https://github.com/cgreenhalgh/vamp-live.git
+    cd vamp-live
     #aclocal
     #autoconf
     ./configure
