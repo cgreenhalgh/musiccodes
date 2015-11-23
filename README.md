@@ -2,22 +2,25 @@
 
 Experimental implementation of music code system.
 
-Note, requires a compiled binary of `vamp-plugin-host` from 
-[vamp-live](https://github.com/cgreenhalgh/vamp-live). That in turn
-requires that the VAMP plugin SDK is installed from 
+Chris Greenhalgh, The University of Nottingham, 2015
+
+See Vagrantfile for setup/pre-requisites, e.g. 
+
+- `vamp-live-host` from 
+[vamp-live](https://github.com/cgreenhalgh/vamp-live)
+- VAMP plugin SDK is installed from 
 [vamp plugins](http://www.vamp-plugins.org/develop.html).
+- [silvet vamp plugin](https://code.soundsoftware.ac.uk/projects/silvet/files)
+- Node.js
+- Node.js dependencies from `server/package.json`
 
-Also requires the [silvet vamp plugin](https://code.soundsoftware.ac.uk/projects/silvet/files)
-to be installed. 
-```
-sudo cp silvet.* /usr/local/lib/vamp/
-```
-
-Copy `vamp-plugin-host` to `server/`
-
-Then run
+Run
 ```
 cd server
 node server.js
 ```
+
+Open browser to [http://localhost:3000](http://localhost:3000).
+
+Note: requires good web audio support - probably Chrome.
 

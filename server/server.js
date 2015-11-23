@@ -34,7 +34,7 @@ function Client(socket) {
 */
   this.waitingForHeader = true;
   // instrument 0 various, 2 guitar, 7 flute, 13 wind ensemble
-  this.process = require('child_process').spawn('./vamp-simple-host',
+  this.process = require('child_process').spawn('vamp-live-host',
     ['silvet:silvet','-','2','-p','mode','0','-p','instrument','0'], {
   });
   this.process.on('close', function(code) {
