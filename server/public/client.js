@@ -266,15 +266,17 @@ MusicCodeClient.prototype.onoffset = function(note) {
   if (!note.off) {
     if (this.closeGroupsTimeout)
       clearTimeout(this.closeGroupsTimeout);
-    this.closeGroupsTimeout = setTimeout(function(){ self.closeGroups(); }, 2000);
+    this.closeGroupsTimeout = setTimeout(function(){ self.closeGroups(); }, 3000);
+
+    $('#notelist').prepend('<li>'+note.note+' ('+note.freq+'Hz vel='+note.velocity+' t='+note.time+')</li>');
   }
 
   var handled = false;
   for (var i=0; i<this.openGroups.length; i++) {
     var group = this.openGroups[i];
     // close
-    // 1 seconds
-    if (group.lastTime<note.time-1) {
+    // 2 seconds
+    if (group.lastTime<note.time-2) {
       group.closed = true;
       console.log("close group "+group.id);
       this.handleGroup(group);
@@ -288,6 +290,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
         group.count++;
         handled = true;
         console.log("add note to group "+group.id);
+        this.updateGroup(group);
       }
     }
   }
@@ -298,9 +301,35 @@ MusicCodeClient.prototype.onoffset = function(note) {
     this.openGroups.push(group);
     this.allGroups.push(group);
     console.log("add group "+group.id);
+    //this.updateGroup(group);
   }
   this.redraw(note.time);
 }
+MusicCodeClient.prototype.updateGroup = function(group) {
+  if (group.notes.length<2)
+	return;
+  var prevnote = group.notes[group.notes.length-1];
+  var t0 = prevnote.time-group.notes[group.notes.length-2].time;
+  var f0 = prevnote.freq;
+  var maxLength = 10;
+  var i;
+  var code = '0';
+  var length = 1;
+  var durationReference = 4;
+  for (i=2; length < maxLength && group.notes.length-i >= 0; i++) {
+    var note = group.notes[group.notes.length-i];
+    var duration = Math.round( durationReference* (prevnote.time - note.time) / t0 );
+    // skip?!
+    if (duration==0)
+      continue;
+    var interval = Math.round( Math.log( note.freq / f0 ) / Math.log( 2 ) * 12 );
+    code = interval+'('+duration+'),'+code;
+    length++;
+    prevnote = note;
+  }
+  $('#notelist').prepend('<li>-&gt; '+code+'</li>');
+  this.handleCode( code, group.notes[group.notes.length-1].time );
+};
 MusicCodeClient.prototype.redraw = function(time) {
   if (time)
     this.lastRedrawTime = time;
@@ -310,6 +339,7 @@ MusicCodeClient.prototype.redraw = function(time) {
   var width = 300;
 
   var xscale = d3.scale.log().domain([25,2500]).range([0,300]);
+  var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
   var yscale = d3.scale.linear().domain([time-30,time]).range([0,600]);
   var svg = d3.select('svg');
   var sel = svg.selectAll('rect.note').data(this.allNotes, function(d) { return d.id; });
@@ -317,10 +347,10 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('y', function(d) { return yscale(d.time); });
   sel.enter().append('rect')
       .classed('note', true)
-      .attr('width', 5)
+      .attr('width', function(d) { return 2*vscale(d.velocity); })
       .attr('height', 10)
       .attr('y', function(d) { return yscale(d.time); })
-      .attr('x', function(d) { return xscale(d.freq); });
+      .attr('x', function(d) { return xscale(d.freq)-vscale(d.velocity); });
   sel.exit().remove();
 
   var groups = svg.selectAll('rect.group').data(this.allGroups, function(d) { return d.id; });
@@ -334,14 +364,14 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('x', function(d) { return xscale(d.lowFreq); });
   groups.exit().remove();
 
-  var codes = svg.selectAll('text.code').data(this.codes, function(d) { return d.id; });
-  codes.attr('y', function(d) { return yscale(d.time); });
-  codes.enter().append('text')
+  var notenames = svg.selectAll('text.code').data(this.allNotes, function(d) { return d.id; });
+  notenames.attr('y', function(d) { return yscale(d.time); });
+  notenames.enter().append('text')
       .classed('code', true)
-      .text(function(d) { return d.code; })
+      .text(function(d) { return d.note; })
       .attr('y', function(d) { return yscale(d.time); })
-      .attr('x', function(d) { return xscale(d.lowFreq); });
-  codes.exit().remove();
+      .attr('x', function(d) { return xscale(d.freq)+10; });
+  notenames.exit().remove();
 
 };
 
@@ -364,19 +394,24 @@ MusicCodeClient.prototype.handleGroup = function(group) {
   group.code = notes;
   this.codes.push(group);
   console.log("Group: "+notes);
+  $('#notelist').prepend('<li>-&gt; '+notes+'</li>');
+  this.handleCode( notes, group.lastTime );
+};
 
+var markerId = 1;
+MusicCodeClient.prototype.handleCode = function(code, time) {
   if (this.experience && this.experience.markers) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
-      if (marker.code == group.code) {
-        group.marker = marker;
-        if (!group.marker.showDetail) {
-          if (group.marker.action) {
-            console.log('open '+group.marker.action);
-            $('#viewframe').attr('src',group.marker.action);
+      if (marker.code == code || (marker.code.length<code.length && code.substring(code.length-marker.code.length)==marker.code)) {
+        //group.marker = marker;
+        if (!marker.showDetail) {
+          if (marker.action) {
+            console.log('open '+marker.action);
+            $('#viewframe').attr('src',marker.action);
           }
         } else {
-          this.markers.push(group);
+          this.markers.push({ marker: marker, lastTime: time, id: markerId++ });
         }
       }
     }
