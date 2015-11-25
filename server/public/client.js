@@ -12,6 +12,11 @@ window.AudioContext = window.AudioContext ||
 
 var audioContext = new AudioContext();
 
+// Gap marking ending of active stream (seconds)
+var streamGap = 2;
+// Frequency range of active stream (ratio of first note frequency)
+var frequencyRatio = 2.05;
+
 function MusicCodeClient() {
   this.buffers = [];
   this.getMicrophoneInput();
@@ -276,7 +281,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
     var group = this.openGroups[i];
     // close
     // 2 seconds
-    if (group.lastTime<note.time-2) {
+    if (group.lastTime<note.time-streamGap) {
       group.closed = true;
       console.log("close group "+group.id);
       this.handleGroup(group);
@@ -297,7 +302,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
 
   if (!note.off && !handled) {
     var group = { id: note.id, notes: [note], closed: false, time: note.time,
-        lastTime: note.time, lowFreq: note.freq/1.5, highFreq: note.freq*1.5, count: 0 };
+        lastTime: note.time, lowFreq: note.freq/frequencyRatio, highFreq: note.freq*frequencyRatio, count: 0 };
     this.openGroups.push(group);
     this.allGroups.push(group);
     console.log("add group "+group.id);
