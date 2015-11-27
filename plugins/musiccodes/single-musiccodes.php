@@ -4,7 +4,7 @@
  */
 
 if ( array_key_exists( 'showgui', $_REQUEST ) ) {
-	require( dirname( __FILE__ ) . '/custom-musiccodes.php' );
+	require( dirname( __FILE__ ) . '/gui-index.php' );
 	return;
 }
 
