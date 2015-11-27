@@ -29,3 +29,5 @@ node_modules
 # editor backup files
 *~
 
+# wordpress dev stuff
+wordpress/

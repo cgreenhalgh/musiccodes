@@ -5,7 +5,38 @@ Vagrant.configure(2) do |config|
     v.memory = 1024
   end
 
+  # node server for vamp
   config.vm.network "forwarded_port", guest: 3000, host: 3000
+  # web server for wordpress
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  # Standard salt set-up cf. wordpress-selfservice
+  # Workaround https://github.com/mitchellh/vagrant/issues/5973
+  config.vm.provision "shell", inline: <<-SHELL
+    # master formulas, pillars and states
+    apt-get install -y git
+    [ -d /srv ] ||  mkdir /srv
+    cd /srv
+    [ -d formulas ] || mkdir /srv/formulas
+    cd /srv/formulas
+    [ -d apache-formula ] || git clone https://github.com/cgreenhalgh/apache-formula.git
+    [ -d mysql-formula ] || git clone https://github.com/cgreenhalgh/mysql-formula.git
+    [ -d docker-formula ] || git clone https://github.com/cgreenhalgh/docker-formula.git
+    [ -d php-formula ] || git clone https://github.com/cgreenhalgh/php-formula.git
+    [ -d wordpress-selfservice ] || git clone https://github.com/cgreenhalgh/wordpress-selfservice.git
+    # see http://docs.saltstack.com/en/latest/topics/installation/ubuntu.html
+    add-apt-repository ppa:saltstack/salt
+    apt-get update
+
+    apt-get install -y salt-minion
+    
+    # This will set the salt ID, which will determine what gets installed!! - here 'dev' :-)
+    cp /vagrant/saltstack/etc/minion-local-dev.conf /etc/salt/minion
+
+    service salt-minion restart
+    salt-call state.highstate
+
+  SHELL
 
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     sudo apt-get install -y git wget curl
