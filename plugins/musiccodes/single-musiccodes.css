@@ -1,0 +1,50 @@
+/* wototo.css */
+div.musiccodes_thing {
+  border: solid 1px gray;
+  padding: 0.35em;
+  margin-bottom: 0.25em;
+}
+.hide {
+  display:none;
+}
+span.musiccodes_item_title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.checkbox_item {
+  margin-bottom: 20px;
+}
+div.musiccodes-links {
+}
+div.musiccodes-links p {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+a.musiccodes-link {
+  border: solid 1px gray;
+  border-radius: 0.3em;
+  padding: 0.5em;
+  background-color: #ccc;
+  font-size: 80%;
+}
+a.musiccodes-link:hover {
+  background-color: #e8e8e8;
+  transition: background-color 0.2s;
+  -webkit-transition: background-color 0.2s;
+}
+a.musiccodes-link-qr {
+  padding: 0.2em;
+  background-color: #aaa;
+  font-size: 80%;
+  font-family: sans-serif;
+}
+a.musiccodes-link-qr:hover {
+  background-color: #ccc;
+  transition: background-color 0.2s;
+  -webkit-transition: background-color 0.2s;
+}
+span.musiccodes-warning {
+  font-family: sans-serif;
+  font-size: 70%;
+  color: red; 
+}
