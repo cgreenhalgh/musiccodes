@@ -12,6 +12,11 @@ app.get('/*.(js|json)', function(req, res){
   res.sendFile(__dirname + '/public' + url.pathname);
 });
 
+var STATE_WAITING_FOR_PARAMETERS = 1;
+var STATE_WAITING_FOR_HEADER = 2;
+var STATE_RUNNING = 3;
+var STATE_ERROR = 4;
+
 function Client(socket) {
   this.socket = socket;
   console.log('New client');
@@ -32,10 +37,35 @@ function Client(socket) {
  0.980000000: 1174.66 0 D6 off
  1.200000000: 293.665 0 D4 off
 */
-  this.waitingForHeader = true;
+  this.state = STATE_WAITING_FOR_PARAMETERS;
+  socket.on('disconnect', function(){
+    self.disconnect();
+  });
+  socket.on('parameters', function(msg) {
+    self.parameters(msg);
+  });
+  socket.on('audioHeader', function(msg) {
+	    self.header(msg);
+	  });
+  socket.on('audioData', function(msg) {
+  self.data(msg);
+  });
+}
+
+Client.prototype.parameters = function(parameters) {
+  var self = this;
+  this.state = STATE_WAITING_FOR_HEADER;
+  var args = ['silvet:silvet','-','2'];
+  for (var pname in parameters) {
+	  var pvalue = parameters[pname];
+	  args.push('-p');
+	  args.push(String(pname));
+	  args.push(String(pvalue));
+  }
+  console.log('Got parameters, running with '+args);
   // instrument 0 various, 2 guitar, 7 flute, 13 wind ensemble
   this.process = require('child_process').spawn('vamp-live-host',
-    ['silvet:silvet','-','2','-p','mode','0','-p','instrument','0'], {
+    args, {
   });
   this.process.on('close', function(code) {
     console.log( 'Client process exited with code '+code );
@@ -53,15 +83,6 @@ function Client(socket) {
   });
   this.process.stderr.on('end', function() {});
   this.process.stderr.on('error', function() {});
-  socket.on('disconnect', function(){
-    self.disconnect();
-  });
-  socket.on('audioHeader', function(msg) {
-    self.header(msg);
-  });
-  socket.on('audioData', function(msg) {
-    self.data(msg);
-  });
 }
 Client.prototype.disconnect = function() {
   console.log('Client disconnected');
@@ -75,7 +96,8 @@ Client.prototype.disconnect = function() {
 };
 Client.prototype.header = function(msg) {
   console.log('Header: '+msg);
-  this.waitingForHeader = false;
+  if (this.state==STATE_WAITING_FOR_HEADER)
+	  this.state = STATE_RUNNING;
   if (this.process!==null) {
     try {
       this.process.stdin.write(msg, 'base64');
@@ -85,8 +107,8 @@ Client.prototype.header = function(msg) {
   }
 };
 Client.prototype.data = function(msg) {
-  if (this.waitingForHeader) {
-    console.log('Discard data - waiting for header');
+  if (this.state!=STATE_RUNNING) {
+    console.log('Discard data - state '+this.state);
     return;
   }
   console.log('Data: '+msg.substring(0,50)+'...');

@@ -17,7 +17,7 @@ var streamGap = 2;
 // Frequency range of active stream (ratio of first note frequency)
 var frequencyRatio = 2.05;
 
-function MusicCodeClient() {
+function MusicCodeClient( experiencejson ) {
   this.buffers = [];
   this.getMicrophoneInput();
   this.sentHeader = false;
@@ -34,17 +34,27 @@ function MusicCodeClient() {
   socket.on('onoffset', function(note) {
     self.onoffset(note);
   });
-  $.ajax({
-    url:"example.json",
-    dataType:"json",
-    success:function(data) {
-      self.experience = data;
-      console.log('loaded experience: '+JSON.stringify(data));
-    },
-    error:function(err) {
-      alert('Error loading experience from example.json');
-    }
-  });
+  this.experience = experiencejson;
+  this.parameters = this.experience.parameters===undefined ? {} : this.experience.parameters;
+  this.parameters.streamGap = this.parameters.streamGap===undefined ? streamGap : Number(this.parameters.streamGap);
+  this.parameters.frequencyRatio = this.parameters.frequencyRatio===undefined ? frequencyRatio : Number(this.parameters.frequencyRatio);
+  var vampParameters = this.parameters.vampParameters===undefined ? {} : this.parameters.vampParameters;
+  // default silvet plugin parameters: live mode, unknown instrument
+  vampParameters.mode = vampParameters.mode===undefined ? 0 : vampParameters.mode;
+  vampParameters.instrument = vampParameters.instrument===undefined ? 0 : vampParameters.instrument;
+  console.log('Send parameters '+JSON.stringify(vampParameters));
+  socket.emit( 'parameters', vampParameters );
+  //$.ajax({
+  //  url:experienceurl,
+  //  dataType:"json",
+  //  success:function(data) {
+  //    self.experience = data;
+  //    console.log('loaded experience: '+JSON.stringify(data));
+  //  },
+  //  error:function(err) {
+  //    alert('Error loading experience from '+experienceurl);
+  //  }
+  //});
 }
 
 function floatTo16BitPCM(output, offset, input){
@@ -281,7 +291,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
     var group = this.openGroups[i];
     // close
     // 2 seconds
-    if (group.lastTime<note.time-streamGap) {
+    if (group.lastTime<note.time-this.parameters.streamGap) {
       group.closed = true;
       console.log("close group "+group.id);
       this.handleGroup(group);
@@ -302,7 +312,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
 
   if (!note.off && !handled) {
     var group = { id: note.id, notes: [note], closed: false, time: note.time,
-        lastTime: note.time, lowFreq: note.freq/frequencyRatio, highFreq: note.freq*frequencyRatio, count: 0 };
+        lastTime: note.time, lowFreq: note.freq/this.parameters.frequencyRatio, highFreq: note.freq*this.parameters.frequencyRatio, count: 0 };
     this.openGroups.push(group);
     this.allGroups.push(group);
     console.log("add group "+group.id);

@@ -41,7 +41,17 @@
 </script>
 <script src="client.js"></script>
 <script>
-  var client = new MusicCodeClient();
+$.ajax({
+    url:"example.json",
+    dataType:"json",
+    success:function(data) {
+      console.log('loaded experience: '+JSON.stringify(data));
+      var client = new MusicCodeClient( data );
+    },
+    error:function(err) {
+      alert('Error loading experience from example.json');
+    }
+  });
 </script>
   </body>
 </html>
