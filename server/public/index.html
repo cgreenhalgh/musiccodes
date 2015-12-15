@@ -33,6 +33,17 @@
         <iframe id="viewframe"></iframe>
       </div>
     </div>
+  <p>Note: you may need to quit and restart Chrome to update the available MIDI ports</p>
+  <p>
+  	<label >MIDI Input</label>
+  	<select name="midiinput" id="midiinput">
+  	  <option value="">(none)</option>
+  	</select>
+  	<label>MIDI Output</label>
+  	<select name="midioutput" id="midioutput">
+  	  <option value="">(none)</option>
+  	</select>
+  </p>
 <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
@@ -40,6 +51,7 @@
   var socket = io();
 </script>
 <script src="client.js"></script>
+<script src="midi.js"></script>
 <script>
 $.ajax({
     url:"example.json",

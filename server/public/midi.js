@@ -1,9 +1,15 @@
 /* midi.js - midi test... */
-
 var midi = null;  // global MIDIAccess object
 var midiInputPort = null;
 var midiOutputPort = null;
+var midiNoteCallback = null;
 
+function setupMidi( noteCallback ) {
+	midiNoteCallback = noteCallback;
+	// request top-level midi access (non-exclusive)
+	navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
+}
+	
 function onMIDISuccess( midiAccess ) {
   console.log( "MIDI ready!" );
   midi = midiAccess;  // store in the global (in real usage, would probably keep in an object instance)
@@ -14,9 +20,6 @@ function onMIDISuccess( midiAccess ) {
 function onMIDIFailure(msg) {
   console.log( "Failed to get MIDI access - " + msg );
 }
-
-// request top-level midi access (non-exclusive)
-navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
 
 function listInputsAndOutputs( midiAccess ) {
   midiAccess.inputs.forEach( function( input ) {
@@ -77,6 +80,12 @@ function processMidiNote(cmd, note, vel) {
 	var time = (Date.now()-time0)*0.001;
 	var event = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
 	console.log(event);
+	try {
+		if (midiNoteCallback!==null)
+			midiNoteCallback(event);
+	} catch (err) {
+		console.log('midiNoteCallback error '+err);
+	}
 }
 $('#midioutput').change( function( ev ) {
 	  var id = $(this).val();

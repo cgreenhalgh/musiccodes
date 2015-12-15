@@ -55,6 +55,8 @@ function MusicCodeClient( experiencejson ) {
   //    alert('Error loading experience from '+experienceurl);
   //  }
   //});
+  // midi?!
+  setupMidi(function(note) { self.onoffset(note); });
 }
 
 function floatTo16BitPCM(output, offset, input){
