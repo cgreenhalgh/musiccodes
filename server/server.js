@@ -6,7 +6,7 @@ app.get('/', function(req, res){
   console.log('get /');
   res.sendFile(__dirname + '/public/index.html');
 });
-app.get('/*.(js|json)', function(req, res){
+app.get('/*.(js|json|html)', function(req, res){
   var url = require('url').parse(req.url);
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
