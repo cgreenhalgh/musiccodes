@@ -48,8 +48,36 @@ $('#midiinput').change( function( ev ) {
 	    str += "0x" + event.data[i].toString(16) + " ";
 	  }
 	  console.log( str );
+	  processMidiMessage( event.data );
   };
 });
+
+function processMidiMessage( data ) {
+  if (data.length<3)
+	  return;
+  var cmd = data[0];
+  if (cmd>=0x90 && cmd<=0x9f) {
+	  // note on
+	  var note = data[1];
+	  var vel = Number(data[2]);
+	  processMidiNote(cmd, note, vel);
+  }
+  else if (cmd>=0x80 && cmd<=0x8f) {
+	  // note off - cf note on vel = 0
+	  var note = data[1];
+	  processMidiNote(cmd, note, 0);	  
+  }
+}
+var time0 = Date.now();
+var notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function processMidiNote(cmd, note, vel) {
+	// note 60 is middle C, which I think plugin calls C4, freq. is nominally 261.6Hz
+	var name = notes[note % 12]+String(Math.floor(note / 12)-1);
+	var freq = 261.6*Math.pow(2, (note-60)/12.0);
+	var time = (Date.now()-time0)*0.001;
+	var event = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
+	console.log(event);
+}
 $('#midioutput').change( function( ev ) {
 	  var id = $(this).val();
 	  console.log('Select output '+id);	
