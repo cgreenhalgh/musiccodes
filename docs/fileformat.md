@@ -50,4 +50,62 @@ E.g. `"4(4),2(4),0"` is a sequence of (at least) 3 notes, where the last 3 notes
 
 Note that format 2 checks for codes after every note and does not wait for the 'end' of a note stream, so the note pattern can be embedded within a longer stream of notes.
   
-  
+### Generalised code format
+
+planning notes... not yet implemented.
+
+Note information includes: pitch (note, frequency), time, velocity and duration.
+
+Pitch can be expressed in absolute terms as:
+- Note name compared to reference pitch within some nominal octave, e.g. `C`
+- Note name compared to reference pitch within two nominal octaves (as in folk tab notation), e.g. `C` or `c`
+- Note name and octave compared to reference pitch and octave, e.g. `C4`
+- Midi note number, e.g. `60` which is middle-C (C4)
+- Frequency in Hz, e.g. `261.6` which is also middle-C (but to what precision?!)
+
+Pitch can be expressed in relative terms as:
+- Note name and octave based on some reference note, e.g. `D4` would be a tone above compared to middle-C
+- Midi note number offset or semitone offset, e.g. `+2` or `-2` for a tone above or below
+- Frequency ratio, e.g. `2.0` which is one octave above
+
+A reference note could be:
+- The last note played
+- The first note in the group
+
+From time we can derive time interval between notes, which is comparable to duration (an elapsed time).
+
+Time interval can be expressed in absolute terms as:
+- Seconds, e.g. `1.2`
+- Beats relative to a specified tempo, e.g. `2` beats of 72 bpm
+- Note type relative to a specified tempo and time signature, e.g. `dotted quaver`
+
+Time interval can be expressed in relative terms as:
+- Ratio of a reference note or time, e.g. `0.5`
+- Beats relative to current tempo
+- Note type relative to current tempo / time signature
+
+A reference interval could be:
+- The interval before the last note played
+- The first interval in the group
+
+A code prefix:
+- `m` for midi note
+- `n` for note name
+- `o` for octave
+- `/` for relative to
+- `l` for last note
+- `=` for mapped-to value
+
+- `t` for time
+- `c` for count
+- `/` for relative to
+- `l` for last note
+- `=` for mapped-to value
+
+- `*`, `,`, `;`, ` ` separator characters
+
+E.g. format 1 = `no`; format 2 = `m/l=0(c/l=4),`. But format 2 isn’t good for regex matching because all the `(` need escaping. A better alternative is `m/l-c/l=4,`
+
+Code variables, e.g. `x`. Constraints, e.g. `x<10`. Variable corresponds to `([A-G]#?[0-9]*)|([0-9]+(\.[0-9]+)?)`, i.e. note name with optional octave number or number (integer or float).
+
+Compound code, prefix `:` code (opt.) `:` constraint expression
