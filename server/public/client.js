@@ -354,7 +354,7 @@ MusicCodeClient.prototype.updateGroup = function(group) {
     if (duration==0)
       continue;
     var interval = Math.round( Math.log( note.freq / f0 ) / Math.log( 2 ) * 12 );
-    code = interval+'('+duration+'),'+code;
+    code = interval+'/'+duration+','+code;
     length++;
     prevnote = note;
   }
@@ -436,7 +436,8 @@ MusicCodeClient.prototype.handleCode = function(code, time) {
   if (this.experience && this.experience.markers) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
-      if (marker.code == code || (marker.code.length<code.length && code.substring(code.length-marker.code.length)==marker.code)) {
+      // test as regexp
+      if (marker.code !== undefined && (new RegExp(marker.code)).test( code ) ) {
         //group.marker = marker;
         if (!marker.showDetail) {
           if (marker.action) {

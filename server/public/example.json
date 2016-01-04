@@ -6,10 +6,10 @@
    "monophonicGap":0.1
  },
  "markers":[
-  {"code":"B5A5G5","showDetail":false,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice"},
-  {"code":"B5","title":"3","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
-  {"code":"A5","title":"Blind","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
-  {"code":"G5","title":"Mice","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
+  {"code":"^B[0-9]A[0-9]G[0-9]$","showDetail":false,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice"},
+  {"code":"^B5","title":"3","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
+  {"code":"A[0-9]","title":"Blind","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
+  {"code":"G5$","title":"Mice","description":"","showDetail":true,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice","image":"https://s3.amazonaws.com/rapgenius/1330036198_blind-mice-lrg-web.jpg"},
   {"code":"G5G5G5","showDetail":false,"action":"https://en.wikipedia.org/wiki/Row,_Row,_Row_Your_Boat"},
   {"code":"C5C5C5","showDetail":false,"action":"https://en.wikipedia.org/wiki/Row,_Row,_Row_Your_Boat"},
 

@@ -42,13 +42,13 @@ Format 1 (from original demo) builds codes from the note names, in the order the
 
 ### Code format 2
 
-Format 2 builds codes from relative interval and timing the immediately preceeding notes. E.g. `"0(4),0"` corresponds to two consecutive notes of the same pitch, decomposing the string as follows:
+Format 2 builds codes from relative interval and timing the immediately preceeding notes. E.g. `"0/4,0"` corresponds to two consecutive notes of the same pitch, decomposing the string as follows:
 - `0` - pitch offset of first note being considered relative to last note, in semitones = `0`, i.e. same pitch
-- `(4)` - duration of time interval between that note and the next note, normalised so that the last interval is considered `4` (i.e. 4 beats)
+- `/4` - (originally `(4)`) duration of time interval between that note and the next note, normalised so that the last interval is considered `4` (i.e. 4 beats)
 - `,` - next note...
 - `0` - last note is always considered to be pitch `0` and length unspecified.
 
-E.g. `"4(4),2(4),0"` is a sequence of (at least) 3 notes, where the last 3 notes have the same time interval between them (i.e. the first and second notes have the same duration) and there the pitch of each note is one tone below the previous one.
+E.g. `"4/4,2/4,0"` is a sequence of (at least) 3 notes, where the last 3 notes have the same time interval between them (i.e. the first and second notes have the same duration) and there the pitch of each note is one tone below the previous one.
 
 Note that format 2 checks for codes after every note and does not wait for the 'end' of a note stream, so the note pattern can be embedded within a longer stream of notes.
   
@@ -94,19 +94,19 @@ A code prefix:
 - `m` for midi note
 - `n` for note name
 - `o` for octave
-- `/` for relative to
+- `r` for relative to
 - `l` for last note
-- `=` for mapped-to value
+- `e` for equal-to (mapped-to) value
 
 - `t` for time
 - `c` for count
-- `/` for relative to
+- `r` for relative to
 - `l` for last note
-- `=` for mapped-to value
+- `e` for equal-to (mapped-to) value
 
 - `*`, `,`, `;`, ` ` separator characters
 
-E.g. format 1 = `no`; format 2 = `m/l=0(c/l=4),`. But format 2 isn’t good for regex matching because all the `(` need escaping. A better alternative is `m/l-c/l=4,`
+E.g. format 1 = `no`; format 2 = `mrle0/crle4,`. 
 
 Code variables, e.g. `x`. Constraints, e.g. `x<10`. Variable corresponds to `([A-G]#?[0-9]*)|([0-9]+(\.[0-9]+)?)`, i.e. note name with optional octave number or number (integer or float).
 
