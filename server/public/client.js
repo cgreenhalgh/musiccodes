@@ -46,9 +46,14 @@ function MusicCodeClient( experiencejson ) {
     alert('Error starting master: '+msg);
   });
   socket.emit('master',{room:this.room, pin:this.pin});
-  //setInterval( function() {
-  //    self.sendAudio();
-  //  },200);
+  if (false)
+    // scroll note view even with no new notes - harder to debug 
+    setInterval( function() {
+      if (self.lastNoteTime!==undefined) {
+        var time = (new Date()).getTime();
+        self.redraw(self.lastNoteTime+(time-self.lastNoteLocalTime)/1000);
+      }
+    },1000);
   this.allNotes = [];
   this.notesOn = {};
   this.allGroups = [];
@@ -354,6 +359,8 @@ MusicCodeClient.prototype.onoffset = function(note) {
     console.log("add group "+group.id);
     //this.updateGroup(group);
   }
+  this.lastNoteTime = note.time;
+  this.lastNoteLocalTime = (new Date()).getTime();
   this.redraw(note.time);
 }
 MusicCodeClient.prototype.updateGroup = function(group) {
