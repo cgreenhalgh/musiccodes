@@ -1,70 +1,12 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      .container { width: 600px; height: 900px; }
-      .main { width: 300px; height: 600px; background: #eee; position: absolute; }
-      .notelist { width: 300px; height: 600px; position: absolute; top: 0; left: 300px; overflow: scroll; }
-      .list { width: 300px; height: 300px; position: absolute; top: 0; left: 600px; overflow: scroll; }
-      .view { width: 300px; height: 300px; position: absolute; top: 300px; left: 600px;  }
-      #viewframe { width: 100%; height: 100%; overflow: scroll; }
-      .note-included { fill: #0f0; }
-      .note-discarded { fill: #444; opacity: 0.3; }
-      .group { stroke: #f00; stroke-width: 1; fill-opacity: 0; }
-      .code { fill: #000; }
-      .codelink { cursor: pointer; background: #bbb; height: 50px; width: 90%; display: block; border: 1px solid red; margin: 5px; }
-      .codeimage { width: 45px; height: 45px; }
-      .codetitle { display: inline; padding: 5px; font-size: 150%; }
-    </style>
+    <title>MusicCodes</title>
   </head>
   <body>
-    <div class="container">
-      <svg id="main" class="main">
-      </svg>
-      <div class="notelist">
-        <ul id="notelist"></ul>
-      </div>
-      <div class="list">
-        <ul id="links"></ul>
-      </div>
-      <div class="view">
-        <iframe id="viewframe"></iframe>
-      </div>
-    </div>
-  <p>Note: you may need to quit and restart Chrome to update the available MIDI ports</p>
-  <p>
-  	<label >MIDI Input</label>
-  	<select name="midiinput" id="midiinput">
-  	  <option value="">(none)</option>
-  	</select>
-  	<label>MIDI Output</label>
-  	<select name="midioutput" id="midioutput">
-  	  <option value="">(none)</option>
-  	</select>
-  </p>
-<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-<script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
-<script>
-  var socket = io();
-</script>
-<script src="client.js"></script>
-<script src="midi.js"></script>
-<script>
-$.ajax({
-    url:"example.json",
-    dataType:"json",
-    success:function(data) {
-      console.log('loaded experience: '+JSON.stringify(data));
-      var client = new MusicCodeClient( data );
-    },
-    error:function(err) {
-      alert('Error loading experience from example.json');
-    }
-  });
-</script>
+    <p><a href="master.html">Default Master</a></p>
+    <p><a href="slave.html">Default Slave</a></p>
+    <p><a href="master.html?r=test&p=1234">Master 'test'</a></p>
+    <p><a href="slave.html?r=test">Slave 'test'</a></p>
   </body>
 </html>

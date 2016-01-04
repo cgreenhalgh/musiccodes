@@ -17,6 +17,8 @@ var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;
 var STATE_ERROR = 4;
 
+var rooms = {};
+
 function Client(socket) {
   this.socket = socket;
   console.log('New client');
@@ -40,6 +42,15 @@ function Client(socket) {
   this.state = STATE_WAITING_FOR_PARAMETERS;
   socket.on('disconnect', function(){
     self.disconnect();
+  });
+  socket.on('master', function(msg) {
+    self.master(msg);
+  });
+  socket.on('slave', function(msg) {
+    self.slave(msg);
+  });
+  socket.on('action', function(msg) {
+    self.action(msg);
   });
   socket.on('parameters', function(msg) {
     self.parameters(msg);
@@ -134,6 +145,49 @@ Client.prototype.processSilvetOnoffset = function(data) {
     console.log('Get note '+JSON.stringify(values[ix]));
     this.socket.emit('onoffset', values[ix]);
   }     
+};
+
+Client.prototype.master = function(msg) {
+  // room, pin
+  if (msg.room===undefined) {
+    console.log("Master with no room defined");
+    return;
+  }
+  if (rooms[msg.room]===undefined) {
+    console.log("New room for master "+msg.room+" with pin "+msg.pin);
+    rooms[msg.room] = { pin: msg.pin };
+    this.room = msg.room;
+    this.master = true;
+  } else if (rooms[msg.room].pin !== msg.pin) {
+    console.log("Join existing room "+msg.room+" with wrong pin ("+msg.pin+")");
+    this.socket.emit('join.error', 'Incorrect PIN');
+  } else {
+    console.log("Join existing room "+msg.room);
+    this.room = msg.room;
+    this.master = true;
+  }
+};
+Client.prototype.slave = function(msg) {
+   // room
+  if (msg.room===undefined) {
+    console.log("Slave with no room defined");
+    return;
+  }
+  console.log("slave joined room "+msg.room);
+  this.socket.join(msg.room);
+  this.slave = true;
+  this.room = msg.room;
+  if (rooms[msg.room]===undefined)
+    this.socket.emit('join.warning', 'Unknown room');
+};
+Client.prototype.action = function(msg) {
+  // marker...
+  if (this.master) {
+    console.log("relay action to room "+this.room+": "+msg);
+    io.to(this.room).emit('action', msg);
+  } else {
+    console.log("discard action for non-master");
+  }
 };
 
 io.on('connection', function(socket){

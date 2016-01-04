@@ -21,11 +21,31 @@ var DEFAULT_MONOPHONIC = false;
 // defaults to 0.1s gap for monophonic
 var DEFAULT_MONOPHONIC_GAP = 0.1;
 
+// http://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-url-parameter
+function getQueryParams(qs) {
+    qs = qs.split('+').join(' ');
+    var params = {},
+        tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+    }
+    return params;
+}
+
 function MusicCodeClient( experiencejson ) {
   this.buffers = [];
   this.getMicrophoneInput();
   this.sentHeader = false;
   var self = this;
+  var params = getQueryParams(document.location.search);
+  this.room = params['r']===undefined ? 'default' : params['r'];
+  this.pin = params['p']===undefined ? '' : params['p'];
+  console.log('Room = '+this.room+', pin = '+this.pin);
+  socket.on('join.error', function(msg) {
+    alert('Error starting master: '+msg);
+  });
+  socket.emit('master',{room:this.room, pin:this.pin});
   //setInterval( function() {
   //    self.sendAudio();
   //  },200);
@@ -439,6 +459,7 @@ MusicCodeClient.prototype.handleCode = function(code, time) {
       // test as regexp
       if (marker.code !== undefined && (new RegExp(marker.code)).test( code ) ) {
         //group.marker = marker;
+        socket.emit('action',marker);
         if (!marker.showDetail) {
           if (marker.action) {
             console.log('open '+marker.action);
