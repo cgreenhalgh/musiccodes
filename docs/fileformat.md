@@ -13,6 +13,8 @@ Single top-level JSON object with properties:
 - `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
 - `frequencyRatio` (float, ratio, default 2.05), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
 - `vampParameters` - map of VAMP plugin parameters, default (for silvet plugin) `mode` = `0` (live), `instrument` = `0` (various/unknown).
+- `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
+- `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use

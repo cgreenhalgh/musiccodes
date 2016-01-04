@@ -1,7 +1,9 @@
 {
  "parameters":{
    "streamGap":1.0,
-   "frequencyRatio":1.5
+   "frequencyRatio":8.05,
+   "monophonic":true,
+   "monophonicGap":0.1
  },
  "markers":[
   {"code":"B5A5G5","showDetail":false,"action":"https://en.wikipedia.org/wiki/Three_Blind_Mice"},

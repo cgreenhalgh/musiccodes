@@ -16,6 +16,10 @@ var audioContext = new AudioContext();
 var streamGap = 2;
 // Frequency range of active stream (ratio of first note frequency)
 var frequencyRatio = 2.05;
+// defaults to polyphonic
+var DEFAULT_MONOPHONIC = false;
+// defaults to 0.1s gap for monophonic
+var DEFAULT_MONOPHONIC_GAP = 0.1;
 
 function MusicCodeClient( experiencejson ) {
   this.buffers = [];
@@ -38,6 +42,8 @@ function MusicCodeClient( experiencejson ) {
   this.parameters = this.experience.parameters===undefined ? {} : this.experience.parameters;
   this.parameters.streamGap = this.parameters.streamGap===undefined ? streamGap : Number(this.parameters.streamGap);
   this.parameters.frequencyRatio = this.parameters.frequencyRatio===undefined ? frequencyRatio : Number(this.parameters.frequencyRatio);
+  this.parameters.monophonic = this.parameters.monophonic===undefined ? DEFAULT_MONOPHONIC : Boolean(this.parameters.monophonic);
+  this.parameters.monophonicGap = this.parameters.monophonicGap===undefined ? DEFAULT_MONOPHONIC_GAP : Number(this.parameters.monophonicGap);
   var vampParameters = this.parameters.vampParameters===undefined ? {} : this.parameters.vampParameters;
   // default silvet plugin parameters: live mode, unknown instrument
   vampParameters.mode = vampParameters.mode===undefined ? 0 : vampParameters.mode;
@@ -302,12 +308,20 @@ MusicCodeClient.prototype.onoffset = function(note) {
     } else if (!handled && !note.off) {
       // add to group?!
       if (note.freq >= group.lowFreq && note.freq <= group.highFreq) {
-        group.lastTime = note.time;
-        group.notes.push(note);
-        group.count++;
-        handled = true;
-        console.log("add note to group "+group.id);
-        this.updateGroup(group);
+        // candidate for group - check monophonic
+        if (this.parameters.monophonic && note.time - group.lastTime < this.parameters.monophonicGap) {
+          // discard polyphonic note
+          console.log("discard polyphonic note with gap "+(note.time-group.lastTime));
+          handled = true;
+          note.discarded = true;
+        } else {
+          group.lastTime = note.time;
+          group.notes.push(note);
+          group.count++;
+          handled = true;
+          console.log("add note to group "+group.id);
+          this.updateGroup(group);
+        }
       }
     }
   }
@@ -364,6 +378,8 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('y', function(d) { return yscale(d.time); });
   sel.enter().append('rect')
       .classed('note', true)
+      .classed('note-included', function(d) { return d.discarded===undefined || !d.discarded ; })
+      .classed('note-discarded', function(d) { return d.discarded!==undefined ? d.discarded : false; })
       .attr('width', function(d) { return 2*vscale(d.velocity); })
       .attr('height', 10)
       .attr('y', function(d) { return yscale(d.time); })
