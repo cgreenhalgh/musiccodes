@@ -398,29 +398,30 @@ MusicCodeClient.prototype.redraw = function(time) {
 
   var xscale = d3.scale.log().domain([25,2500]).range([0,300]);
   var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
-  var yscale = d3.scale.linear().domain([time-30,time]).range([0,600]);
+  var yscale = d3.scale.linear().domain([time-20,time]).range([600,20]);
   var svg = d3.select('svg');
+  var DEFAULT_HEIGHT = 10;
   var sel = svg.selectAll('rect.note').data(this.allNotes, function(d) { return d.id; });
-  sel.attr('height', function(d) { return d.endTime!==undefined ? yscale(d.endTime)-yscale(d.time) : 10; })
-      .attr('y', function(d) { return yscale(d.time); });
+  sel.attr('height', function(d) { return d.endTime!==undefined ? yscale(d.time)-yscale(d.endTime) : DEFAULT_HEIGHT; })
+      .attr('y', function(d) { return d.endTime!==undefined ? yscale(d.endTime) : yscale(d.time)-DEFAULT_HEIGHT; });
   sel.enter().append('rect')
       .classed('note', true)
       .classed('note-included', function(d) { return d.discarded===undefined || !d.discarded ; })
       .classed('note-discarded', function(d) { return d.discarded!==undefined ? d.discarded : false; })
       .attr('width', function(d) { return 2*vscale(d.velocity); })
-      .attr('height', 10)
-      .attr('y', function(d) { return yscale(d.time); })
+      .attr('height', DEFAULT_HEIGHT)
+      .attr('y', function(d) { return yscale(d.time)-DEFAULT_HEIGHT; })
       .attr('x', function(d) { return xscale(d.freq)-vscale(d.velocity); });
   sel.exit().remove();
 
   var groups = svg.selectAll('rect.group').data(this.allGroups, function(d) { return d.id; });
-  groups.attr('height', function(d) { return yscale(d.lastTime+0.1)-yscale(d.time); })
-      .attr('y', function(d) { return yscale(d.time); });
+  groups.attr('height', function(d) { return yscale(d.time)-yscale(d.lastTime)+2; })
+      .attr('y', function(d) { return yscale(d.lastTime)-1; });
   groups.enter().append('rect')
       .classed('group', true)
       .attr('width', function(d) { return xscale(d.highFreq)-xscale(d.lowFreq); })
-      .attr('height', 10)
-      .attr('y', function(d) { return yscale(d.time); })
+      .attr('height', 2)
+      .attr('y', function(d) { return yscale(d.lastTime)-1; })
       .attr('x', function(d) { return xscale(d.lowFreq); });
   groups.exit().remove();
 
