@@ -54,15 +54,19 @@
 <script src="client.js"></script>
 <script src="midi.js"></script>
 <script>
+var filename = getQueryParams(document.location.search)['f'];
+if (filename===undefined)
+  filename = "example.json";
+console.log("Loading experience: "+filename);
 $.ajax({
-    url:"example.json",
+    url:filename,
     dataType:"json",
     success:function(data) {
       console.log('loaded experience: '+JSON.stringify(data));
       var client = new MusicCodeClient( data );
     },
     error:function(err) {
-      alert('Error loading experience from example.json');
+      alert('Error loading experience from '+filename);
     }
   });
 </script>
