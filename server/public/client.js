@@ -58,12 +58,29 @@ function MusicCodeClient( experiencejson ) {
   this.notesOn = {};
   this.allGroups = [];
   this.openGroups = [];
-  this.codes = [];
   this.markers = [];
+  // default code formats - 1 and 2 
+  // TODO: prime from experience code prefixes
+  this.codeformats = ['no','mrle0/crle4,'];
   socket.on('onoffset', function(note) {
     self.onoffset(note);
   });
   this.experience = experiencejson;
+  this.codes = {};
+  // prepare marker regexes
+  for (var mi in this.experience.markers) {
+    var marker = this.experience.markers[mi];
+    if (marker.code && marker.code.length>0) {
+      var code = marker.code;
+      if (code[code.length-1]=='$') 
+        // escape to match exact
+        code = code.substring(0, code.length-1)+'\\$$';
+      else
+        // to end
+        code = code+'$';
+      this.codes[marker.code] = { regex: new RegExp(code) };
+    }
+  }
   this.parameters = this.experience.parameters===undefined ? {} : this.experience.parameters;
   this.parameters.streamGap = this.parameters.streamGap===undefined ? streamGap : Number(this.parameters.streamGap);
   this.parameters.frequencyRatio = this.parameters.frequencyRatio===undefined ? frequencyRatio : Number(this.parameters.frequencyRatio);
@@ -293,11 +310,6 @@ MusicCodeClient.prototype.onoffset = function(note) {
   if (ni>0)
     this.allNotes.splice(0,ni);
   ni=0;
-  for (; ni<this.codes.length && this.codes[ni].lastTime<note.time-30; ni++)
-    ;
-  if (ni>0)
-    this.codes.splice(0,ni);
-  ni=0;
   for (; ni<this.markers.length && this.markers[ni].lastTime<note.time-10; ni++)
     ;
   if (ni>0)
@@ -345,7 +357,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
           group.count++;
           handled = true;
           console.log("add note to group "+group.id);
-          this.updateGroup(group);
+          this.handleGroup(group);
         }
       }
     }
@@ -357,37 +369,54 @@ MusicCodeClient.prototype.onoffset = function(note) {
     this.openGroups.push(group);
     this.allGroups.push(group);
     console.log("add group "+group.id);
-    //this.updateGroup(group);
+    this.handleGroup(group);
   }
   this.lastNoteTime = note.time;
   this.lastNoteLocalTime = (new Date()).getTime();
   this.redraw(note.time);
 }
-MusicCodeClient.prototype.updateGroup = function(group) {
-  if (group.notes.length<2)
-	return;
-  var prevnote = group.notes[group.notes.length-1];
-  var t0 = prevnote.time-group.notes[group.notes.length-2].time;
-  var f0 = prevnote.freq;
-  var maxLength = 10;
-  var i;
-  var code = '0';
-  var length = 1;
-  var durationReference = 4;
-  for (i=2; length < maxLength && group.notes.length-i >= 0; i++) {
-    var note = group.notes[group.notes.length-i];
-    var duration = Math.round( durationReference* (prevnote.time - note.time) / t0 );
-    // skip?!
-    if (duration==0)
-      continue;
-    var interval = Math.round( Math.log( note.freq / f0 ) / Math.log( 2 ) * 12 );
-    code = interval+'/'+duration+','+code;
-    length++;
-    prevnote = note;
+
+MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
+  // TODO: generalise...
+  if (codeformat=='mrle0/crle4,') {
+    // format 2
+    if (group.notes.length<2)
+	return null;
+    var prevnote = group.notes[group.notes.length-1];
+    var t0 = prevnote.time-group.notes[group.notes.length-2].time;
+    var f0 = prevnote.freq;
+    var maxLength = 10;
+    var i;
+    var code = '0';
+    var length = 1;
+    var durationReference = 4;
+    for (i=2; length < maxLength && group.notes.length-i >= 0; i++) {
+      var note = group.notes[group.notes.length-i];
+      var duration = Math.round( durationReference* (prevnote.time - note.time) / t0 );
+      // skip?!
+      if (duration==0)
+        continue;
+      var interval = Math.round( Math.log( note.freq / f0 ) / Math.log( 2 ) * 12 );
+      code = interval+'/'+duration+','+code;
+      length++;
+      prevnote = note;
+    }
+    if (group.closed)
+      code = code+'$';
+    return code;
+  } else if (codeformat=='no') {
+    // format 1
+    var code = '';
+    for (var ni in group.notes)
+      code += group.notes[ni].note;
+    if (group.closed)
+      code = code+'$';
+    return code;
+  } else {
+    console.log('Unknown codeformat '+codeformat);
+    return null;
   }
-  $('#notelist').prepend('<li>-&gt; '+code+'</li>');
-  this.handleCode( code, group.notes[group.notes.length-1].time );
-};
+}
 MusicCodeClient.prototype.redraw = function(time) {
   if (time)
     this.lastRedrawTime = time;
@@ -449,23 +478,23 @@ MusicCodeClient.prototype.closeGroups = function() {
 };
 
 MusicCodeClient.prototype.handleGroup = function(group) {
-  var notes = '';
-  for (var ni in group.notes) 
-    notes += group.notes[ni].note;
-  group.code = notes;
-  this.codes.push(group);
-  console.log("Group: "+notes);
-  $('#notelist').prepend('<li>-&gt; '+notes+'</li>');
-  this.handleCode( notes, group.lastTime );
+  for (var ci in this.codeformats) {
+    var codeformat = this.codeformats[ci];
+    var code = this.groupToCode(group, codeformat);
+    console.log("Code "+codeformat+':'+code);
+    $('#notelist').prepend('<li>-&gt; '+codeformat+':'+code+'</li>');
+    this.handleCode( code, group.lastTime, codeformat );
+  }
 };
 
 var markerId = 1;
-MusicCodeClient.prototype.handleCode = function(code, time) {
+MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
   if (this.experience && this.experience.markers) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
       // test as regexp
-      if (marker.code !== undefined && (new RegExp(marker.code)).test( code ) ) {
+      // TODO: check codeformat
+      if (marker.code !== undefined && this.codes[marker.code].regex.test( code ) ) {
         //group.marker = marker;
         socket.emit('action',marker);
         if (!marker.showDetail) {
