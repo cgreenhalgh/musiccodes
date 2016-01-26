@@ -72,6 +72,10 @@ function MusicCodeClient( experiencejson ) {
     var marker = this.experience.markers[mi];
     if (marker.code && marker.code.length>0) {
       var code = marker.code;
+      if (marker.codeformat!==undefined) {
+        if (this.codeformats.indexOf(marker.codeformat)<0)
+          this.codeformats.push(marker.codeformat);
+      }
       if (code[code.length-1]=='$') 
         // escape to match exact
         code = code.substring(0, code.length-1)+'\\$$';
@@ -377,6 +381,77 @@ MusicCodeClient.prototype.onoffset = function(note) {
 }
 
 MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
+  var cf = /^(([mn])(o)?(rl(e([0-9A-Za-z]+))?)?)?([^A-Za-z0-9]*)(([tc])(rl(e([0-9]+(\.[0-9]+)?))?)?)?([^A-Za-z0-9]*)$/.exec(codeformat);
+  if (cf==null) {
+    alert('Invalid codeformat '+codeformat);
+    return null;
+  }
+  var notetype = cf[2];
+  var noteoctave = cf[3];
+  var noterelative = cf[4];
+  var noteequals = cf[6];
+  var noteseparator = cf[7];
+  var timetype = cf[9];
+  var timerelative = cf[10];
+  var timeequals = cf[12];
+  var timeseparator = cf[14];
+  console.log('codeformat '+codeformat+' -> note type='+notetype+', octave='+noteoctave+', relative='+noterelative+', equals='+noteequals+', sep='+noteseparator+'; time type='+timetype+', rel='+timerelative+', equals='+timeequals+', sep='+timeseparator);
+  var durationReference = 1;
+  if (timeequals!==undefined)
+    durationReference = Number(timeequals);
+
+  var prevnote = null;
+  var code = '';
+  var i;
+  var maxLength = 100;
+  var t0 = null;
+  var f0 = null;
+  for (i=1; i<maxLength && group.notes.length-i >= 0; i++) {
+    var note = group.notes[group.notes.length-i];
+    // time sep
+    if (timeseparator!==undefined && code.length>0)
+      code = timeseparator+code;
+    // time
+    if (timetype!==undefined) {
+      if (prevnote!=null) {
+        if (t0==null) 
+          t0 = prevnote.time-note.time;
+         
+        var duration = Math.round( durationReference* (prevnote.time - note.time) / t0 );
+        if (timetype=='c')
+          code = String(duration)+code;
+       // TODO: m, non-relative
+      }
+    }
+    // note
+    if (noteseparator!==undefined && code.length>0)
+      code = noteseparator+code;
+    if (notetype!==undefined) {
+      if (f0==null)
+        f0 = note.freq;
+      if (noterelative===undefined) {
+        if (notetype=='m') {
+          // freq to midi var freq = 261.6*Math.pow(2, (note-60)/12.0);
+          var midi = Math.round(Math.log2(note.freq/261.6)*12+60);
+          code = midi+code;
+        }
+        else if (notetype=='n') {
+          if (noteoctave!==undefined)
+            code = note.note+code;
+          else {
+            var np = /^([A-Ga-g]#?)/.exec(note.note);
+            code = np[1]+code;
+          }
+        } 
+      }
+      // TODO relative
+    }
+    prevnote = note;
+  }
+  if (group.closed)
+    code = code+'$';
+  console.log('built '+codeformat+': '+code);
+
   // TODO: generalise...
   if (codeformat=='mrle0/crle4,') {
     // format 2
@@ -414,7 +489,7 @@ MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
     return code;
   } else {
     console.log('Unknown codeformat '+codeformat);
-    return null;
+    return code;
   }
 }
 MusicCodeClient.prototype.redraw = function(time) {
@@ -493,9 +568,11 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
       // test as regexp
-      // TODO: check codeformat
-      if (marker.code !== undefined && this.codes[marker.code].regex.test( code ) ) {
+      if (marker.code !== undefined && 
+          (marker.codeformat===undefined || marker.codeformat==codeformat) &&
+          this.codes[marker.code].regex.test( code ) ) {
         //group.marker = marker;
+        console.log('Matched '+marker.codeformat+':'+marker.code);
         socket.emit('action',marker);
         if (!marker.showDetail) {
           if (marker.action) {

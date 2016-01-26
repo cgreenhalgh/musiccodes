@@ -26,6 +26,7 @@ This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
 Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
+- `codeformat` (string, default any code), format of code - see below (e.g. `no`)
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `action` (string, URL), the action, e.g. target page to load, when code is detected
 - `title` (string), title of the action in showDetail view
