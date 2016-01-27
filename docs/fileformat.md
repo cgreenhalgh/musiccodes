@@ -26,7 +26,7 @@ This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
 Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
-- `codeformat` (string, default any code), format of code - see below (e.g. `no`)
+- `codeformat` (string, default any code, but SHOULD be defined), format of code - see below (e.g. `no`)
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `action` (string, URL), the action, e.g. target page to load, when code is detected
 - `title` (string), title of the action in showDetail view
@@ -35,13 +35,18 @@ Object with properties:
 
 ## `code`
 
-As of 25/11/2015 there are two code formats.
+As of 25/11/2015 there were two code formats.
+As of 27/01/2016 custom formats (below) are only partially implemented. (not all will work.)
 
 ### Code format 1
+
+This is `codeformat`:`no`
 
 Format 1 (from original demo) builds codes from the note names, in the order they are detected, without timing information. E.g. `"B5A5G5"` corresponds to a note stream which ends with a `B5` (i.e. B in octave 5), `A5` then `G5`. These codes are only checked after the note stream has ended, i.e. after the `streamGap` with the default classifier.
 
 ### Code format 2
+
+This is `codeformat`:`mrle0/crle4,`
 
 Format 2 builds codes from relative interval and timing the immediately preceeding notes. E.g. `"0/4,0"` corresponds to two consecutive notes of the same pitch, decomposing the string as follows:
 - `0` - pitch offset of first note being considered relative to last note, in semitones = `0`, i.e. same pitch
@@ -53,9 +58,14 @@ E.g. `"4/4,2/4,0"` is a sequence of (at least) 3 notes, where the last 3 notes h
 
 Note that format 2 checks for codes after every note and does not wait for the 'end' of a note stream, so the note pattern can be embedded within a longer stream of notes.
   
+### Other code formats
+
+Other formats MUST be specified using the `marker`s `codeformat` property. E.g.
+- `no/crle4,` - mixture of format 1 and 2, with note name and octave, plus relative timing.
+
 ### Generalised code format
 
-planning notes... not yet implemented.
+planning notes... only partially implemented.
 
 Note information includes: pitch (note, frequency), time, velocity and duration.
 
