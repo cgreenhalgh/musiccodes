@@ -106,13 +106,13 @@ A code prefix:
 - `n` for note name
 - `o` for octave
 - `r` for relative to
-- `l` for last note
+- `l` for last note, or `f` for first note in group
 - `e` for equal-to (mapped-to) value
 
 - `t` for time
 - `c` for count
 - `r` for relative to
-- `l` for last note
+- `l` for last note, or `f` for first note in group
 - `e` for equal-to (mapped-to) value
 
 - `*`, `,`, `;`, ` ` separator characters

@@ -387,7 +387,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
 }
 
 MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
-  var cf = /^(([mn])(o)?(rl(e([0-9A-Za-z]+))?)?)?([^A-Za-z0-9]*)(([tc])(rl(e([0-9]+(\.[0-9]+)?))?)?)?([^A-Za-z0-9]*)$/.exec(codeformat);
+  var cf = /^(([mn])(o)?(r[lf](e([0-9A-Za-z]+))?)?)?([^A-Za-z0-9]*)(([tc])(r[lf](e([0-9]+(\.[0-9]+)?))?)?)?([^A-Za-z0-9]*)$/.exec(codeformat);
   if (cf==null) {
     alert('Invalid codeformat '+codeformat);
     return null;
@@ -406,53 +406,60 @@ MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
   if (timeequals!==undefined)
     durationReference = Number(timeequals);
 
-  var prevnote = null;
   var code = '';
   var i;
   var maxLength = 100;
   var t0 = null;
   var f0 = null;
-  for (i=1; i<maxLength && group.notes.length-i >= 0; i++) {
-    var note = group.notes[group.notes.length-i];
-    // time sep
-    if (timeseparator!==undefined && code.length>0)
-      code = timeseparator+code;
-    // time
-    if (timetype!==undefined) {
-      if (prevnote!=null) {
-        if (t0==null) 
-          t0 = prevnote.time-note.time;
-         
-        var duration = Math.round( durationReference* (prevnote.time - note.time) / t0 );
-        if (timetype=='c')
-          code = String(duration)+code;
-       // TODO: m, non-relative
-      }
-    }
+  if (timerelative!==undefined && timerelative.indexOf('rl')==0) {
+    if (group.notes.length>=2) 
+      t0 = group.notes[group.notes.length-1].time-group.notes[group.notes.length-2].time;
+  } else if (timerelative!==undefined && timerelative.indexOf('rf')==0) {
+    if (group.notes.length>=2)
+      t0 = group.notes[1].time-group.notes[0].time;
+  }
+  if (noterelative!==undefined && noterelative.indexOf('rl')==0) {
+    if (group.notes.length>=1)
+      f0 = group.notes[group.notes.length-1].freq;
+  } else if (noterelative!==undefined && noterelative.indexOf('rf')==0) {
+    if (group.notes.length>=1)
+      f0 = group.notes[0].freq;
+  }
+  for (var i=0; i<maxLength && i<group.notes.length; i++) {
+    var note = group.notes[i];
     // note
-    if (noteseparator!==undefined && code.length>0)
-      code = noteseparator+code;
     if (notetype!==undefined) {
-      if (f0==null)
-        f0 = note.freq;
       if (noterelative===undefined) {
         if (notetype=='m') {
           // freq to midi var freq = 261.6*Math.pow(2, (note-60)/12.0);
           var midi = Math.round(Math.log2(note.freq/261.6)*12+60);
-          code = midi+code;
+          code = code+midi;
         }
         else if (notetype=='n') {
           if (noteoctave!==undefined)
-            code = note.note+code;
+            code = code+note.note;
           else {
             var np = /^([A-Ga-g]#?)/.exec(note.note);
-            code = np[1]+code;
+            code = code+np[1];
           }
         } 
       }
       // TODO relative
     }
-    prevnote = note;
+    if (noteseparator!==undefined && i+1<group.notes.length)
+      code = code+noteseparator;
+     // time
+    if (timetype!==undefined) {
+      if (t0!==null && i+1<group.notes.length) {
+        var duration = Math.round( durationReference* (group.notes[i+1].time - note.time) / t0 );
+        if (timetype=='c')
+          code = code+String(duration);
+       // TODO: m, non-relative
+      }
+    }
+    // time sep
+    if (timeseparator!==undefined && i+1<group.notes.length)
+      code = code+timeseparator;
   }
   if (group.closed)
     code = code+'$';
