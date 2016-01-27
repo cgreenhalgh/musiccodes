@@ -67,6 +67,7 @@ function MusicCodeClient( experiencejson ) {
   });
   this.experience = experiencejson;
   this.codes = {};
+  this.partcodes = [];
   // prepare marker regexes
   for (var mi in this.experience.markers) {
     var marker = this.experience.markers[mi];
@@ -83,6 +84,11 @@ function MusicCodeClient( experiencejson ) {
         // to end
         code = code+'$';
       this.codes[marker.code] = { regex: new RegExp(code) };
+      if (marker.codeformat!==undefined) {
+        var partcode = { code: code, codeformat: marker.codeformat, marker: marker };
+        this.partcodes.push(partcode);
+        this.setupPartcode(partcode);
+      }
     }
   }
   this.parameters = this.experience.parameters===undefined ? {} : this.experience.parameters;
@@ -538,6 +544,30 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('x', function(d) { return xscale(d.freq)+10; });
   notenames.exit().remove();
 
+  var partcodes = d3.select('#partcodes').selectAll('div.prefixes').data(this.partcodes);
+  var partcodesenter = partcodes.enter().append('li')
+      .classed('partcode', true);
+  partcodesenter.append('div')
+      .classed('prefix-label', true)
+      .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+d.marker.action; });
+  partcodesenter.append('div')
+      .classed('prefixes', true);
+
+  // have trouble with multiple additions if i don't re-select
+  partcodes = d3.select('#partcodes').selectAll('div.prefixes').data(this.partcodes);
+
+  var prefixes = partcodes.selectAll('.prefix').data(function(d) { return d.prefixes; });
+  prefixes.enter() 
+    .append('span')
+      .classed('prefix', true)
+//      .classed('prefix-matched', function(d) { return d.matched; })
+//      .classed('prefix-unmatched', function(d) { return !d.matched; })
+      .text(function(d) { return d.text; });
+  prefixes
+      .classed('prefix-matched', function(d) { return d.matched; })
+      .classed('prefix-unmatched', function(d) { return !d.matched; })
+
+
 };
 
 MusicCodeClient.prototype.closeGroups = function() {
@@ -564,6 +594,7 @@ MusicCodeClient.prototype.handleGroup = function(group) {
 
 var markerId = 1;
 MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
+  this.updatePartcodes(code, codeformat);
   if (this.experience && this.experience.markers) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
@@ -598,6 +629,73 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
       .text(function(d) { return d.marker.title; });
   markers.exit().remove();
 };
+
+MusicCodeClient.prototype.setupPartcode = function(partcode) {
+  // split into prefix codes, build regexes and state
+  // has partcode.code, partcode.codeformat, partcode.marker
+  var prefixes = [];
+  var ppat = /((\\[0-7]{1,3})|(\\x[a-fA-F0-9]{2})|(\\u[a-fA-F0-9]{4})|(\\[^0-7xu])|(\[[^\]]*\]))|([+*?]|[{][0-9]+(,[0-9]*)?[}])|([()])|([^()[\\*+?{])/g
+  var match;
+  var patt = '';
+
+  console.log('find prefixes of '+partcode.code);
+  while( (match=ppat.exec(partcode.code)) != null ) {
+    var metachar = match[1];
+    var quantifier = match[7];
+    var bracket = match[9];
+    var string = match[10];
+    //console.log('  metachar='+metachar+', quant='+quantifier+', bracket='+bracket+', string='+string);
+    if (quantifier!==undefined) {
+      // no-op
+    } else if (patt.length>0 && patt!='^') {
+      console.log('Found prefix '+patt+' for '+partcode.code);
+      var text = patt;
+      if (prefixes.length>0)
+        text = text.substring(prefixes[prefixes.length-1].length);
+      var prefix = { patt: patt, text: text, matched: false, regex: new RegExp(patt+'$'), length: patt.length };
+      prefixes.push(prefix);
+      // bracket?
+      if (bracket=='(') {
+        var depth = 1;
+        patt = patt+match[0];
+        while( (match=ppat.exec(partcode.code)) != null) {
+          var bracket = match[9];
+          if (bracket=='(')
+            depth++;
+          else if (bracket==')') {
+            depth--;
+            if (depth==0)
+              break;
+          }
+          patt = patt+match[0];
+        }
+
+      }
+    }
+    patt = patt+match[0];
+  }
+  partcode.prefixes = prefixes;
+};
+
+MusicCodeClient.prototype.updatePartcodes = function(code,codeformat) {
+  for (var pi in this.partcodes) {
+    var partcode = this.partcodes[pi];
+    if (partcode.codeformat!=codeformat)
+      continue;
+    var longest = 0;
+    for (var i=partcode.prefixes.length-1; i>=0; i--) {
+      var prefix = partcode.prefixes[i];
+      if (prefix.regex.test(code)) {
+        longest = prefix.length;
+        break;
+      }
+    }
+    for (var i in partcode.prefixes) {
+      partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
+    }
+  }
+};
+
 
 $(document).on('click', '.codelink', function(ev) {
   var group = d3.select(ev.target).datum();

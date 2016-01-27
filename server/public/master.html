@@ -18,6 +18,12 @@
       .codelink { cursor: pointer; background: #bbb; height: 50px; width: 90%; display: block; border: 1px solid red; margin: 5px; }
       .codeimage { width: 45px; height: 45px; }
       .codetitle { display: inline; padding: 5px; font-size: 150%; }
+      #links { display: none; }
+      #prefixes {}
+      .prefix { font-weight: bold; }
+      .prefix-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .prefix-matched { color: red;}
+      .prefix-unmatched { }
     </style>
   </head>
   <body>
@@ -29,6 +35,7 @@
       </div>
       <div class="list">
         <ul id="links"></ul>
+        <ul id="partcodes"></ul>
       </div>
       <div class="view">
         <iframe id="viewframe"></iframe>
