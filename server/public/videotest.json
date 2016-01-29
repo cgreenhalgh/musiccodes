@@ -1,5 +1,6 @@
 {
  "markers":[
-  {"code":".*","showDetail":false,"action":"https://www.youtube.com/embed/ZnuwB35GYMY?rel=0&controls=0&showinfo=0&autoplay=1"}
+  {"code":"B","showDetail":false,"action":"http://www.cs.nott.ac.uk/~pszcmg/Music/campus.mp3"},
+  {"code":"A","showDetail":false,"action":"https://www.youtube.com/embed/ZnuwB35GYMY?rel=0&controls=0&showinfo=0&autoplay=1"}
 ]}
 

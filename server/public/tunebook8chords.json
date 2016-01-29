@@ -1,0 +1,29 @@
+{
+ "parameters":{
+   "streamGap":3.0,
+   "frequencyRatio":8.05,
+   "monophonic":true,
+   "monophonicGap":0.1
+ },
+ "markers":[
+
+ {"codeformat":"no","code":"^A..*C..*E..*A.","match":"any","title":"Carolan","showDetail":false,"action":"http://wp.me/p4iqKD-1d"},
+ {"codeformat":"no","code":"^A..*E..*A..*C.","match":"any","title":"Carolan","showDetail":false,"action":"http://wp.me/p4iqKD-17"},
+
+
+
+ {"codeformat":"no","code":"^D..*F..*A..*D.","match":"any","title":"About","showDetail":false,"action":"http://wp.me/p4iqKD-13"},
+ {"codeformat":"no","code":"^D..*A..*D..*F..","match":"any","title":"About","showDetail":false,"action":"http://wp.me/p4iqKD-1a"},
+
+{"codeformat":"no","code":"^D..*A..*D..*A.","match":"any","title":"About","showDetail":false,"action":"http://wp.me/p4iqKD-S"},
+
+{"codeformat":"no","code":"^E..*G..*B..*E.","match":"any","title":"Guide","showDetail":false,"action":"http://wp.me/p4iqKD-15"},
+
+ {"codeformat":"no","code":"^E..*B..*E..*G.","match":"any","title":"Guide","showDetail":false,"action":"http://wp.me/p4iqKD-15"},
+
+ {"codeformat":"no","code":"^G..*B..*D..*G.","match":"any","title":"Performances","showDetail":false,"action":"http://wp.me/p4iqKD-E/"},
+ {"codeformat":"no","code":"^G..*D..*G..*B.","match":"any","title":"Performances","showDetail":false,"action":"http://wp.me/p4iqKD-E"}
+
+  
+]}
+

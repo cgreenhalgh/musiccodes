@@ -1,0 +1,43 @@
+{
+ "parameters":{
+   "streamGap":3.0,
+   "frequencyRatio":8.05,
+   "monophonic":true,
+   "monophonicGap":0.25
+ },
+ "markers":[
+
+
+{"codeformat":"no","code":"^D.F#.E.D.B.C#.D.","match":"any","title":"Silver Spear 2","showDetail":false,"action":"http://wp.me/p4iqKD-S"},
+
+{"codeformat":"no","code":"^F#.A..*B...F#","match":"any","title":"Silver Spear 1 + 2","showDetail":false,"action":"http://wp.me/p4iqKD-S"},
+
+
+{"codeformat":"no","code":"^F#.A.B.A.F#.A.B.A.","match":"any","title":"Egans","showDetail":false,"action":"http://wp.me/p4iqKD-X"},
+
+{"codeformat":"no","code":"^C.B.A.C.B.A.G.B.","match":"any","title":"Star of Munster","showDetail":false,"action":"http://wp.me/p4iqKD-1d"},
+
+
+{"codeformat":"no", "code":"^G..*A..*B..*A..*G..*B..*A..*G.","match":"any","title":"Father Kelly's","showDetail":false,"action":"http://wp.me/p4iqKD-E"},
+
+
+{"codeformat":"no", "code":"^A.D..*F#.G.A..*D.B.A","match":"any","title":"Horse with a Heart","showDetail":false,"action":"http://wp.me/p4iqKD-13"},
+
+
+{"codeformat":"no", "code":"^A.B.C.B.A.","match":"any","title":"Dusty Windowsills","showDetail":false,"action":"http://wp.me/p4iqKD-17"},
+
+{"codeformat":"no", "code":"^A..*C.B.A.","match":"any","title":"Dusty Windowsills","showDetail":false,"action":"https://www.youtube.com/embed/bbYPqs7fteU?autoplay=1"},
+
+{"codeformat":"no", "code":"^F#.A..*D..*B.A..*.*D.","match":"any","title":"The Connaughtmans Rambles","showDetail":false,"action":"http://wp.me/p4iqKD-1a"},
+
+
+{"codeformat":"no", "code":"^A.F#.A.A.D.A.A.","match":"any","title":"The Connaughtmans Rambles","showDetail":false,"action":"http://wp.me/p4iqKD-1a"},
+
+{"codeformat":"no", "code":"^F#.A.A.D.A.A.","match":"any","title":"The Connaughtmans Rambles","showDetail":false,"action":"http://wp.me/p4iqKD-1a"},
+
+
+{"codeformat":"no","code":"^E..*B.E.B.E.B.A..*F#.D.","match":"any","title":"Morrisons","showDetail":false,"action":"http://wp.me/p4iqKD-15"}
+
+  
+]}
+
