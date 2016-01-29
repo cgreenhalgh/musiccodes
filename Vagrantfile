@@ -10,6 +10,8 @@ Vagrant.configure(2) do |config|
   # web server for wordpress
   config.vm.network "forwarded_port", guest: 80, host: 8080
 
+  # Not using wordpress interface for now (needs node for action broadcast)
+=begin
   # Standard salt set-up cf. wordpress-selfservice
   # Workaround https://github.com/mitchellh/vagrant/issues/5973
   config.vm.provision "shell", inline: <<-SHELL
@@ -37,6 +39,7 @@ Vagrant.configure(2) do |config|
     salt-call state.highstate
 
   SHELL
+=end
 
   config.vm.provision "shell", privileged: false, inline: <<-SHELL
     sudo apt-get install -y git wget curl
