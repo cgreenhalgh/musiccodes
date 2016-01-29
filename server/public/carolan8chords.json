@@ -1,0 +1,38 @@
+{
+ "parameters":{
+   "streamGap":3.0,
+   "frequencyRatio":8.05,
+   "monophonic":true,
+   "monophonicGap":0.1
+ },
+ "markers":[
+
+ {"codeformat":"no","code":"A..*C..*E..*A.","match":"any","title":"Carolan","showDetail":false,"action":"http://carolanguitar.com"},
+ {"codeformat":"no","code":"A..*E..*A..*C.","match":"any","title":"Carolan","showDetail":false,"action":"http://carolanguitar.com"},
+
+ {"codeformat":"no","code":"B..*D..*F..*B.","match":"any","title":"Tech","showDetail":false,"action":"http://carolanguitar.com/tech-spec/"},
+ {"codeformat":"no","code":"B..*F..*B..*D.","match":"any","title":"Tech","showDetail":false,"action":"http://carolanguitar.com/tech-spec/"},
+
+
+ {"codeformat":"no","code":"C..*E..*G..*C.","match":"any","title":"Players","showDetail":false,"action":"http://carolanguitar.com/fact-open-mic-players/"},
+ {"codeformat":"no","code":"C..*G..*C..*E.","match":"any","title":"Players","showDetail":false,"action":"http://carolanguitar.com/fact-open-mic-players/"},
+
+ {"codeformat":"no","code":"D..*F..*A..*D.","match":"any","title":"About","showDetail":false,"action":"http://carolanguitar.com/about/"},
+ {"codeformat":"no","code":"D..*A..*D..*F.","match":"any","title":"About","showDetail":false,"action":"http://carolanguitar.com/about/"},
+
+
+ {"codeformat":"no","code":"E..*G..*B..*E.","match":"any","title":"Guide","showDetail":false,"action":"http://carolanguitar.com/user-guide/"},
+ {"codeformat":"no","code":"E..*B..*E..*G.","match":"any","title":"Guide","showDetail":false,"action":"http://carolanguitar.com/user-guide/"},
+
+
+ {"codeformat":"no","code":"F..*A..*C..*F.","match":"any","title":"Brochure","showDetail":false,"action":"http://carolanguitar.com/brochure/"},
+ {"codeformat":"no","code":"F..*C..*F..*A.","match":"any","title":"Brochure","showDetail":false,"action":"http://carolanguitar.com/brochure/"},
+ {"codeformat":"no","code":"F..*G#..*C..*F.","match":"any","title":"Brochure","showDetail":false,"action":"http://carolanguitar.com/brochure/"},
+ {"codeformat":"no","code":"F..*C..*F..*G#.","match":"any","title":"Brochure","showDetail":false,"action":"http://carolanguitar.com/brochure/"},
+
+ {"codeformat":"no","code":"G..*B..*D..*G.","match":"any","title":"Performances","showDetail":false,"action":"http://carolanguitar.com/performances/"},
+ {"codeformat":"no","code":"G..*D..*G..*B.","match":"any","title":"Performances","showDetail":false,"action":"http://carolanguitar.com/performances/"}
+
+  
+]}
+
