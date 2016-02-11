@@ -87,6 +87,7 @@ function MusicCodeClient( experiencejson ) {
       this.codes[marker.code] = { regex: new RegExp(code) };
       if (marker.codeformat!==undefined) {
         var partcode = { code: code, codeformat: marker.codeformat, marker: marker };
+        partcode.id = this.partcodes.length;
         this.partcodes.push(partcode);
         this.setupPartcode(partcode);
       }
@@ -509,6 +510,21 @@ MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
     return code;
   }
 }
+function getLongestPrefix(p) {
+  if (p!==undefined && p.longestPrefix!==undefined)
+    return p.longestPrefix;
+  return 0;
+}
+function getPattLength(p) {
+  if (p!==undefined && p.code!==undefined)
+    return p.code.length;
+  return 0;
+}
+function getPrefixRemain(p) {
+  if (p!==undefined && p.longestPrefix!==undefined && p.code!==undefined)
+    return p.code.length-p.longestPrefix;
+  return 0;
+}
 MusicCodeClient.prototype.redraw = function(time) {
   if (time)
     this.lastRedrawTime = time;
@@ -555,7 +571,7 @@ MusicCodeClient.prototype.redraw = function(time) {
       .attr('x', function(d) { return xscale(d.freq)+10; });
   notenames.exit().remove();
 
-  var partcodes = d3.select('#partcodes').selectAll('div.prefixes').data(this.partcodes);
+  var partcodes = d3.select('#partcodes').selectAll('li').data(this.partcodes,function(p){ return p.id; });
   var partcodesenter = partcodes.enter().append('li')
       .classed('partcode', true);
   partcodesenter.append('div')
@@ -564,8 +580,11 @@ MusicCodeClient.prototype.redraw = function(time) {
   partcodesenter.append('div')
       .classed('prefixes', true);
 
+  //d3.select('#partcodes').selectAll('li').sort(function(a,b){ return getPrefixRemain(a)<getPrefixRemain(b) ? -1: (getPrefixRemain(a)>getPrefixRemain(b) ? 1 : (getPattLength(a)<getPattLength(b) ? -1: (getPattLength(a)>getPattLength(b) ? 1 : 0)));});
+  d3.select('#partcodes').selectAll('li').sort(function(a,b){ return getLongestPrefix(a)>getLongestPrefix(b) ? -1: (getLongestPrefix(a)<getLongestPrefix(b) ? 1 : (getPattLength(a)<getPattLength(b) ? -1: (getPattLength(a)>getPattLength(b) ? 1 : 0)));});
+
   // have trouble with multiple additions if i don't re-select
-  partcodes = d3.select('#partcodes').selectAll('div.prefixes').data(this.partcodes);
+  partcodes = d3.select('#partcodes').selectAll('li'); //.data(this.partcodes);
 
   var prefixes = partcodes.selectAll('.prefix').data(function(d) { return d.prefixes; });
   prefixes.enter() 
@@ -701,6 +720,7 @@ MusicCodeClient.prototype.updatePartcodes = function(code,codeformat) {
         break;
       }
     }
+    partcode.longestPrefix = longest;
     for (var i in partcode.prefixes) {
       partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
     }
