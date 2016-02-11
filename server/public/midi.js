@@ -3,9 +3,11 @@ var midi = null;  // global MIDIAccess object
 var midiInputPort = null;
 var midiOutputPort = null;
 var midiNoteCallback = null;
+var midiSelectCallback = null;
 
-function setupMidi( noteCallback ) {
+function setupMidi( noteCallback, selectCallback ) {
 	midiNoteCallback = noteCallback;
+	midiSelectCallback = selectCallback;
 	// request top-level midi access (non-exclusive)
 	navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
 }
@@ -53,6 +55,8 @@ $('#midiinput').change( function( ev ) {
 	  console.log( str );
 	  processMidiMessage( event.data );
   };
+  if (midiSelectCallback!==null) 
+    midiSelectCallback(id);
 });
 
 function processMidiMessage( data ) {

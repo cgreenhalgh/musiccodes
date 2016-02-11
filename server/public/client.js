@@ -38,6 +38,7 @@ function MusicCodeClient( experiencejson ) {
   this.getMicrophoneInput();
   this.sentHeader = false;
   var self = this;
+  this.mute = false;
   var params = getQueryParams(document.location.search);
   this.room = params['r']===undefined ? 'default' : params['r'];
   this.pin = params['p']===undefined ? '' : params['p'];
@@ -114,7 +115,8 @@ function MusicCodeClient( experiencejson ) {
   //  }
   //});
   // midi?!
-  setupMidi(function(note) { self.onoffset(note); });
+  setupMidi(function(note) { self.onoffset(note); },
+    function(id) { self.mute = true; });
 }
 
 function floatTo16BitPCM(output, offset, input){
@@ -187,6 +189,8 @@ function base64ArrayBuffer(arrayBuffer) {
 
 MusicCodeClient.prototype.sendAudio = function() {
   var bufs = this.buffers.splice(0, this.buffers.length);
+  if (this.mute)
+    return;
 
   if ( !this.sentHeader ) {
     console.log( 'send header, sample rate='+audioContext.sampleRate+'Hz' );
