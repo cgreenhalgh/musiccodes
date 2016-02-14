@@ -104,7 +104,7 @@ function MusicCodeClient( experiencejson ) {
         code = code+'$';
       this.codes[marker.code] = { regex: new RegExp(code) };
       if (marker.codeformat!==undefined) {
-        var partcode = { code: code, codeformat: marker.codeformat, marker: marker };
+        var partcode = { code: code, codeformat: marker.codeformat, marker: marker, precondition: marker.precondition, preconditionok: true };
         partcode.id = this.partcodes.length;
         this.partcodes.push(partcode);
         this.setupPartcode(partcode);
@@ -122,6 +122,11 @@ function MusicCodeClient( experiencejson ) {
   vampParameters.instrument = vampParameters.instrument===undefined ? 0 : vampParameters.instrument;
   console.log('Send parameters '+JSON.stringify(vampParameters));
   socket.emit( 'parameters', vampParameters );
+  // state
+  this.state = {};
+  this.statechanged = false;
+  if (this.parameters.initstate!==undefined)
+    this.updateState(this.parameters.initstate);
   //$.ajax({
   //  url:experienceurl,
   //  dataType:"json",
@@ -142,7 +147,53 @@ function MusicCodeClient( experiencejson ) {
   $('body').keydown( function(ev) { self.key(ev, true); });
   $('body').keyup( function(ev) { self.key(ev, false); });
 }
-
+// state is map of name to value. Safely evaluate...
+MusicCodeClient.prototype.updateState = function(state) {
+  var output = {};
+  for (var name in state) {
+    var expression = state[name];
+    output[name] = this.safeEvaluate(expression);
+    console.log('State '+name+' = '+output[name]+' = '+expression);
+  }
+  for (var name in output) {
+    if (this.state[name]!==output[name]) {
+      this.statechanged = true;
+      this.state[name] = output[name];
+    }
+  }
+};
+MusicCodeClient.prototype.safeEvaluate = function(expression) {
+  window.scriptstate = {};
+  for (var si in this.state)
+    window.scriptstate[si] = this.state[si];
+  window.scriptstate['false'] = false;
+  window.scriptstate['true'] = true;
+  window.scriptstate['null'] = null;
+  var result = null;
+  // is expression safe? escape all names as window.scriptstate. ...
+  var vpat = /([A-Za-z_][A-Za-z_0-9]*)|([^A-Za-z_])/g;
+  var match = null;
+  var safeexpression = '';
+  while((match=vpat.exec(expression))!==null) {
+    if (match[1]!==undefined) 
+      safeexpression = safeexpression+'(window.scriptstate.'+match[1]+')';
+    else if (match[2]!==undefined)
+      safeexpression = safeexpression+match[2];
+  }
+  try {
+    result = eval(safeexpression);
+    if (result===undefined) {
+      var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': undefined';
+      console.log(msg);
+      alert(msg);
+    }
+  } catch (ex) {
+    var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': '+ex.message;
+    console.log(msg);
+    alert(msg);
+  }
+  return result;
+};
 function floatTo16BitPCM(output, offset, input){
   for (var i = 0; i < input.length; i++, offset+=2){
     var s = Math.max(-1, Math.min(1, input[i]));
@@ -601,14 +652,19 @@ MusicCodeClient.prototype.redraw = function(time) {
       .classed('prefix-label', true)
       // TODO pretty print multiple actions
       .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+(d.marker.actions); });
-  partcodesenter.append('div')
+  var partcodesdivs =  partcodesenter.append('div')
       .classed('prefixes', true);
-
+  partcodesdivs.append('span')
+     .classed('precondition', true)
+     .text(function(d){ return d.precondition===undefined ? '' : d.precondition+': ';});
+  d3.select('#partcodes').selectAll('li .precondition')
+      .classed('precondition-true', function(d) { return d.preconditionok; })
+      .classed('precondition-false', function(d) { return !d.preconditionok; });
   //d3.select('#partcodes').selectAll('li').sort(function(a,b){ return getPrefixRemain(a)<getPrefixRemain(b) ? -1: (getPrefixRemain(a)>getPrefixRemain(b) ? 1 : (getPattLength(a)<getPattLength(b) ? -1: (getPattLength(a)>getPattLength(b) ? 1 : 0)));});
-  d3.select('#partcodes').selectAll('li').sort(function(a,b){ return getLongestPrefix(a)>getLongestPrefix(b) ? -1: (getLongestPrefix(a)<getLongestPrefix(b) ? 1 : (getPattLength(a)<getPattLength(b) ? -1: (getPattLength(a)>getPattLength(b) ? 1 : 0)));});
+  d3.select('#partcodes').selectAll('li').sort(function(a,b){ return a.preconditionok && !b.preconditionok ? -1 : (!a.preconditionok && b.preconditionok ? 1 : (getLongestPrefix(a)>getLongestPrefix(b) ? -1: (getLongestPrefix(a)<getLongestPrefix(b) ? 1 : (getPattLength(a)<getPattLength(b) ? -1: (getPattLength(a)>getPattLength(b) ? 1 : 0)))));});
 
   // have trouble with multiple additions if i don't re-select
-  partcodes = d3.select('#partcodes').selectAll('li'); //.data(this.partcodes);
+  partcodes = d3.select('#partcodes').selectAll('li div.prefixes'); //.data(this.partcodes);
 
   var prefixes = partcodes.selectAll('.prefix').data(function(d) { return d.prefixes; });
   prefixes.enter() 
@@ -619,9 +675,22 @@ MusicCodeClient.prototype.redraw = function(time) {
       .text(function(d) { return d.text; });
   prefixes
       .classed('prefix-matched', function(d) { return d.matched; })
-      .classed('prefix-unmatched', function(d) { return !d.matched; })
+      .classed('prefix-unmatched', function(d) { return !d.matched && d.preconditionok; })
+      .classed('prefix-precondition-false', function(d) { return !d.preconditionok; });
 
-
+  // state to array?
+  var vs = [];
+  for (var sn in this.state) {
+    vs.push({name:sn,value:this.state[sn]});
+  }
+  var stateitems = d3.select('#statelist').selectAll('li').data(vs,function(v){ return v.name; });
+  stateitems.enter()
+    .append('li')
+      .text(function(v) { return v.name; });
+  stateitems.exit().remove();
+  stateitems.sort(function(a,b){ return a.name<b.name ? -1: (a.name==b.name ? 0: 1); });
+  stateitems.text(function (v) { return v.name+'='+v.value; });
+  this.statechanged = false;
 };
 
 MusicCodeClient.prototype.closeGroups = function() {
@@ -637,6 +706,19 @@ MusicCodeClient.prototype.closeGroups = function() {
 };
 
 MusicCodeClient.prototype.handleGroup = function(group) {
+  if (this.handleGroupTimer!==undefined && this.handleGroupTimer!==null) {
+    clearInterval(this.handleGroupTimer);
+    this.handleGroupTimer = null;
+  }
+  if (this.experience && this.experience.markers) {
+    for (var i in this.experience.markers) {
+      var marker = this.experience.markers[i];
+      if (marker.precondition===undefined)
+        marker.preconditionok = true;
+      else
+        marker.preconditionok = true==this.safeEvaluate(marker.precondition);
+    }
+  }
   for (var ci in this.codeformats) {
     var codeformat = this.codeformats[ci];
     var code = this.groupToCode(group, codeformat);
@@ -644,6 +726,18 @@ MusicCodeClient.prototype.handleGroup = function(group) {
     $('#notelist').prepend('<li>-&gt; '+codeformat+':'+code+'</li>');
     this.handleCode( code, group.lastTime, codeformat );
   }
+  //if (this.statechanged) {
+  //  this.handleGroupTimer = setInterval(
+  //    function() { 
+  //      // update preconditions, etc.
+  //      for (var ci in this.codeformats) {
+  //        var codeformat = this.codeformats[ci];
+  //        var code = this.groupToCode(group, codeformat);
+  //        this.updatePartcodes( code, codeformat );
+  //      }
+  //      this.redraw();
+  //    }, 400);
+  //}
 };
 
 var markerId = 1;
@@ -653,12 +747,15 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
     for (var i in this.experience.markers) {
       var marker = this.experience.markers[i];
       // test as regexp
-      if (marker.code !== undefined && 
+      if (marker.preconditionok &&
+          marker.code !== undefined && 
           (marker.codeformat===undefined || marker.codeformat==codeformat) &&
           this.codes[marker.code].regex.test( code ) ) {
         //group.marker = marker;
         console.log('Matched '+marker.codeformat+':'+marker.code);
         socket.emit('action',marker);
+        if (marker.poststate!==undefined)
+          this.updateState(marker.poststate);
         for (var ai in marker.actions) {
           var action = marker.actions[ai];
           if (this.channel==action.channel) {
@@ -736,8 +833,13 @@ MusicCodeClient.prototype.updatePartcodes = function(code,codeformat) {
     var partcode = this.partcodes[pi];
     if (partcode.codeformat!=codeformat)
       continue;
+    if (partcode.precondition===undefined)
+      partcode.preconditionok = true;
+    else
+      partcode.preconditionok = true==this.safeEvaluate(partcode.precondition);
+    
     var longest = 0;
-    for (var i=partcode.prefixes.length-1; i>=0; i--) {
+    for (var i=partcode.prefixes.length-1; partcode.preconditionok && i>=0; i--) {
       var prefix = partcode.prefixes[i];
       if (prefix.regex.test(code)) {
         longest = prefix.length;
@@ -747,12 +849,13 @@ MusicCodeClient.prototype.updatePartcodes = function(code,codeformat) {
     partcode.longestPrefix = longest;
     for (var i in partcode.prefixes) {
       partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
+      partcode.prefixes[i].preconditionok = partcode.preconditionok;
     }
   }
 };
 // virtual piano keys from A = middle C. Keycodes are based on capital.
 // note 60 is middle C, which I think plugin calls C4, freq. is nominally 261.6Hz
-var KEYS = "AWSEDFTGYHUJK";
+var KEYS = "AWSEDFTGYHUJK"; 
 var KEY0_MIDI = 60;
 var KEY_TIME0 = Date.now();
 var KEY_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -761,7 +864,7 @@ MusicCodeClient.prototype.key = function(ev, down) {
   var midi = -1;
   for (var i=0; i<KEYS.length; i++) {
     if (KEYS.charCodeAt(i)==ev.which) {
-      midi = KEY0_MIDI+i;
+      midi = KEY0_MIDI+i+(ev.shiftKey ? 12 : 0);
       break;
     }
   }
