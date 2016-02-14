@@ -116,7 +116,9 @@ function MusicCodeClient( experiencejson ) {
   //  }
   //});
   // midi?!
-  setupMidi(function(note) { self.onoffset(note); },
+  var midiIn = params['i'];
+  var midiOut = params['o'];
+  setupMidi(midiIn, midiOut, function(note) { self.onoffset(note); },
     function(id) { self.mute = true; });
   // key input
   $('body').keydown( function(ev) { self.key(ev, true); });
