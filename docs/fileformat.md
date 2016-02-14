@@ -28,10 +28,12 @@ Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
 - `codeformat` (string, default any code, but SHOULD be defined), format of code - see below (e.g. `no`)
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
-- `action` (string, URL), the action, e.g. target page to load, when code is detected
+- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
 - `title` (string), title of the action in showDetail view
 - `description` (string), description of the action in showDetail view (not currently used)
 - `image` (string, URL), icon of the action in showDetail view
+- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 
 ## `code`
 

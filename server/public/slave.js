@@ -40,14 +40,14 @@ socket.on('join.warning', function(msg) {
 socket.on('action', function(marker) {
   console.log('new marker: '+marker);
   var time = (new Date()).getTime();
-  if (!marker.showDetail) {
-    if (marker.action) {
-       console.log('open '+marker.action);
-       $('#viewframe').attr('src',marker.action);
+  for (var ai in marker.actions) {
+    var action = marker.actions[ai];
+    if (channel==action.channel) {
+      console.log('open '+action.url);
+      $('#viewframe').attr('src',action.url);
     }
-  } else {
-    markers.push({ marker: marker, lastTime: time, id: markerId++ });
   }
+  // markers.push({ marker: marker, lastTime: time, id: markerId++ });
   redraw();
 });
 
@@ -65,7 +65,8 @@ setInterval(function() {
 
 var params = getQueryParams(document.location.search);
 var room = params['r']===undefined ? 'default' : params['r'];
-console.log('Slave: Room = '+room);
+var channel = params['c']===undefined ? '' : params['c'];
+console.log('Slave: Room = '+room+', channel='+channel);
 socket.emit('slave',{room:room});
 
 $(document).on('click', '.codelink', function(ev) {

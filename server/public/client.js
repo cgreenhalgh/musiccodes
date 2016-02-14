@@ -42,7 +42,8 @@ function MusicCodeClient( experiencejson ) {
   var params = getQueryParams(document.location.search);
   this.room = params['r']===undefined ? 'default' : params['r'];
   this.pin = params['p']===undefined ? '' : params['p'];
-  console.log('Room = '+this.room+', pin = '+this.pin);
+  this.channel = params['c']===undefined ? '' : params['c'];
+  console.log('Room = '+this.room+', pin = '+this.pin+', channel='+this.channel);
   socket.on('join.error', function(msg) {
     alert('Error starting master: '+msg);
   });
@@ -69,6 +70,23 @@ function MusicCodeClient( experiencejson ) {
   this.experience = experiencejson;
   this.codes = {};
   this.partcodes = [];
+  // prepapre marker actions
+  for (var mi in this.experience.markers) {
+    var marker = this.experience.markers[mi];
+    if (marker.actions===undefined)
+      marker.actions = [];
+    else {
+      for (var ai in marker.actions) {
+        var action = marker.actions[ai];
+        if (action.channel===undefined)
+          action.channel = '';
+      }
+    }
+    if (marker.action!==undefined) {
+      marker.actions.push({url: marker.action, channel: ''});
+      delete marker.action;
+    }
+  }
   // prepare marker regexes
   for (var mi in this.experience.markers) {
     var marker = this.experience.markers[mi];
@@ -581,7 +599,8 @@ MusicCodeClient.prototype.redraw = function(time) {
       .classed('partcode', true);
   partcodesenter.append('div')
       .classed('prefix-label', true)
-      .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+d.marker.action; });
+      // TODO pretty print multiple actions
+      .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+(d.marker.actions); });
   partcodesenter.append('div')
       .classed('prefixes', true);
 
@@ -640,14 +659,14 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
         //group.marker = marker;
         console.log('Matched '+marker.codeformat+':'+marker.code);
         socket.emit('action',marker);
-        if (!marker.showDetail) {
-          if (marker.action) {
-            console.log('open '+marker.action);
-            $('#viewframe').attr('src',marker.action);
+        for (var ai in marker.actions) {
+          var action = marker.actions[ai];
+          if (this.channel==action.channel) {
+            console.log('open '+action.url);
+            $('#viewframe').attr('src',action.url);
           }
-        } else {
-          this.markers.push({ marker: marker, lastTime: time, id: markerId++ });
         }
+        // this.markers.push({ marker: marker, lastTime: time, id: markerId++ });
       }
     }
   }
