@@ -93,17 +93,25 @@ Vagrant.configure(2) do |config|
     npm install --no-bin-links
 
     # upstart user session for auto-running node
-    sudo cp /vagrant/upstart/session-init-setup.conf /etc/init/
-    sudo cp /vagrant/upstart/session-init.conf /etc/init/
-    mkdir -p $HOME/.config/upstart
-    cp /vagrant/upstart/musiccodes.conf $HOME/.config/upstart/
-    sudo service session-init-setup start
+    #sudo cp /vagrant/upstart/session-init-setup.conf /etc/init/
+    #sudo cp /vagrant/upstart/session-init.conf /etc/init/
+    #mkdir -p $HOME/.config/upstart
+    #cp /vagrant/upstart/musiccodes.conf $HOME/.config/upstart/
+    #sudo service session-init-setup start
     # let us manage this with normal command line
-    export UPSTART_SESSION=$(initctl list-sessions | cut "-d " -f2)
+    #export UPSTART_SESSION=$(initctl list-sessions | cut "-d " -f2)
+    #initctl start musiccodes
 
+    # upstart system
+    sudo cp /vagrant/upstart/musiccodes.conf /etc/init/
+    # done below: sudo service musiccodes start
 
 SHELL
 
+  # lots of trouble trying to make musiccodes start on boot...
+  config.vm.provision "shell", run:"always", privileged: false, inline: <<-SHELL
+    sudo service musiccodes start
+SHELL
 
 end
 

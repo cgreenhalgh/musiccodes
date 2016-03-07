@@ -2,29 +2,17 @@
 
 Using [upstart](http://upstart.ubuntu.com/cookbook) as i am using Ubuntu.
 
-Running as vagrant, hence user session.
+Running as vagrant, hence setuid.
+
 
 Should:
-- install session-init-setup.conf and session-init.conf in /etc/init
-- start session-init-setup
-- configure that to auto-start
-- copy musiccodes.conf to user session config dir ~/.config/upstart/
+- copy musiccodes.conf to `/etc/init/`
+- ensure service starts (having trouble with vagrant), e.g. `sudo service musiccodes start`
 
 Note:
-- need to sort logs, output to ~/.cache/upstart
-
-Need to 'join' session to manage jobs, e.g. 
+- logs output to `/var/log/upstart/musiccodes.log`
+- if updating 
 ```
- export UPSTART_SESSION=$(initctl list-sessions | cut "-d " -f2)
-```
-Also need to use `initctl` rather than `service`, i.e.
-```
-initctl status musiccodes
-initctl restart musiccodes
-```
-or
-```
-initctl start musiccodes
-initctl stop musiccodes
+sudo service musiccodes restart
 ```
 
