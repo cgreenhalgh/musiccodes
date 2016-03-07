@@ -31,3 +31,10 @@ node_modules
 
 # wordpress dev stuff
 wordpress/
+
+# bower sutff
+server/public/vendor/
+
+# vagrant
+.vagrant/
+

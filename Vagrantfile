@@ -92,6 +92,10 @@ Vagrant.configure(2) do |config|
     # --no-bin-links workaround for use on top of windows FS
     npm install --no-bin-links
 
+    # web/angular dependencies
+    sudo npm install -g bower
+    bower install
+
     # upstart user session for auto-running node
     #sudo cp /vagrant/upstart/session-init-setup.conf /etc/init/
     #sudo cp /vagrant/upstart/session-init.conf /etc/init/

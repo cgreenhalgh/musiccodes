@@ -6,11 +6,15 @@ app.get('/', function(req, res){
   console.log('get /');
   res.sendFile(__dirname + '/public/index.html');
 });
-app.get('/*.(js|json|html)', function(req, res){
+function returnPublicFile(req, res) {
   var url = require('url').parse(req.url);
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
-});
+};
+app.get('/*.(js|json|html)', returnPublicFile);
+app.get('/vendor/*', returnPublicFile);
+app.get('/css/*.css', returnPublicFile);
+app.get('/js/*', returnPublicFile);
 
 var STATE_WAITING_FOR_PARAMETERS = 1;
 var STATE_WAITING_FOR_HEADER = 2;
