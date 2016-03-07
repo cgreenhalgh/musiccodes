@@ -1,7 +1,8 @@
 var editorApp = angular.module('editorApp', []);
 
 editorApp.controller('EditorCtrl', ['$scope', '$http', function ($scope,$http) {
-  $http.get('example.json').success(function(data) {
+  $scope.filename = 'example.json';
+  $http.get($scope.filename).success(function(data) {
     /* fix default actions */
     for (var mi in data.markers) {
       var marker = data.markers[mi];

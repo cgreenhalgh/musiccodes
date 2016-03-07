@@ -10,6 +10,21 @@
   <script src="vendor/angular-resource/angular-resource.js"></script>  <script src="js/editor.js"></script>
 </head>
 <body ng-controller="EditorCtrl">
+  <h1>Musiccode Editor</h1>
+  <p><label>Filename:</label><input type="text" ng-model="filename"></p>
+  <h2>Parameters</h2>
+  <table><tbody>
+  <tr><td><label>Stream gap (seconds)</label></td>
+      <td><input type="number" ng-model="parameters.streamGap"></td></tr>
+  <tr><td><label>Frequency ratio</label></td>
+      <td><input type="number" ng-model="parameters.frequencyRatio"></td></tr>
+  <tr><td><label>Monophonic</label></td>
+      <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
+  <tr><td><label>Monophonic gap (seconds)</label></td>
+      <td><input type="number" ng-model="parameters.monophonicGap"></td></tr>
+  </tbody></table>
+
+  <h2>Codes</h2>
 
   <ul>
     <li ng-repeat="marker in markers">
