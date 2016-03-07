@@ -27,17 +27,49 @@
   <h2>Codes</h2>
 
   <ul>
-    <li ng-repeat="marker in markers">
-      <span>{{marker.title}}</span>
-      <p>{{marker.code}}</p>
+    <li ng-repeat="marker in markers" ng-controller="MarkerCtrl">
+      <button ng-click="deleteMarker($index)">-</button>
+      <select ng-model="marker.codeformat">
+        <option value=""></option>
+		<option value="n">n</option>
+		<option value="no">no</option>
+		<option value="no/crle4,">no/crle4</option>
+		<option value="no/crfe4,">no/crle4</option>
+      </select>
+      <input type="text" ng-model="marker.code">
+      <label>Title:</label>
+      <input type="text" ng-model="marker.title">
       <ul>
         <li ng-repeat="action in marker.actions">
-          <span>{{action.url}}</span>
-          <span>({{action.channel}})</span>
+          <button ng-click="deleteAction($index)">-</button>
+          <label>Action URL:</label>
+          <input type="text" ng-model="action.url">
+          <label>Channel:</label>
+          <input type="text" ng-model="action.channel">
+        </li>
+        <li >
+          <button ng-click="addAction()">+</button>
+          <label>Action URL:</label>
+          <input type="text" ng-model="newActionUrl">
+          <label>Channel:</label>
+          <input type="text" ng-model="newActionChannel">
         </li>
       </ul>
     </li>
-  </ul>
+    <li>
+      <button ng-click="addMarker()">+</button>
+      <select ng-model="newMarkerCodeformat">
+        <option value=""></option>
+		<option value="n">n</option>
+		<option value="no">no</option>
+		<option value="no/crle4,">no/crle4</option>
+		<option value="no/crfe4,">no/crle4</option>
+      </select>
+      <input type="text" ng-model="newMarkerCode">
+      <label>Title:</label>
+      <input type="text" ng-model="newMarkerTitle">
+   </li>
+</ul>
 
 </body>
 </html>
