@@ -15,6 +15,7 @@ Single top-level JSON object with properties:
 - `vampParameters` - map of VAMP plugin parameters, default (for silvet plugin) `mode` = `0` (live), `instrument` = `0` (various/unknown).
 - `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
 - `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
+- `initstate` (map of name to value), initial state, used in code `precondition`s.
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
@@ -28,10 +29,51 @@ Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
 - `codeformat` (string, default any code, but SHOULD be defined), format of code - see below (e.g. `no`)
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
-- `action` (string, URL), the action, e.g. target page to load, when code is detected
+- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
 - `title` (string), title of the action in showDetail view
 - `description` (string), description of the action in showDetail view (not currently used)
 - `image` (string, URL), icon of the action in showDetail view
+- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `precondition` (string, default true, i.e. code can always be matched), expression which if true enables code to be matched, can depend only on state variables.
+- `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
+
+## State
+
+The state is a number of named variables, e.g. `a`, `ready`, etc., and their values, e.g. `0`, `true`, `"ready"`. Variable names must start with a letter or underscore and contain only letters, digits or underscore. Values should be numbers, true/false or strings only. State expressions, e.g. in `precondition` or `poststate` should be simple expressions involving no functions.
+
+For example...
+
+`count` is initially `0`:
+```
+"parameters":{
+  "initstate":{
+    "count": 0
+  }
+  ...
+}
+```
+
+Code will only be matched if count is less than 4:
+```
+"markers":[
+  {
+    "precondition":"count<4",
+    ...
+  }
+]
+```
+Matching code will increase count by 1:
+```
+"markers":[
+  {
+    "poststate":{
+      "count":"count+1"
+    }
+    ...
+  }
+]
+```
 
 ## `code`
 
