@@ -57,11 +57,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
 	$scope.newMarkerCode = '';
 	$scope.newMarkerTitle = '';
 	$scope.markers.push( marker );
-	$scope.experienceForm.$dirty = true;
+	$scope.experienceForm.$setDirty();
   };
   $scope.deleteMarker = function(index) {
 	$scope.markers.splice(index,1);  
-	$scope.experienceForm.$dirty = true;
+	$scope.experienceForm.$setDirty();
   };
   // defaults
   if ($scope.filename.indexOf('.json')>=0)
@@ -93,7 +93,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
   ];
   $scope.markers = [];
   $scope.channels = [''];
-  //$scope.experienceForm.$dirty = true;
+  //$scope.experienceForm.$setDirty();
   $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
 	  var data = res.data;
 	  $scope.status = 'Loaded '+$routeParams.experience;
@@ -122,7 +122,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
     $scope.name = data.name;
     $scope.description = data.description;
     console.log('read experience with '+(data.markers.length)+' markers');
-    $scope.experienceForm.$dirty = false;
+    $scope.experienceForm.$setPristine();
   }, function(error) {
 	  if (error.status==404)
 		  $scope.status = 'File does not exist';
@@ -146,13 +146,13 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  markers: $scope.markers, parameters: $scope.parameters };
 	  $scope.status = "Saving...";
-	  $scope.experienceForm.$dirty = false;
+	  $scope.experienceForm.$setPristine();
 	  // todo disable until done
 	  $http.put('/experiences/'+filename, experience).then(function(res) {
 		  $scope.status = 'Saved';
 	  }, function(err) {
 		 $scope.status = 'Error saving: '+err.statusText;
-		 $scope.experienceForm.$dirty = true;
+		 $scope.experienceForm.$setDirty();
 	  });
   };
   $scope.openMaster = function() {
@@ -173,10 +173,10 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 		$scope.newActionUrl = '';
 		$scope.newActionChannel = '';
 		$scope.marker.actions.push( action );
-		$scope.experienceForm.$dirty = true;
+		$scope.experienceForm.$setDirty();
 	};
 	$scope.deleteAction = function(index) {
 		$scope.marker.actions.splice(index,1);  
-		$scope.experienceForm.$dirty = true;
+		$scope.experienceForm.$setDirty();
 	};
 }]);
