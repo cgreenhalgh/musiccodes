@@ -92,6 +92,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
   	{name:"Wind ensemble",value:13}
   ];
   $scope.markers = [];
+  $scope.channels = [''];
   //$scope.experienceForm.$dirty = true;
   $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
 	  var data = res.data;
@@ -104,6 +105,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
           marker.actions = [];
         marker.actions.push({url:marker.action,channel:''});
         delete marker.action;
+      }
+      for (var ci in marker.actions) {
+    	  var action = marker.actions[ci];
+    	  if (action.channel!==undefined && $scope.channels.indexOf(action.channel)<0)
+    		  $scope.channels.push(action.channel);
       }
     }
     $scope.markers = data.markers;
@@ -149,6 +155,12 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
 		 $scope.experienceForm.$dirty = true;
 	  });
   };
+  $scope.openMaster = function() {
+	window.open('/master.html?f='+encodeURIComponent('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')),'musiccodes_master');  
+  };
+  $scope.openSlave = function(ci) {
+		window.open('/fullscreenslave.html?c='+encodeURIComponent($scope.channels[ci]),'musiccodes_slave_'+$scope.channels[ci]);  
+	  };
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
