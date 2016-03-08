@@ -15,7 +15,11 @@ app.get('/*.(js|json|html)', returnPublicFile);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);
-
+app.get('/partials/*', returnPublicFile);
+app.get('/edit/*', function(req, res) {
+  console.log('get '+req.url+' -> editor.html');
+  res.sendFile(__dirname+'/public/editor.html');
+});
 var STATE_WAITING_FOR_PARAMETERS = 1;
 var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;

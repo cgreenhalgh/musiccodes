@@ -1,12 +1,29 @@
-var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap']);
+var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute']);
 
-editorApp.controller('EditorCtrl', ['$scope', '$http', function ($scope,$http) {
-  $scope.filename = 'example.json';
-  
-  $scope.foo = function(a) {
-	  console.log('foo: '+a);
+editorApp.config(['$routeProvider',
+  function($routeProvider) {
+    $routeProvider.when('/:experience', {
+      templateUrl: '/partials/experience.html',
+      controller: 'ExperienceCtrl'
+    }).
+    when('/', {
+      templateUrl: '/partials/list.html',
+      controller: 'ListCtrl'
+    }).
+    otherwise({
+      redirectTo: '/'
+    });
   }
-  
+]);
+
+editorApp.controller('ListCtrl', ['$scope', '$http', function($scope,$http) {
+  // TODO
+}]);
+
+editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', function ($scope,$http,$routeParams) {
+  $scope.filename = $routeParams.experience;
+  console.log('Edit experience '+$scope.filename);
+
   $scope.addMarker = function() {
 	  console.log('addMarker');
 	var marker = {codeformat: $scope.newMarkerCodeformat, code: $scope.newMarkerCode, title: $scope.newMarkerTitle};
@@ -18,7 +35,7 @@ editorApp.controller('EditorCtrl', ['$scope', '$http', function ($scope,$http) {
   $scope.deleteMarker = function(index) {
 	$scope.markers.splice(index,1);  
   };
-  $http.get($scope.filename).success(function(data) {
+  $http.get('/experience/'+$scope.filename).success(function(data) {
     /* fix default actions */
     for (var mi in data.markers) {
       var marker = data.markers[mi];
