@@ -10,6 +10,7 @@
     "bootstrap": "~3.3.6",
     "angular-route": "1.5.x",
     "angular-resource": "1.5.x",
-    "angular-animate": "1.5.x"
+    "angular-animate": "1.5.x",
+    "angular-bootstrap": "1.2.x"
   }
 }

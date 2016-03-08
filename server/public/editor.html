@@ -7,11 +7,21 @@
   <link rel="stylesheet" href="css/app.css">
   <script src="vendor/angular/angular.js"></script>
   <script src="vendor/angular-route/angular-route.js"></script>
-  <script src="vendor/angular-resource/angular-resource.js"></script>  <script src="js/editor.js"></script>
+  <script src="vendor/angular-resource/angular-resource.js"></script>
+  <script src="vendor/angular-animate/angular-animate.js"></script>
+  <script src="vendor/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+  <script src="js/editor.js"></script>
 </head>
 <body ng-controller="EditorCtrl">
   <h1>Musiccode Editor</h1>
   <p><label>Filename:</label><input type="text" ng-model="filename"></p>
+  <h2>General</h2>
+  <table><tbody>
+  <tr><td><label>Name</label></td>
+      <td><input type="text" ng-model="name"></td></tr>
+  <tr><td><label>Description</label></td>
+      <td><input type="text" ng-model="description"></td></tr>
+  </tbody></table>
   <h2>Parameters</h2>
   <table><tbody>
   <tr><td><label>Stream gap (seconds)</label></td>
@@ -22,13 +32,19 @@
       <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
   <tr><td><label>Monophonic gap (seconds)</label></td>
       <td><input type="number" ng-model="parameters.monophonicGap"></td></tr>
+  <tr><td><label>Instrument (Silvet plugin)</label></td>
+    <td>
+      <select ng-model="parameters.vampParameters.instrument" ng-options="option.value as option.name for option in instrumentOptions">
+      </select>
+  </td></tr>
+
   </tbody></table>
 
   <h2>Codes</h2>
 
-  <ul>
-    <li ng-repeat="marker in markers" ng-controller="MarkerCtrl">
-      <button ng-click="deleteMarker($index)">-</button>
+  <ul class="markers">
+    <li ng-repeat="marker in markers" ng-controller="MarkerCtrl" class="marker">
+      <span class="glyphicon" aria-hidden="true" ng-class="{'glyphicon-triangle-right': isCollapsed, 'glyphicon-triangle-bottom': !isCollapsed}" ng-click="isCollapsed=(!isCollapsed)"></span>
       <select ng-model="marker.codeformat">
         <option value=""></option>
 		<option value="n">n</option>
@@ -39,24 +55,30 @@
       <input type="text" ng-model="marker.code">
       <label>Title:</label>
       <input type="text" ng-model="marker.title">
+      <button ng-click="deleteMarker($index)">-</button>
+      <div uib-collapse="isCollapsed">
+      <label>Description:</label>
+      <input type="text" ng-model="marker.description">
+      <label>Actions:</label>
       <ul>
         <li ng-repeat="action in marker.actions">
-          <button ng-click="deleteAction($index)">-</button>
-          <label>Action URL:</label>
-          <input type="text" ng-model="action.url">
           <label>Channel:</label>
-          <input type="text" ng-model="action.channel">
+          <input type="text" size="10" ng-model="action.channel">
+          <label>URL:</label>
+          <input type="text" ng-model="action.url">
+          <button ng-click="deleteAction($index)">-</button>
         </li>
         <li >
           <button ng-click="addAction()">+</button>
-          <label>Action URL:</label>
-          <input type="text" ng-model="newActionUrl">
           <label>Channel:</label>
-          <input type="text" ng-model="newActionChannel">
+          <input type="text" size="10" ng-model="newActionChannel">
+          <label>URL:</label>
+          <input type="text" ng-model="newActionUrl">
         </li>
       </ul>
+      </div>
     </li>
-    <li>
+    <li class="marker">
       <button ng-click="addMarker()">+</button>
       <select ng-model="newMarkerCodeformat">
         <option value=""></option>

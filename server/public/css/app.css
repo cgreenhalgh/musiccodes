@@ -1,0 +1,6 @@
+li.marker {
+  list-style-type: none;
+}
+ul.markers {
+  padding: 0;
+}
