@@ -1,1 +1,11 @@
-<h1>Experiences (TODO)</h1>
+<h1>Experiences</h1>
+Edit...
+<ul>
+	<li ng-repeat="experience in experiences">
+		<a href="#/{{experience.name}}">{{experience.name}}</a> (old versions:
+		<span ng-repeat="version in experience.versions">
+		  <a href="#/{{experience.name}}/{{version}}">{{version | date:'short'}}</a>;
+		</span>)	
+	</li>
+</ul>
+<p><button ng-click="addExperience()">+</button><input type="text" ng-model="newExperience" placeholder="new experience name"></p>

@@ -1,6 +1,7 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var fs = require('fs');
 
 app.get('/', function(req, res){
   console.log('get /');
@@ -11,7 +12,6 @@ function returnPublicFile(req, res) {
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
 };
-app.get('/*.(js|json|html)', returnPublicFile);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);
@@ -20,6 +20,83 @@ app.get('/edit/*', function(req, res) {
   console.log('get '+req.url+' -> editor.html');
   res.sendFile(__dirname+'/public/editor.html');
 });
+var EXPERIENCES_DIR = __dirname+'/experiences/';
+app.get('/experiences/', function(req,res) {
+	console.log('get experiences');
+	fs.readdir(EXPERIENCES_DIR, function(err,fnames) {
+		if (err) {
+			res.status(500).send('Could not read experiences directory ('+err+')');
+			return;
+		}
+		var resp = {};
+		for (var ni in fnames) {
+			var fname = fnames[ni];
+			var m = /^(.*\.json)(.([0-9]+))?$/.exec(fname);
+			if (m!==null) {
+				var name = m[1];
+				var time = m[3];
+				var experience = resp[name];
+				if (experience===undefined)
+					resp[name] = experience = {versions:[]};
+				if (time===undefined) {
+					try {
+						var info = fs.statSync(EXPERIENCES_DIR+name);
+						experience.lastmodified = info.mtime.getTime();
+					} catch (err) {
+						console.log('Error stat '+name+': '+err);
+					}
+				} else {
+					experience.versions.push(time);
+				}
+			}
+		}
+		res.set('Content-Type', 'application/json').send(JSON.stringify(resp));
+	});
+});
+app.get('/experiences/:experience', function(req,res) {
+	console.log('get experience '+req.params.experience);
+	res.sendFile(EXPERIENCES_DIR+req.params.experience);
+});
+app.get('/experiences/:experience/:version', function(req,res) {
+	console.log('get experience '+req.params.experience+' version '+req.params.version);
+	res.sendFile(EXPERIENCES_DIR+req.params.experience+'.'+req.params.version);
+});
+app.use(require('body-parser').json());
+
+app.put('/experiences/:experience', function(req,res) {
+	console.log('put experience '+req.params.experience);
+	// rename old version using last modified?
+	var filename = EXPERIENCES_DIR+req.params.experience;
+	if (fs.existsSync(filename)) {
+		try {
+			var info = fs.statSync(filename);
+			var newfilename = filename+'.'+info.mtime.getTime();
+			console.log('Move '+filename+' to '+newfilename);
+			try {
+				fs.renameSync(filename, newfilename);
+			} catch (err) {
+				console.log('Error moving '+filename+' to '+newfilename+': '+err);
+				res.status(500).send('Error moving '+filename+' to '+newfilename+': '+err);
+				return;
+			}
+		} catch (err) {
+			console.log('Error stat (on save) '+filename+': '+err);
+			res.status(500).send('Error stat (on save) '+filename+': '+err);
+			return;
+		}
+	}
+	console.log('write '+filename);
+	fs.writeFile(filename, JSON.stringify(req.body), function(err) {
+		if (err) {
+			console.log('error writing '+filename+': '+err);
+			res.status(500).send('Error writing file: '+err);
+			return;
+		}
+		res.sendStatus(200);
+	});
+});
+app.get('/*.(js|json|html)', returnPublicFile);
+
 var STATE_WAITING_FOR_PARAMETERS = 1;
 var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;

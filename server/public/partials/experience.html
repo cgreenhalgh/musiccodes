@@ -1,5 +1,13 @@
-  <h1>Musiccode Editor</h1>
-  <p><label>Filename:</label><input type="text" ng-model="filename"></p>
+  <h1><a href="#/">Musiccode Editor</a></h1>
+  <p>{{status}}</p>
+  <p><label>Filename:</label><input type="text" ng-model="filename" ng-change="checkFilename()"> 
+    <span>{{filenameStatus}}</span>
+  </p>
+  <p>Version: {{version | date:'short'}}</p>
+<form name="experienceForm" ng-submit="save()"> 
+  <input type="submit" value="save" ng-disabled="!experienceForm.$dirty">
+ {{ experienceForm.$dirty ? 'Has unsaved changes' : 'No changes' }}
+ 
   <h2>General</h2>
   <table><tbody>
   <tr><td><label>Name</label></td>
@@ -10,13 +18,13 @@
   <h2>Parameters</h2>
   <table><tbody>
   <tr><td><label>Stream gap (seconds)</label></td>
-      <td><input type="number" ng-model="parameters.streamGap"></td></tr>
+      <td><input type="number" step="0.01" ng-model="parameters.streamGap"></td></tr>
   <tr><td><label>Frequency ratio</label></td>
-      <td><input type="number" ng-model="parameters.frequencyRatio"></td></tr>
+      <td><input type="number" step="0.01" ng-model="parameters.frequencyRatio"></td></tr>
   <tr><td><label>Monophonic</label></td>
       <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
   <tr><td><label>Monophonic gap (seconds)</label></td>
-      <td><input type="number" ng-model="parameters.monophonicGap"></td></tr>
+      <td><input type="number" step="0.01" ng-model="parameters.monophonicGap"></td></tr>
   <tr><td><label>Instrument (Silvet plugin)</label></td>
     <td>
       <select ng-model="parameters.vampParameters.instrument" ng-options="option.value as option.name for option in instrumentOptions">
@@ -77,3 +85,4 @@
       <input type="text" ng-model="newMarkerTitle">
    </li>
 </ul>
+</form>
