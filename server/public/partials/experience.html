@@ -5,7 +5,10 @@
   </p>
   <p>Version: {{version | date:'short'}}</p>
   <button ng-click="openMaster()">Open Master view</button>
-  <button ng-repeat="channel in channels" ng-click="openSlave($index)">Open Slave, {{ channel=='' ? 'default channel' : 'channel '+channel}}</button>
+  <span ng-repeat="channel in channels">
+    <button ng-click="openSlave($index)">Open Slave, {{ channel=='' ? 'default channel' : 'channel '+channel}}</button><button ng-click="openSlaveQR($index)">QR</button>
+  </span>
+  <p>Server {{serverProtocol}}//{{serverHost}}:{{serverPort}}</p>
   <hr>
   <h2>Edit</h2>
 <form name="experienceForm" ng-submit="save()"> 

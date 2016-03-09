@@ -19,7 +19,30 @@ editorApp.config(['$routeProvider',
     });
   }
 ]);
+// getIPAddress().then(...)
+editorApp.factory('getIPAddress', ['$window', '$q', function($window, $q) {
+	var deferred = $q.defer();
+	var promise = deferred.promise;
+	// get ip address
+	// see http://stackoverflow.com/questions/20194722/can-you-get-a-users-local-lan-ip-address-via-javascript
+	// Local only - no stun / public
+	$window.RTCPeerConnection = $window.RTCPeerConnection || $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;   //compatibility for firefox and chrome
+	var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};
+	pc.createDataChannel("");    //create a bogus data channel
+	pc.createOffer(pc.setLocalDescription.bind(pc), noop);    // create offer and set local description
+	pc.onicecandidate = function(ice){  //listen for candidate events
+		if(!ice || !ice.candidate || !ice.candidate.candidate)  return;
+		console.log('got candidate '+ice.candidate.candidate);
+		var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate);
+		if (myIP!==null) {
+			console.log('my IP: ', myIP[1]);
+			pc.onicecandidate = noop;
+			deferred.resolve(myIP[1]);
+		}
+	};
+	return function() { return promise; }
 
+}]);
 editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scope,$http,$location) {
 	$http.get('/experiences/').success(function(data) {
 		var experiences = [];
@@ -43,7 +66,17 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 	};
 }]);
 
-editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', function ($scope,$http,$routeParams) {
+editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', function ($scope,$http,$routeParams,getIPAddress,$location) {
+	// ip
+	$scope.serverProtocol = $location.protocol();
+	$scope.serverHost = $location.host();
+	$scope.serverPort = $location.port();
+	if ($scope.serverHost=='localhost' || $scope.serverHost=='127.0.0.1') {
+		getIPAddress().then(function(myIP) {
+			console.log('resolved IP '+myIP);
+			$scope.serverHost = myIP;
+		});
+	}
   $scope.filename = $routeParams.experience;
   $scope.version = $routeParams.version;
   console.log('Edit experience '+$scope.filename+' (version '+$routeParams.version+')');
@@ -157,6 +190,17 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
 	    $scope.addMarker();
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  markers: $scope.markers, parameters: $scope.parameters };
+	  // refresh channels
+	  $scope.channels = [];
+	  for (var mi in $scope.markers) {
+	    var marker = $scope.markers[mi];
+	    for (var ci in marker.actions) {
+	      var action = marker.actions[ci];
+	      if (action.channel!==undefined && $scope.channels.indexOf(action.channel)<0)
+	        $scope.channels.push(action.channel);
+	    }
+	  }
+
 	  $scope.status = "Saving...";
 	  $scope.experienceForm.$setPristine();
 	  // todo disable until done
@@ -168,11 +212,19 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
 	  });
   };
   $scope.openMaster = function() {
+	// Note: remote access to microphone requires https if not localhost
+	// so no remote master for now
 	window.open('/master.html?f='+encodeURIComponent('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')),'musiccodes_master');  
   };
   $scope.openSlave = function(ci) {
-		window.open('/fullscreenslave.html?c='+encodeURIComponent($scope.channels[ci]),'musiccodes_slave_'+$scope.channels[ci]);  
+	window.open($scope.serverProtocol+'://'+$scope.serverHost+':'+$scope.serverPort+'/fullscreenslave.html?c='+
+		encodeURIComponent($scope.channels[ci]),'musiccodes_slave_'+$scope.channels[ci]);  
 	  };
+	$scope.openSlaveQR = function(ci) {
+		var url = $scope.serverProtocol+'://'+$scope.serverHost+':'+$scope.serverPort+'/fullscreenslave.html?c='+encodeURIComponent($scope.channels[ci]);
+		var win=window.open('http://chart.googleapis.com/chart?cht=qr&chs=300x300&choe=UTF-8&chld=H&chl='+encodeURIComponent(url),'qr','height=300,width=300,left='+(screen.width/2-150)+',top='+(screen.height/2-150)+',titlebar=no,toolbar=no,location=no,directories=no,status=no,menubar=no');
+		if (window.focus) {win.focus();}
+	};
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
