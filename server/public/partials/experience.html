@@ -11,9 +11,11 @@
   <p>Server {{serverProtocol}}//{{serverHost}}:{{serverPort}}</p>
   <hr>
   <h2>Edit</h2>
-<form name="experienceForm" ng-submit="save()"> 
-  <input type="submit" value="save" ng-disabled="!experienceForm.$dirty">
- {{ experienceForm.$dirty ? 'Has unsaved changes' : 'No changes' }}
+  <p><label>Show State:</label> <input type="checkbox" ng-model="showState"></p>
+<form name="experienceForm" ng-submit=""> 
+  <!-- dirty isn't working for adding/removing form sections -->
+  <input type="submit" value="save" ng-disabled="!experienceForm.$dirty && !formChanged" ng-click="save()">
+ {{ experienceForm.$dirty || formChanged ? 'Has unsaved changes' : 'No changes' }}
 
   <h3>General</h3>
   <table><tbody>
@@ -37,7 +39,16 @@
       <select ng-model="parameters.vampParameters.instrument" ng-options="option.value as option.name for option in instrumentOptions">
       </select>
   </td></tr>
-
+  <tr uib-collapse="!showState"><td><label>Initial State</label></td>
+    <td>
+      <div class="var" ng-repeat="(var,value) in parameters.initstate"><span>{{var}}</span>=<input type="text" size="6" ng-model="parameters.initstate[var]"><!-- 
+       --><button ng-click="deleteInitstate(var)">-</button>
+      </div>
+      <div class="var">
+      	<button ng-click="addInitstate()">+</button><!-- 
+      	 --><input type="text"  size="6" ng-model="newInitstateName">=<input type="text"  size="6" ng-model="newInitstateValue">
+      </div>
+  </td></tr>
   </tbody></table>
 
   <h3>Codes</h3>
@@ -57,6 +68,13 @@
       <input type="text" ng-model="marker.title">
       <button ng-click="deleteMarker($index)">-</button>
       <div uib-collapse="isCollapsed">
+      <div uib-collapse="!showState">
+		<label>Precondition:</label><input type="text" ng-model="marker.precondition">
+		<label>Post state:</label>
+	      <div class="var" ng-repeat="var in variables">
+	        <span>{{var}}</span>=<input type="text"  size="6" ng-model="marker.poststate[var]" placeholder="{{var }}">
+      	</div>
+      </div>
       <label>Description:</label>
       <input type="text" ng-model="marker.description">
       <label>Actions:</label>

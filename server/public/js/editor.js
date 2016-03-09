@@ -90,11 +90,13 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.newMarkerCode = '';
 	$scope.newMarkerTitle = '';
 	$scope.markers.push( marker );
-	$scope.experienceForm.$setDirty();
+	//$scope.experienceForm.$setDirty();
+	$scope.formChanged = true;
   };
   $scope.deleteMarker = function(index) {
 	$scope.markers.splice(index,1);  
-	$scope.experienceForm.$setDirty();
+	//$scope.experienceForm.$setDirty();
+	$scope.formChanged = true;
   };
   // defaults
   if ($scope.filename.indexOf('.json')>=0)
@@ -126,7 +128,10 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
   ];
   $scope.markers = [];
   $scope.channels = [''];
+  $scope.variables = [];
+  $scope.showState = false;
   //$scope.experienceForm.$setDirty();
+  $scope.formChanged = false;
   $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
 	  var data = res.data;
 	  $scope.status = 'Loaded '+$routeParams.experience;
@@ -144,6 +149,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     	  if (action.channel!==undefined && $scope.channels.indexOf(action.channel)<0)
     		  $scope.channels.push(action.channel);
       }
+      if (marker.poststate===undefined)
+    	  marker.poststate = {};
+      for (var v in marker.poststate)
+    	  if ($scope.variables.indexOf(v)<0)
+    		  $scope.variables.push(v);
     }
     $scope.markers = data.markers;
     // vamp plugin instrument
@@ -151,11 +161,23 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
       data.parameters.vampParameters = { instrument: 0 };
     else if (data.parameters.vampParameters.instrument===undefined)
       data.parameters.vampParameters.instrument = 0;
+    // variables
+    if (data.parameters.initstate===undefined)
+    	data.parameters.initstate = {};
+    for (var v in data.parameters.initstate)
+  	  if ($scope.variables.indexOf(v)<0)
+  		  $scope.variables.push(v);
+    for (var vi in $scope.variables) {
+    	var name = $scope.variables[vi];
+    	if (data.parameters.initstate[name]===undefined)
+    		data.parameters.initstate[name] = '';
+    }
     $scope.parameters = data.parameters;
     $scope.name = data.name;
     $scope.description = data.description;
     console.log('read experience with '+(data.markers.length)+' markers');
     $scope.experienceForm.$setPristine();
+    $scope.formChanged = false;
   }, function(error) {
 	  if (error.status==404)
 		  $scope.status = 'File does not exist';
@@ -185,13 +207,21 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	      delete marker.newActionChannel;
 	      marker.actions.push( action );
             }
+	    // fix poststate non-assigns
+	    for (var name in marker.poststate) {
+	    	if (marker.poststate[name]=='')
+	    		delete marker.poststate[name];
+	    }
 	  }
 	  if ($scope.newMarkerCodeformat || $scope.newMarkerCode || $scope.newMarkerTitle)
 	    $scope.addMarker();
+	  if ($scope.newInitstateName)
+		  $scope.addInitstate();
+	  
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  markers: $scope.markers, parameters: $scope.parameters };
 	  // refresh channels
-	  $scope.channels = [];
+	  $scope.channels = [''];
 	  for (var mi in $scope.markers) {
 	    var marker = $scope.markers[mi];
 	    for (var ci in marker.actions) {
@@ -203,12 +233,14 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 
 	  $scope.status = "Saving...";
 	  $scope.experienceForm.$setPristine();
+	  $scope.formChanged = false;
 	  // todo disable until done
 	  $http.put('/experiences/'+filename, experience).then(function(res) {
 		  $scope.status = 'Saved';
 	  }, function(err) {
 		 $scope.status = 'Error saving: '+err.statusText;
-		 $scope.experienceForm.$setDirty();
+		 //$scope.experienceForm.$setDirty();
+		 $scope.formChanged = true;
 	  });
   };
   $scope.openMaster = function() {
@@ -225,6 +257,32 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		var win=window.open('http://chart.googleapis.com/chart?cht=qr&chs=300x300&choe=UTF-8&chld=H&chl='+encodeURIComponent(url),'qr','height=300,width=300,left='+(screen.width/2-150)+',top='+(screen.height/2-150)+',titlebar=no,toolbar=no,location=no,directories=no,status=no,menubar=no');
 		if (window.focus) {win.focus();}
 	};
+	$scope.addInitstate = function() {
+		if ($scope.newInitstateName===undefined || $scope.newInitstateName=='')
+			return;
+		$scope.parameters.initstate[$scope.newInitstateName] = $scope.newInitstateValue;
+		if ($scope.variables.indexOf($scope.newInitstateName)<0)
+			$scope.variables.push($scope.newInitstateName);
+		$scope.newInitstateName = '';
+		$scope.newInitstateValue = '';
+		//$scope.experienceForm.$setDirty();
+		$scope.formChanged = true;
+	};
+	$scope.deleteInitstate = function(name) {
+		delete $scope.parameters.initstate[name];
+		// delete from all poststates!
+		for (var mi in $scope.markers) {
+			var marker = $scope.markers[mi];
+			if (marker.poststate[name]!==undefined)
+				delete marker.poststate[name];
+		}
+		$scope.variables.splice($scope.variables.indexOf(name),1);
+		//$scope.experienceForm.$setDirty();
+		$scope.formChanged = true;
+	};
+	$scope.setFormChanged = function() {
+		$scope.formChanged = true;
+	};
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
@@ -237,10 +295,12 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 		delete $scope.marker.newActionUrl;
 		delete $scope.marker.newActionChannel;
 		$scope.marker.actions.push( action );
-		$scope.experienceForm.$setDirty();
+		//$scope.experienceForm.$setDirty();
+		$scope.setFormChanged();
 	};
 	$scope.deleteAction = function(index) {
 		$scope.marker.actions.splice(index,1);  
-		$scope.experienceForm.$setDirty();
+		//$scope.experienceForm.$setDirty();
+		$scope.setFormChanged();
 	};
 }]);
