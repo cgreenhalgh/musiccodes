@@ -38,3 +38,5 @@ server/public/vendor/
 # vagrant
 .vagrant/
 
+# experience files
+server/experiences/

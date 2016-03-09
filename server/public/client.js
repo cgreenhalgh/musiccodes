@@ -599,6 +599,18 @@ function getPrefixRemain(p) {
     return p.code.length-p.longestPrefix;
   return 0;
 }
+function actionsToText(actions) {
+  var text = '';
+  for (var ai in actions) {
+    var action = actions[ai];
+    if (action.channel===undefined || action.channel=='')
+      text = text+'(default) ';
+    else
+      text = text+'('+action.channel+') ';
+    text = text+action.url+';';
+  }
+  return text;
+}
 MusicCodeClient.prototype.redraw = function(time) {
   if (time)
     this.lastRedrawTime = time;
@@ -650,8 +662,7 @@ MusicCodeClient.prototype.redraw = function(time) {
       .classed('partcode', true);
   partcodesenter.append('div')
       .classed('prefix-label', true)
-      // TODO pretty print multiple actions
-      .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+(d.marker.actions); });
+      .text(function (d) { return '('+d.codeformat+') '+(d.marker.title!==undefined ? '"'+d.marker.title+'" ' : '')+'-> '+actionsToText(d.marker.actions); });
   var partcodesdivs =  partcodesenter.append('div')
       .classed('prefixes', true);
   partcodesdivs.append('span')

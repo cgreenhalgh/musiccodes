@@ -143,6 +143,18 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', funct
   $scope.save = function() {
 	  var filename = $scope.filename;
 	  console.log('save '+filename);
+	  // fix part adds
+	  for (var mi in $scope.markers) {
+	    var marker = $scope.markers[mi];
+	    if ((marker.newActionUrl!==undefined && marker.newActionUrl!='') || (marker.newActionChannel!==undefined && marker.newActionChannel!='')) {
+	      var action = {url: marker.newActionUrl, channel: marker.newActionChannel};
+	      delete marker.newActionUrl;
+	      delete marker.newActionChannel;
+	      marker.actions.push( action );
+            }
+	  }
+	  if ($scope.newMarkerCodeformat || $scope.newMarkerCode || $scope.newMarkerTitle)
+	    $scope.addMarker();
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  markers: $scope.markers, parameters: $scope.parameters };
 	  $scope.status = "Saving...";
@@ -169,9 +181,9 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 	// nested...
 	$scope.addAction = function() {
 		console.log('Add action '+$scope.newActionUrl);
-		var action = {url: $scope.newActionUrl, channel: $scope.newActionChannel};
-		$scope.newActionUrl = '';
-		$scope.newActionChannel = '';
+		var action = {url: $scope.marker.newActionUrl, channel: $scope.marker.newActionChannel};
+		delete $scope.marker.newActionUrl;
+		delete $scope.marker.newActionChannel;
 		$scope.marker.actions.push( action );
 		$scope.experienceForm.$setDirty();
 	};
