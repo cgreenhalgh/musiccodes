@@ -26,6 +26,9 @@ var GROUP_MAX_DURATION = 30;
 var GROUP_MAX_NOTES = 60;
 var NOTELIST_MAX_LINES = 100;
 
+// midi message url prefix
+var MIDI_HEX_PREFIX = 'data:text/x-midi-hex,';
+
 // http://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-url-parameter
 function getQueryParams(qs) {
     qs = qs.split('+').join(' ');
@@ -145,7 +148,11 @@ function MusicCodeClient( experiencejson ) {
   //});
   // midi?!
   var midiIn = params['i'];
+  if (this.parameters.midiInput && this.parameters.midiInput.length>0)
+    midiIn = this.parameters.midiInput;
   var midiOut = params['o'];
+  if (this.parameters.midiOutput && this.parameters.midiOutput.length>0)
+    midiOut = this.parameters.midiOutput;
   setupMidi(midiIn, midiOut, function(note) { self.onoffset(note); },
     function(id) { self.mute = true; });
   // key input
@@ -782,9 +789,14 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
           this.updateState(marker.poststate);
         for (var ai in marker.actions) {
           var action = marker.actions[ai];
-          if (this.channel==action.channel) {
+          if (this.channel==action.channel && action.url) {
             console.log('open '+action.url);
-            $('#viewframe').attr('src',action.url);
+            if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
+              // midi output
+              midiSend( action.url.substring(MIDI_HEX_PREFIX.length) );
+            } else {
+              $('#viewframe').attr('src',action.url);
+            }
           }
         }
         // this.markers.push({ marker: marker, lastTime: time, id: markerId++ });

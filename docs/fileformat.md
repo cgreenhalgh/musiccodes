@@ -16,13 +16,15 @@ Single top-level JSON object with properties:
 - `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
 - `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
 - `initstate` (map of name to value), initial state, used in code `precondition`s.
+- `midiInput` (string, default undefined), name of midi input device, if any
+- `midiOutput` (string, default undefined), name of midi output device, if any
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
 
 
 ## `marker`
-/
+
 This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
 Object with properties:
@@ -74,6 +76,16 @@ Matching code will increase count by 1:
   }
 ]
 ```
+
+## Actions
+
+Actions are URLs. By default they are loaded into an iframe when triggered.
+
+Note that simple text can be encoded using data URIs, e.g. `data:text/plain,hello`. Strictly these should be %-escaped for all characters other than letters and digits.
+
+### Midi actions
+
+A data URI with the non-standard MIME type `text/x-midi-hex` will be output to the current MIDI output channel (if any). All bytes are output immediately. Each byte is encoded as two hex digits. E.g. `data:text/x-midi-hex,903a7f` is note on, middle C, max velocity.
 
 ## `code`
 

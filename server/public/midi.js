@@ -120,9 +120,23 @@ function selectMidiOutput(id) {
 	  console.log('Select output '+id);	
 	  // send a test note on / off
 	  var noteOnMessage = [0x90, 60, 0x7f];    // note on, middle C, full velocity
-	  var output = midi.outputs.get(id);
-	  output.send( noteOnMessage );  //omitting the timestamp means send immediately.
-	  output.send( [0x80, 60, 0x40], window.performance.now() + 1000.0 ); // Inlined array creation- note off, middle C,  
+	  midiOutputPort = midi.outputs.get(id);
+	  //output.send( noteOnMessage );  //omitting the timestamp means send immediately.
+	  //output.send( [0x80, 60, 0x40], window.performance.now() + 1000.0 ); // Inlined array creation- note off, middle C,  
 	                                                                      // release velocity = 64, timestamp = now + 1000ms.
 
+}
+// accepts message as hex string
+function midiSend( hex ) {
+	if (midiOutputPort===null) {
+		console.log('discard midi send '+hex+' (no output)');
+		return;
+	}
+	var message = [];
+	for (var i=0; i+1<hex.length; i+=2) {
+		var b = hex.substring(i,i+2);
+		message.push(parseInt(b, 16));
+	}
+	console.log('midiSend: '+hex);
+	midiOutputPort.send( message );
 }
