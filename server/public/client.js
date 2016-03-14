@@ -21,6 +21,11 @@ var DEFAULT_MONOPHONIC = false;
 // defaults to 0.1s gap for monophonic
 var DEFAULT_MONOPHONIC_GAP = 0.1;
 
+// limits to avoid out of memory
+var GROUP_MAX_DURATION = 30;
+var GROUP_MAX_NOTES = 60;
+var NOTELIST_MAX_LINES = 100;
+
 // http://stackoverflow.com/questions/979975/how-to-get-the-value-from-the-url-parameter
 function getQueryParams(qs) {
     qs = qs.split('+').join(' ');
@@ -406,7 +411,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
   for (var i=0; i<this.allGroups.length; i++) {
     var group = this.allGroups[i];
     // off screen
-    if (group.endTime<note.time-30) {
+    if (group.lastTime<note.time-30) {
       this.allGroups.splice(i,1);
       i--;
     }
@@ -416,7 +421,7 @@ MusicCodeClient.prototype.onoffset = function(note) {
     if (this.closeGroupsTimeout)
       clearTimeout(this.closeGroupsTimeout);
     this.closeGroupsTimeout = setTimeout(function(){ self.closeGroups(); }, 3000);
-
+    $('#notelist li:gt('+NOTELIST_MAX_LINES+')').remove();
     $('#notelist').prepend('<li>'+note.note+' ('+note.freq+'Hz vel='+note.velocity+' t='+note.time+')</li>');
   }
 
@@ -445,7 +450,15 @@ MusicCodeClient.prototype.onoffset = function(note) {
           group.notes.push(note);
           group.count++;
           handled = true;
-          console.log("add note to group "+group.id);
+          // limits to group...
+          var gccount = 0;
+          for (var ni=group.notes.length-1; ni>0; ni--) {
+            if (ni>=GROUP_MAX_NOTES || note.time-group.notes[ni].time > GROUP_MAX_DURATION) {
+              group.notes.splice(ni,1);
+              gccount++;
+            }
+          }
+          console.log("add note to group "+group.id+' (GC '+gccount+' notes)');
           this.handleGroup(group);
         }
       }
