@@ -772,7 +772,7 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
       var marker = this.experience.markers[i];
       // test as regexp
       if (marker.preconditionok &&
-          marker.code !== undefined && 
+          marker.code && marker.code.length>0 && 
           (marker.codeformat===undefined || marker.codeformat==codeformat) &&
           this.codes[marker.code].regex.test( code ) ) {
         //group.marker = marker;
