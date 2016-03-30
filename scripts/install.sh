@@ -53,7 +53,6 @@
       cd "$1"
     fi
     # node dependencies
-    cd /vagrant/server
     # --no-bin-links workaround for use on top of windows FS
     npm install --no-bin-links
 
@@ -72,7 +71,7 @@
     #initctl start musiccodes
 
     # upstart system
-    sudo cp /vagrant/upstart/musiccodes.conf /etc/init/
+    sudo cp ../upstart/musiccodes.conf /etc/init/
     if ! [ -z "$1" ]; then
       sudo sed -i "s:/vagrant/server:$1:g" /etc/init/musiccodes.conf
     fi
