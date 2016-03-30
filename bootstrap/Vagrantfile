@@ -1,0 +1,31 @@
+Vagrant.configure(2) do |config|
+    config.vm.box = "ubuntu/trusty64"
+
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 1024
+  end
+
+  # node server for vamp
+  config.vm.network "forwarded_port", guest: 3000, host: 3000
+  # web server for wordpress
+  #config.vm.network "forwarded_port", guest: 80, host: 8080
+
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    sudo apt-get update
+    sudo apt-get install -y git
+    cd /vagrant
+    [ -d musiccodes ] || git clone https://github.com/cgreenhalgh/musiccodes.git
+    
+  SHELL
+
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    /vagrant/musiccodes/scripts/install.sh /vagrant/musiccodes/server
+  SHELL
+
+  # lots of trouble trying to make musiccodes start on boot... (at least in Vagrant pre-1.8.1)
+  config.vm.provision "shell", run:"always", privileged: false, inline: <<-SHELL
+    /vagrant/musiccodes/scripts/run.sh /vagrant/musiccodes/server
+  SHELL
+
+end
+
