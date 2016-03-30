@@ -1,2 +1,2 @@
-zip musiccodes-bootstrap.zip bootstrap/README.md bootstrap/Vagrantfile bootstrap/musiccodes.bat bootstrap/musiccodes.command bootstrap/install.md
+(cd bootstrap; zip ../musiccodes-bootstrap.zip README.md Vagrantfile musiccodes.bat musiccodes.command install.md)
 
