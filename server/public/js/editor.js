@@ -132,9 +132,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
   $scope.showState = false;
   //$scope.experienceForm.$setDirty();
   $scope.formChanged = false;
-  $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
-	  var data = res.data;
-	  $scope.status = 'Loaded '+$routeParams.experience;
+  var loaded = function(data) {
+	  console.log('loaded '+JSON.stringify(data));
     /* fix default actions */
     for (var mi in data.markers) {
       var marker = data.markers[mi];
@@ -178,10 +177,18 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     console.log('read experience with '+(data.markers.length)+' markers');
     $scope.experienceForm.$setPristine();
     $scope.formChanged = false;
+  };
+    $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
+    	var data = res.data;
+    	$scope.status = 'Loaded '+$routeParams.experience;
+    	loaded(data);
   }, function(error) {
-	  if (error.status==404)
+	  if (error.status==404) {
 		  $scope.status = 'File does not exist';
-	  else
+		  // new file
+		  var data = { parameters: {}, markers: [] };
+		  loaded(data);
+	  } else
 		  $scope.status = 'Error loading '+$routeParams.experience+': '+error.statusText;
   });
   $scope.checkFilename = function() {

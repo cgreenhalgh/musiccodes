@@ -1,0 +1,1 @@
+{"markers":[{"codeformat":"n","code":"A","actions":[],"poststate":{"counta":"counta+1"}},{"codeformat":"n","code":"B","title":"","actions":[],"precondition":"counta<4","poststate":{"doneb":"true"}}],"parameters":{"vampParameters":{"instrument":0},"initstate":{"counta":"0","doneb":"false"}}}
