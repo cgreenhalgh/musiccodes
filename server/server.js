@@ -62,6 +62,7 @@ app.get('/experiences/:experience/:version', function(req,res) {
 	res.sendFile(EXPERIENCES_DIR+req.params.experience+'.'+req.params.version);
 });
 app.use(require('body-parser').json());
+app.use(require('body-parser').urlencoded({ extended: true })); 
 
 app.put('/experiences/:experience', function(req,res) {
 	console.log('put experience '+req.params.experience);
@@ -97,6 +98,111 @@ app.put('/experiences/:experience', function(req,res) {
 });
 app.get('/*.(js|json|html)', returnPublicFile);
 
+function escapeHTML(html) {
+    return String(html)
+    .replace(/&(?!\w+;)/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function run_process(cmd, args, cwd, timeout, cont) {
+	console.log('spawn '+cmd+' '+args.join(' '));
+	var output = [];
+	var process = require('child_process').spawn(cmd,
+			args, {
+		cwd: cwd
+	});
+	process.stdin.on('error', function() {});
+	process.stdout.on('data', function(data) {
+		//console.log( 'Client stdout: '+data);
+		output.push(data);
+	});
+	process.stdout.on('end', function() {});
+	process.stdout.on('error', function() {});
+	process.stderr.on('data', function(data) {
+		output.push('Error: '+data);
+	});
+	process.stderr.on('end', function() {});
+	process.stderr.on('error', function() {});
+	process.on('close', function(code) {
+		console.log('process '+cmd+' exited ('+code+')');
+		cont(code, output.join(''));
+	});
+	console.log('done spawn');
+}
+var DEFAULT_TIMEOUT = 30000;
+
+function send_status(res, status, out) {
+	// commit: git log --pretty=format:%H -1
+	run_process('git',['status'], __dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
+		console.log('git status -> '+code+': '+output);
+		out += '<h1>Musiccode Update</h1>';
+		if (code!==0) {
+			status = 500;
+			out += '<p>Git status ERROR:</p><pre>'+escapeHTML(output)+'</pre>';
+		} else {
+			var m = new RegExp('^(On branch |HEAD detached at )(\\S+)').exec(output);
+			if (m!==null) {
+				out += '<p>Git at '+m[2]+'</p>';
+			} else {
+				out += '<p>Git status:</p><pre>'+escapeHTML(output)+'</pre>';
+			}
+		}
+		run_process('git',['log','--pretty=format:%H','-1'], __dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
+			if (code!==0) {
+				status = 500;
+				out += '<p>Git log ERROR:</p><pre>'+escapeHTML(output)+'</pre>';
+			} else {
+				out += '<p>Commit '+output+'</p>';
+			}
+			out += '<hr><form action="/update" method="POST"><label>Version: <input type="text" name="tag"><input type="submit" value="Update"></form>'
+			res.status(status);
+			res.send(out);
+		});
+	});
+	console.log('waiting...');
+};
+app.get('/update', function(req,res) {
+	console.log('/update ...');
+	send_status(res,200,'');
+});
+app.post('/update', function(req,res) {
+	//console.log(req.body);
+	var tag = req.body.tag;
+	console.log('update to '+tag);
+	if (tag===undefined || tag=="") {
+		send_status(res, 200, '<p>No tag specified</p>');
+		return;
+	}
+	var out = '<p>tag: '+escapeHTML(tag)+' specified</p>';
+	run_process('git',['fetch'],__dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
+		console.log('git fetch -> '+code+': '+output);
+		if (code!==0) {
+			out += '<p>Warning: git fetch failed:</p><pre>'+escapeHTML(output)+'</pre>';
+		} else {
+			out += '<p>git fetch ok</p>';
+		}
+		run_process('git',['checkout',tag],__dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
+			console.log('git checkout '+tag+' -> '+code+': '+output);
+			var status = 200;
+			if (code!==0) {
+				out += '<p>Warning: git checkout '+tag+' failed:</p><pre>'+escapeHTML(output)+'</pre>';
+				status = 500;
+			} else {
+				out += '<p>git checkout '+tag+' ok</p>';
+			}
+			setTimeout(function() {
+				console.log('Restart...');
+				var child = require('child_process').spawn('sudo',['service','musiccodes','restart'],
+						{detached:true, stdio:['ignore','ignore','ignore']});
+				child.unref();
+			},2000);
+			out += '<p>Restarting in 2 seconds</p>';
+			send_status(res, status, out+'<hr>');				
+		});
+	});
+	
+});
 var STATE_WAITING_FOR_PARAMETERS = 1;
 var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;
@@ -147,7 +253,6 @@ function Client(socket) {
   self.data(msg);
   });
 }
-
 Client.prototype.parameters = function(parameters) {
   var self = this;
   this.state = STATE_WAITING_FOR_HEADER;
