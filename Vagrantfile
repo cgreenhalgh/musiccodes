@@ -108,13 +108,15 @@ Vagrant.configure(2) do |config|
 
     # upstart system
     sudo cp /vagrant/upstart/musiccodes.conf /etc/init/
-    # done below: sudo service musiccodes start
+    sudo service musiccodes start
 
 SHELL
 
-  # lots of trouble trying to make musiccodes start on boot...
+  # lots of trouble trying to make musiccodes start on boot... (at least in Vagrant pre-1.8.1)
   config.vm.provision "shell", run:"always", privileged: false, inline: <<-SHELL
-    sudo service musiccodes start
+    if ! (status musiccodes | grep -q "^musiccodes start" > /dev/null); then
+      sudo service musiccodes start
+    fi
 SHELL
 
 end
