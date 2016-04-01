@@ -61,7 +61,7 @@ TODO: - `machineNickname`: user-specified
 ## Background
 
 Log start info fields from daoplayer:
-- `logVersion`: `"2.0"`
+- `logVersion`: `"1.0"`
 - `deviceId`: IMEI
 - `packageName`, `appVersionName`, `appVersionCode`: android-app-specific
 
