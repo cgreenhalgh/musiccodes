@@ -2,6 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
+var dateFormat = require('dateformat');
 
 app.get('/', function(req, res){
   console.log('get /');
@@ -208,7 +209,177 @@ var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;
 var STATE_ERROR = 4;
 
+var LEVEL_DEBUG = 2;
+var LEVEL_INFO = 4;
+var LEVEL_WARN = 6;
+var LEVEL_ERROR = 8;
+var LEVEL_SEVERE = 10;
+
+var LOG_FILENAME_DATE_FORMAT = "yyyymmdd'T'HHMMssl'Z'";
+var LOG_DATE_FORMAT = "yyyy-mm-dd'T'HH:MM:ss.l'Z'";
 var rooms = {};
+var roomLogs = {};
+var LOG_DIR = __dirname+'/logs';
+if (!fs.existsSync(LOG_DIR)) {
+	console.log('Try to create log dir '+LOG_DIR);
+	fs.mkdirSync(LOG_DIR);
+	if (!fs.existsSync(LOG_DIR)) {
+		console.log('ERROR: could not create log dir '+LOG_DIR);
+	} else {
+		console.log('Created log dir '+LOG_DIR);		
+	}
+}
+
+var packageInfo = null;
+try {
+	var json = fs.readFileSync(__dirname+'/package.json','utf8');
+	packageInfo = JSON.parse(json);
+}
+catch (err) {
+	console.log("Error reading/parsing package info from "+__dirname+'/package.json: '+err.message);
+}
+var appCommit = null;
+run_process('git',['log','--pretty=format:%H','-1'], __dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
+	if (code!==0) {
+		console.log('Could not get git commit');
+	} else {
+		appCommit = output.trim();
+		console.log('git commit = '+appCommit);
+	}
+});
+var installId = null;
+try {
+	fs.accessSync(__dirname+'/installId', fs.R_OK);
+	installId = fs.readFileSync(__dirname+'/installId','utf8').trim();
+} catch (err) {
+	console.log('Error reading '+__dirname+'/installId: '+err.message);
+}
+if (installId===null) {
+	var uuid = require('uuid');
+	installId = uuid.v1();
+	console.log('Generated installId '+installId);
+	try {
+		fs.writeFileSync(__dirname+'/installId', installId, 'utf8');
+	} catch (err) {
+		console.log('Error: could not write installId: '+err.message);
+	}
+}
+var machineNickname = null;
+try {
+	fs.accessSync(__dirname+'/machineNickname', fs.R_OK);
+	installId = fs.readFileSync(__dirname+'/machineNickname','utf8').trim();
+} catch (err) {
+	console.log('Error reading '+__dirname+'/machineNickname: '+err.message);
+}
+function roomJoin(room, id, masterFlag) {
+	var l = roomLogs[room];
+	if (l===undefined) {
+		roomLogs[room] = l = { masters:[], slaves: [], recordAudio: false, entries: [] };
+		var now = new Date();
+		l.path = LOG_DIR+'/'+dateFormat(now, LOG_FILENAME_DATE_FORMAT)+'-'+room+'.log';
+/*		try {
+			roomLogs[room].log = fs.openSync(path, 'a+');
+		} catch (err) {
+			console.log('Error opening log file '+path+': '+err);
+		}
+*/
+		var info = {
+			logVersion: '0.1'
+		};
+		if (packageInfo!==null) {
+			info.application = packageInfo.name;
+			info.version = packageInfo.version;
+		} else {
+			info.application = "musiccodes-server";
+			// version ?!
+		}
+		// installId, machineNickname, appCommit
+		if (appCommit!==null)
+			info.appCommit = appCommit;
+		if (installId!==null)
+			info.installId = installId;
+		if (machineNickname!==null)
+			info.machineNickname = machineNickname;
+		log(room, 'server', 'log.start', info, LEVEL_INFO);
+	}
+	if (masterFlag && !l.masters.indexOf(id)>=0) {
+		l.masters.push(id);
+	}
+	else if (!masterFlag && !l.slaves.indexOf(id)>=0) {
+		l.slaves.push(id);
+	}
+}
+function roomLeave(room, id) {
+	var l = roomLogs[room];
+	if (l!==undefined) {		
+		if (l.masters.indexOf(id)>=0) {
+			l.masters.splice(l.masters.indexOf(id), 1);
+			console.log('remove master '+id+', leaves '+l.masters.length+'+'+l.slaves.length);
+		}
+		else if (l.slaves.indexOf(id)>=0) {
+			l.slaves.splice(l.slaves.indexOf(id), 1);
+			console.log('remove slave '+id+', leaves '+l.masters.length+'+'+l.slaves.length);
+		}
+		if (l.masters.length==0 && l.slaves.length==0 && l.log!==undefined) {
+			log(room, 'server', 'log.end', {});
+			console.log('close log '+l.path);
+			l.log.end();
+			delete l.out;
+			delete roomLogs[room];
+		} else if (l.masters.length==0) {
+			delete l.logUse;
+		}
+	}
+}
+function roomLogUse(room, logUse) {
+	var log = roomLogs[room];
+	if (log!==undefined) {
+		log.logUse = logUse;
+		if (logUse==false) {
+			log.entries = [];
+		} else {
+			try {
+				console.log('create log file '+log.path);
+				log.log = fs.createWriteStream(log.path, {flags:'a+',defaultEncoding:'utf8',autoClose:true,mode:0o644});
+			} catch (err) {
+				console.log('Error creating log file '+log.path+': '+err.message);
+			}
+			if (log.log!==undefined) {
+				for (var ei in log.entries) {
+					log.log.write(JSON.stringify(log.entries[ei]));
+					log.log.write('\n');
+				}
+				log.entries = [];
+			}
+		}
+	}
+}
+function log(room, component, event, info, level) {
+	var log = roomLogs[room];
+	if (log!==undefined) {
+		if (log.logUse===false) 
+			// discard
+			return;
+		if (level===undefined)
+			level = LEVEL_INFO;
+		var now = new Date();
+		var entry = {
+				time: now.getTime(),
+				datetime: dateFormat(now, LOG_DATE_FORMAT),
+				level: level,
+				component: component,
+				event: event,
+				info: info
+		};
+		if (log.logUse===undefined || log.log===undefined) {
+			// save for later
+			log.entries.push(entry);
+		} else {
+			log.log.write(JSON.stringify(entry));
+			log.log.write('\n');
+		}
+	}
+}
 
 function Client(socket) {
   this.socket = socket;
@@ -235,10 +406,10 @@ function Client(socket) {
     self.disconnect();
   });
   socket.on('master', function(msg) {
-    self.master(msg);
+    self.onMaster(msg);
   });
   socket.on('slave', function(msg) {
-    self.slave(msg);
+    self.onSlave(msg);
   });
   socket.on('action', function(msg) {
     self.action(msg);
@@ -286,7 +457,14 @@ Client.prototype.parameters = function(parameters) {
   this.process.stderr.on('error', function() {});
 }
 Client.prototype.disconnect = function() {
-  console.log('Client disconnected');
+  console.log('Client disconnected, master='+this.master+', room='+this.room);
+  if (this.room!==null && this.room!==undefined) {
+	  if (this.master)
+		  log(this.room, 'server', 'master.disconnect', {id:this.socket.id, room:this.room});
+	  else
+		  log(this.room, 'server', 'slave.disconnect', {id:this.socket.id, room:this.room});
+	  roomLeave(this.room, this.socket.id);
+  }
   try {
     if (this.process!==null) 
       this.process.kill();
@@ -337,7 +515,7 @@ Client.prototype.processSilvetOnoffset = function(data) {
   }     
 };
 
-Client.prototype.master = function(msg) {
+Client.prototype.onMaster = function(msg) {
   // room, pin
   if (msg.room===undefined) {
     console.log("Master with no room defined");
@@ -356,8 +534,14 @@ Client.prototype.master = function(msg) {
     this.room = msg.room;
     this.master = true;
   }
+  if (this.room!==null && this.room!==undefined) {
+	  roomJoin(this.room, this.socket.id, true);
+	  // TODO: logUse set by experience
+	  roomLogUse(this.room, true);
+	  log(this.room, 'server', 'master.connect', {id:this.socket.id, room:this.room});
+  }
 };
-Client.prototype.slave = function(msg) {
+Client.prototype.onSlave = function(msg) {
    // room
   if (msg.room===undefined) {
     console.log("Slave with no room defined");
@@ -367,6 +551,8 @@ Client.prototype.slave = function(msg) {
   this.socket.join(msg.room);
   this.slave = true;
   this.room = msg.room;
+  roomJoin(this.room, this.socket.id, false);
+  log(this.room, 'server', 'slave.connect', {id:this.socket.id, room:this.room});
   if (rooms[msg.room]===undefined)
     this.socket.emit('join.warning', 'Unknown room');
 };
