@@ -568,7 +568,6 @@ MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
   }
   if (group.closed)
     code = code+'$';
-  console.log('built '+codeformat+': '+code);
 
   // TODO: generalise...
   if (codeformat=='mrle0/crle4,') {
@@ -596,19 +595,11 @@ MusicCodeClient.prototype.groupToCode = function(group, codeformat) {
     }
     if (group.closed)
       code = code+'$';
-    return code;
-  } else if (codeformat=='no') {
-    // format 1
-    var code = '';
-    for (var ni in group.notes)
-      code += group.notes[ni].note;
-    if (group.closed)
-      code = code+'$';
-    return code;
-  } else {
-    console.log('Unknown codeformat '+codeformat);
+    console.log('custom built '+codeformat+': '+code);
     return code;
   }
+  console.log('generic built '+codeformat+': '+code);
+  return code;
 }
 function getLongestPrefix(p) {
   if (p!==undefined && p.longestPrefix!==undefined)
