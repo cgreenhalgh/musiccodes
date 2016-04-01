@@ -284,7 +284,7 @@ function roomJoin(room, id, masterFlag) {
 		}
 */
 		var info = {
-			logVersion: '0.1'
+			logVersion: '1.0'
 		};
 		if (packageInfo!==null) {
 			info.application = packageInfo.name;
@@ -423,9 +423,16 @@ function Client(socket) {
   socket.on('audioData', function(msg) {
   self.data(msg);
   });
+  socket.on('log', function(msg) {
+	  var event = msg.event;
+	  if (event===undefined)
+		  event = 'undefined';
+	  log(self.room, 'client', event, msg.info, msg.level);
+  });
 }
 Client.prototype.parameters = function(parameters) {
   var self = this;
+  log(this.room, 'server', 'audio.parameters', parameters);
   this.state = STATE_WAITING_FOR_HEADER;
   var args = ['silvet:silvet','-','2'];
   for (var pname in parameters) {
@@ -511,6 +518,7 @@ Client.prototype.processSilvetOnoffset = function(data) {
        });
   for (var ix in values) {
     console.log('Get note '+JSON.stringify(values[ix]));
+    log(this.room, 'server', 'audio.note', values[ix]);
     this.socket.emit('onoffset', values[ix]);
   }     
 };
@@ -538,7 +546,7 @@ Client.prototype.onMaster = function(msg) {
 	  roomJoin(this.room, this.socket.id, true);
 	  // TODO: logUse set by experience
 	  roomLogUse(this.room, true);
-	  log(this.room, 'server', 'master.connect', {id:this.socket.id, room:this.room});
+	  log(this.room, 'server', 'master.connect', {id:this.socket.id, room:this.room, channel:msg.channel, experience:msg.experience});
   }
 };
 Client.prototype.onSlave = function(msg) {
@@ -552,7 +560,7 @@ Client.prototype.onSlave = function(msg) {
   this.slave = true;
   this.room = msg.room;
   roomJoin(this.room, this.socket.id, false);
-  log(this.room, 'server', 'slave.connect', {id:this.socket.id, room:this.room});
+  log(this.room, 'server', 'slave.connect', {id:this.socket.id, room:this.room, channel:msg.channel});
   if (rooms[msg.room]===undefined)
     this.socket.emit('join.warning', 'Unknown room');
 };
@@ -560,6 +568,7 @@ Client.prototype.action = function(msg) {
   // marker...
   if (this.master) {
     console.log("relay action to room "+this.room+": "+msg);
+    log(this.room, 'server', 'action.tiggered', msg);
     io.to(this.room).emit('action', msg);
   } else {
     console.log("discard action for non-master");

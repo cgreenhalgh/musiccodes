@@ -55,7 +55,7 @@ function MusicCodeClient( experiencejson ) {
   socket.on('join.error', function(msg) {
     alert('Error starting master: '+msg);
   });
-  socket.emit('master',{room:this.room, pin:this.pin});
+  socket.emit('master',{room:this.room, pin:this.pin, channel:this.channel, experience:experiencejson});
   if (false)
     // scroll note view even with no new notes - harder to debug 
     setInterval( function() {
@@ -153,8 +153,13 @@ function MusicCodeClient( experiencejson ) {
   var midiOut = params['o'];
   if (this.parameters.midiOutput && this.parameters.midiOutput.length>0)
     midiOut = this.parameters.midiOutput;
-  setupMidi(midiIn, midiOut, function(note) { self.onoffset(note); },
-    function(id) { self.mute = true; });
+  setupMidi(midiIn, midiOut, 
+	function(note) { 
+	  socket.emit('log', {event:'midi.note', info:note});
+	  self.onoffset(note); 
+	},
+    function(id) { self.mute = true; },
+    function(event,info) { socket.emit('log',{event:event,info:info}); });
   // key input
   $('body').keydown( function(ev) { self.key(ev, true); });
   $('body').keyup( function(ev) { self.key(ev, false); });
@@ -173,6 +178,7 @@ MusicCodeClient.prototype.updateState = function(state) {
       this.state[name] = output[name];
     }
   }
+	socket.emit('log', {event:'state.update', info:this.state});
 };
 MusicCodeClient.prototype.safeEvaluate = function(expression) {
   window.scriptstate = {};
@@ -911,6 +917,7 @@ MusicCodeClient.prototype.key = function(ev, down) {
   var time = (Date.now()-KEY_TIME0)*0.001;
   var vel = down ? 127 : 0;
   var note = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
+  socket.emit('log', {event:'key.note', info:note});
   console.log(note);
   this.onoffset(note);
 };

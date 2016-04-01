@@ -67,7 +67,7 @@ var params = getQueryParams(document.location.search);
 var room = params['r']===undefined ? 'default' : params['r'];
 var channel = params['c']===undefined ? '' : params['c'];
 console.log('Slave: Room = '+room+', channel='+channel);
-socket.emit('slave',{room:room});
+socket.emit('slave',{room:room,channel:channel});
 
 $(document).on('click', '.codelink', function(ev) {
   var group = d3.select(ev.target).datum();

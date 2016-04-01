@@ -6,12 +6,14 @@ var midiNoteCallback = null;
 var midiSelectCallback = null;
 var midiInputName = null;
 var midiOutputName = null;
+var midiLogCallback = null;
 
-function setupMidi( midiIn, midiOut, noteCallback, selectCallback ) {
+function setupMidi( midiIn, midiOut, noteCallback, selectCallback, logCallback ) {
 	midiInputName = midiIn;
 	midiOutputName = midiOut;
 	midiNoteCallback = noteCallback;
 	midiSelectCallback = selectCallback;
+	midiLogCallback = logCallback;
 	// request top-level midi access (non-exclusive)
 	navigator.requestMIDIAccess().then( onMIDISuccess, onMIDIFailure );
 }
@@ -76,6 +78,8 @@ function selectMidiInput(id) {
 	  console.log( str );
 	  processMidiMessage( event.data );
   };
+  if (midiLogCallback!==null)
+	  midiLogCallback('midi.config.in',{id:id, name:midiInputPort.name});
   if (midiSelectCallback!==null) 
     midiSelectCallback(id);
 }
@@ -124,7 +128,8 @@ function selectMidiOutput(id) {
 	  //output.send( noteOnMessage );  //omitting the timestamp means send immediately.
 	  //output.send( [0x80, 60, 0x40], window.performance.now() + 1000.0 ); // Inlined array creation- note off, middle C,  
 	                                                                      // release velocity = 64, timestamp = now + 1000ms.
-
+	  if (midiLogCallback!==null)
+		  midiLogCallback('midi.config.out',{id:id, name:midiOutputPort.name});
 }
 // accepts message as hex string
 function midiSend( hex ) {

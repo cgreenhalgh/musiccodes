@@ -16,17 +16,18 @@ Standard fields:
 
 Event names:
 - `log.start`: start of (experience) log file
-TODO: - `audio.note`: note detected from audio
-TODO: - `midi.note`: note received from MIDI (from client)
-TODO: - `action.tiggered`: action triggered/broadcast
-TODO: - `midi.config.in`: change of MIDI input
-TODO: - `midi.config.out`: change of MIDI output
-TODO: - `state.update`: report of experience state
+- `audio.note`: note detected from audio
+- `midi.note`: note received from MIDI (from client)
+- `key.note`: note received from keyboard input (from client)
+- `action.tiggered`: action triggered/broadcast
+- `midi.config.in`: change of MIDI input
+- `midi.config.out`: change of MIDI output
+- `state.update`: report of experience state
 - `slave.connect`: slave view connect
 - `slave.disconnect`: slave view disconnect
 - `master.connect`: master connect
 - `master.disconnect`: master disconnect
-TODO: - `audio.parameters`: audio parameters set
+- `audio.parameters`: audio parameters set, as map (`info`)
 - `log.end`: explicit end of log file
 
 `log.start` event info fields:
@@ -40,12 +41,23 @@ TODO: - `machineNickname`: user-specified
 `master.connect`, `slave.connect` event info fields:
 - `id`: local ID of master/slave
 - `room`: room name
-TODO: - `channel`: channel used
+- `channel`: channel used
+- `experience`: experience loaded
 
 `master.disconnect`, `slave.disconnect` event info fields:
 - `id`: local ID of master/slave
 - `room`: room name
 
+`audio.note`, `midi.note`, `key.note` event info fields:
+- `time`: time, seconds, since 'start'
+- `freq`: frequency of note, Hz
+- `velocity`: MIDI-style note velocity (volume), 0-127
+- `note`: name letter name and octave number, e.g. 'C4'
+- `off`: boolean, note off (end) as opposed to on (start)
+             
+`midi.config.in`, `midi.config.out` event info fields:
+- `id`: MIDI input/output port ID             
+                        
 ## Background
 
 Log start info fields from daoplayer:
