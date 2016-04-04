@@ -40,3 +40,10 @@ server/public/vendor/
 
 # experience files
 server/experiences/
+
+# local server settings
+server/installId
+server/settings.json
+
+# audio recordings
+server/audio/

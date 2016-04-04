@@ -130,6 +130,19 @@ function MusicCodeClient( experiencejson ) {
   vampParameters.instrument = vampParameters.instrument===undefined ? 0 : vampParameters.instrument;
   console.log('Send parameters '+JSON.stringify(vampParameters));
   socket.emit( 'parameters', vampParameters );
+  if (this.experience.recordAudio!==undefined && this.experience.recordAudio) {
+	  socket.emit('recordAudio', true);
+	  $('#recording').html('<span id="recordingstatus" class="recordingstatus">Recording</span><button id="stoprecording" class="recording">Stop</button><button class="recording" id="reload">Reload</button>');
+	  $('#stoprecording').on('click', function() {
+		 console.log('stop recording');
+		 self.mute = true;
+		 $('#stoprecording').attr('disabled', true);
+		 $('#recordingstatus').text('Stopped');
+	  });
+	  $('#reload').on('click', function() {
+		  location.reload();
+	  });
+  }
   // state
   this.state = {};
   this.statechanged = false;

@@ -67,6 +67,20 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 }]);
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', function ($scope,$http,$routeParams,getIPAddress,$location) {
+	$scope.defaults = {};
+	$http.get('/defaults').success(function(data) {
+		$scope.defaults = data;
+		console.log('loaded defaults '+JSON.stringify(data));
+		if ($scope.author===undefined && $scope.defaults.author!==undefined && $scope.defaults.author!='') {
+			$scope.author = $scope.defaults.author;
+			$scope.formChanged = true;
+		}
+		if ($scope.recordAudio===undefined && $scope.defaults.recordAudio===true) {
+			$scope.recordAudio = $scope.defaults.recordAudio;
+			$scope.formChanged = true;
+		}
+	});
+	
 	// ip
 	$scope.serverProtocol = $location.protocol();
 	$scope.serverHost = $location.host();
@@ -174,9 +188,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     $scope.parameters = data.parameters;
     $scope.name = data.name;
     $scope.description = data.description;
+    $scope.formChanged = false;
+    $scope.author = data.author;
+    $scope.recordAudio = data.recordAudio;
     console.log('read experience with '+(data.markers.length)+' markers');
     $scope.experienceForm.$setPristine();
-    $scope.formChanged = false;
   };
     $http.get('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')).then(function(res) {
     	var data = res.data;
@@ -187,7 +203,12 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  $scope.status = 'File does not exist';
 		  // new file
 		  var data = { parameters: {}, markers: [] };
+		  if ($scope.defaults!==undefined) {
+			  data.author = $scope.defaults.author;
+			  data.recordAudio = $scope.defaults.recordAudio;
+		  }
 		  loaded(data);
+		  $scope.formChanged = true;
 	  } else
 		  $scope.status = 'Error loading '+$routeParams.experience+': '+error.statusText;
   });
@@ -226,6 +247,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  $scope.addInitstate();
 	  
 	  var experience = { name: $scope.name, description: $scope.description, 
+			  author: $scope.author, recordAudio: $scope.recordAudio,
 			  markers: $scope.markers, parameters: $scope.parameters };
 	  // refresh channels
 	  $scope.channels = [''];

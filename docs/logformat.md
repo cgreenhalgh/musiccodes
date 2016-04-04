@@ -29,13 +29,14 @@ Event names:
 - `master.disconnect`: master disconnect
 - `audio.parameters`: audio parameters set, as map (`info`)
 - `log.end`: explicit end of log file
+- `audio.record`: started recording audio
 
 `log.start` event info fields:
 - `application`: from `package.json` `name`, `"musiccodes-server"`
 - `appVersion`: from `package.json` `version`, currently `"0.0.1"`
 - `logVersion`: currently `"1.0"`
 - `installId`: random GUID for this installation/machine
-TODO: - `machineNickname`: user-specified
+- `machineNickname`: user-specified
 - `appCommit`: hash of current code commit
 
 `master.connect`, `slave.connect` event info fields:
@@ -57,7 +58,10 @@ TODO: - `machineNickname`: user-specified
              
 `midi.config.in`, `midi.config.out` event info fields:
 - `id`: MIDI input/output port ID             
-                        
+
+`audio.record` event info fields:
+- `filename`: audio filename
+                   
 ## Background
 
 Log start info fields from daoplayer:

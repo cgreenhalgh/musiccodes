@@ -156,7 +156,8 @@ function send_status(res, status, out) {
 			} else {
 				out += '<p>Commit '+output+'</p>';
 			}
-			out += '<hr><form action="/update" method="POST"><label>Version: <input type="text" name="tag"><input type="submit" value="Update"></form>'
+			out += '<hr><form action="/update" method="POST"><label>Version: <input type="text" name="tag"><input type="submit" value="Update"></form>'+
+				'<p><a href="/">Back</a></p>'
 			res.status(status);
 			res.send(out);
 		});
@@ -204,6 +205,20 @@ app.post('/update', function(req,res) {
 	});
 	
 });
+var DEFAULT_SETTINGS = { machineNickname:'', defaultAuthor:'', defaultLogUse:true, defaultRecordAudio:false };
+var settings = {};
+try {
+	fs.accessSync(__dirname+'/settings.json', fs.R_OK);
+	settings = JSON.parse(fs.readFileSync(__dirname+'/settings.json','utf8'));
+} catch (err) {
+	console.log('Error reading '+__dirname+'/settings.json: '+err.message);
+}
+for (var v in DEFAULT_SETTINGS) {
+	if (settings[v]===undefined)
+		settings[v] = DEFAULT_SETTINGS[v];
+}
+
+
 var STATE_WAITING_FOR_PARAMETERS = 1;
 var STATE_WAITING_FOR_HEADER = 2;
 var STATE_RUNNING = 3;
@@ -227,6 +242,16 @@ if (!fs.existsSync(LOG_DIR)) {
 		console.log('ERROR: could not create log dir '+LOG_DIR);
 	} else {
 		console.log('Created log dir '+LOG_DIR);		
+	}
+}
+var AUDIO_DIR = __dirname+'/audio';
+if (!fs.existsSync(AUDIO_DIR)) {
+	console.log('Try to create audio dir '+AUDIO_DIR);
+	fs.mkdirSync(AUDIO_DIR);
+	if (!fs.existsSync(AUDIO_DIR)) {
+		console.log('ERROR: could not create audio dir '+AUDIO_DIR);
+	} else {
+		console.log('Created audio dir '+AUDIO_DIR);		
 	}
 }
 
@@ -264,13 +289,51 @@ if (installId===null) {
 		console.log('Error: could not write installId: '+err.message);
 	}
 }
-var machineNickname = null;
-try {
-	fs.accessSync(__dirname+'/machineNickname', fs.R_OK);
-	installId = fs.readFileSync(__dirname+'/machineNickname','utf8').trim();
-} catch (err) {
-	console.log('Error reading '+__dirname+'/machineNickname: '+err.message);
-}
+
+function send_settings(res, status, out) {
+	out += '<h1>General Settings</h1>';
+	out += '<form action="/settings" method="POST">'+
+	'<table><tbody>'+
+	'<tr><td>Installation ID:</td><td>'+escapeHTML(installId)+'</td></tr>'+
+	'<tr><td>Machine nickname:</td><td><input type="text" name="machineNickname" value="'+escapeHTML(settings.machineNickname)+'"></td></tr>'+
+	'<tr><td>Default author:</td><td><input type="text" name="defaultAuthor" value="'+escapeHTML(settings.defaultAuthor)+'"></td></tr>'+
+	//'<tr><td>Default log use:</td><td><input type="checkbox" name="defaultLogUse" value="true" '+(settings.defaultLogUse ? 'checked="checked"' : '')+'"></td></tr>'+
+	'<tr><td>Default record audio:</td><td><input type="checkbox" name="defaultRecordAudio" value="true" '+(settings.defaultRecordAudio ? 'checked="checked"' : '')+'"></td></tr>'+
+	'<tr><td></td><td><input type="submit" value="Update"></td></tr>'+
+	'</tbody></table></form>'+
+	'<p><a href="/">Back</a></p>'
+	res.status(status);
+	res.send(out);
+};
+app.get('/settings', function(req,res) {
+	console.log('/settings ...');
+	send_settings(res,200,'');
+});
+app.get('/defaults', function(req,res) {
+	var defaults = { author: settings.defaultAuthor, logUse: settings.defaultLogUse, recordAudio: settings.defaultRecordAudio };
+	res.set('Content-Type', 'application/json').send(JSON.stringify(defaults));
+});
+app.post('/settings', function(req,res) {
+	var status = 200;
+	var out = '';
+	if (req.body.machineNickname!==undefined)
+		settings.machineNickname = req.body.machineNickname;
+	if (req.body.defaultAuthor!==undefined)
+		settings.defaultAuthor = req.body.defaultAuthor;
+	//settings.defaultLogUse = (req.body.defaultLogUse!==undefined && req.body.defaultLogUse=='true');
+	settings.defaultRecordAudio = (req.body.defaultRecordAudio!==undefined && req.body.defaultRecordAudio=='true');
+	try {
+		fs.writeFileSync(__dirname+'/settings.json', JSON.stringify(settings), 'utf8');
+		console.log('updated settings to '+JSON.stringify(settings));
+		out += '<p>Updated settings.</p><hr>';
+	} catch (err) {
+		console.log('Error: could not write settings.json: '+err.message);
+		out += '<p>Error: could not write settings.json: '+err.message+'</p><hr>';
+		status = 500;
+	}
+	send_settings(res, status, out);				
+});
+
 function roomJoin(room, id, masterFlag) {
 	var l = roomLogs[room];
 	if (l===undefined) {
@@ -298,8 +361,8 @@ function roomJoin(room, id, masterFlag) {
 			info.appCommit = appCommit;
 		if (installId!==null)
 			info.installId = installId;
-		if (machineNickname!==null)
-			info.machineNickname = machineNickname;
+		if (settings.machineNickname!==undefined)
+			info.machineNickname = settings.machineNickname;
 		log(room, 'server', 'log.start', info, LEVEL_INFO);
 	}
 	if (masterFlag && !l.masters.indexOf(id)>=0) {
@@ -417,6 +480,9 @@ function Client(socket) {
   socket.on('parameters', function(msg) {
     self.parameters(msg);
   });
+  socket.on('recordAudio', function(msg) {
+	  self.recordAudio();
+  });
   socket.on('audioHeader', function(msg) {
 	    self.header(msg);
 	  });
@@ -479,6 +545,26 @@ Client.prototype.disconnect = function() {
   } catch (err) {
     console.log('Error killing process: ', err);
   }
+  try {
+	  if (this.audioOut!==undefined && this.audioOut!==null)
+		  this.audioOut.end();
+	  this.audioOut = null;
+  } catch (err) {
+	  console.log('Error ending audio out: '+err);
+  }
+};
+Client.prototype.recordAudio = function() {
+	console.log('RecordAudio');
+	var now = new Date();
+	var filename = dateFormat(now, LOG_FILENAME_DATE_FORMAT)+'-'+this.room+'.wav';
+	var path = AUDIO_DIR+'/'+filename;
+	try {
+		console.log('create audio file '+path);
+		this.audioOut = fs.createWriteStream(path, {flags:'a+',defaultEncoding:'base64',autoClose:true,mode:0o644});
+		log(this.room, 'server', 'audio.record', {filename:filename});
+	} catch (err) {
+		console.log('Error creating audio file '+path+': '+err.message);
+	}
 };
 Client.prototype.header = function(msg) {
   console.log('Header: '+msg);
@@ -490,6 +576,13 @@ Client.prototype.header = function(msg) {
     } catch (err) {
       console.log('Error writing data to plugin', err);
     }
+  }
+  if (this.audioOut!==null && this.audioOut!==undefined) {
+	  try {
+		  this.audioOut.write(msg, 'base64');
+	  } catch (err) {
+		  console.log('Error writing data to audio file', err);
+	  }
   }
 };
 Client.prototype.data = function(msg) {
@@ -506,6 +599,13 @@ Client.prototype.data = function(msg) {
     } catch (err) {
       console.log('Error writing data to plugin', err);
     }
+  }
+  if (this.audioOut!==null && this.audioOut!==undefined) {
+	  try {
+		  this.audioOut.write(msg, 'base64');
+	  } catch (err) {
+		  console.log('Error writing data to audio file', err);
+	  }
   }
 };
 Client.prototype.processSilvetOnoffset = function(data) {
