@@ -99,6 +99,35 @@ app.put('/experiences/:experience', function(req,res) {
 });
 app.get('/*.(js|json|html)', returnPublicFile);
 
+// Test if URL can load in iframe, return 0=OK, -1=failed to get, -2=x-frame-origin prevents
+app.get('/testiframeurl', function(req,res) {
+	var url = req.query.u;
+	if (url===null || url===undefined || url=='') {
+		res.status(400).send('No query parameter u specified');
+		return;
+	}
+	console.log('test http get '+url);
+	var r = require('http');
+	if (url.indexOf('https:')==0)
+		r = require('https');
+	r.get(url, function(urlres) {
+		var options = urlres.headers['x-frame-options'];
+		console.log('URL '+url+' -> x-frame-options '+options);
+		if (options!==undefined) {
+			options = options.toLowerCase();
+			if (options.indexOf('deny')>=0 || options.indexOf('sameorigin')>=0) {
+				res.send('-2');
+				return;
+			}
+			res.send('0');
+		}
+	}).on('error', function(err) {
+		console.log('Error getting '+url+': '+err.message);
+		res.status(200).send('-1');
+	});
+});
+
+
 function escapeHTML(html) {
     return String(html)
     .replace(/&(?!\w+;)/g, '&amp;')

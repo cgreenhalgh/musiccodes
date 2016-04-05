@@ -805,7 +805,19 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
               // midi output
               midiSend( action.url.substring(MIDI_HEX_PREFIX.length) );
             } else {
-              $('#viewframe').attr('src',action.url);
+            	var url = action.url;
+            	$('#viewframe').attr('src','data:text/plain,Loading%20'+encodeURIComponent(url));
+            	$('#viewframe').attr('src',url);
+            	// test?!
+            	$.ajax({
+            		url:'/testiframeurl?u='+encodeURIComponent(url),
+            		success:function(data) {
+            			console.log('testiframeurl '+url+' -> '+data);
+            			if (data=='-2') {
+            				$('#viewframe').attr('src','data:text/plain,Cannot%20load%20URL%20due%20to%20x-iframe-options');            			  
+            			}
+            		}
+            	});
             }
           }
         }
@@ -826,7 +838,6 @@ MusicCodeClient.prototype.handleCode = function(code, time, codeformat) {
       .text(function(d) { return d.marker.title; });
   markers.exit().remove();
 };
-
 MusicCodeClient.prototype.setupPartcode = function(partcode) {
   // split into prefix codes, build regexes and state
   // has partcode.code, partcode.codeformat, partcode.marker
