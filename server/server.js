@@ -119,8 +119,8 @@ app.get('/testiframeurl', function(req,res) {
 				res.send('-2');
 				return;
 			}
-			res.send('0');
 		}
+		res.send('0');
 	}).on('error', function(err) {
 		console.log('Error getting '+url+': '+err.message);
 		res.status(200).send('-1');
