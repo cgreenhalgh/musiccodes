@@ -193,14 +193,25 @@ app.post('/update', function(req,res) {
 			} else {
 				out += '<p>git checkout '+tag+' ok</p>';
 			}
-			setTimeout(function() {
-				console.log('Restart...');
-				var child = require('child_process').spawn('sudo',['service','musiccodes','restart'],
-						{detached:true, stdio:['ignore','ignore','ignore']});
-				child.unref();
-			},2000);
-			out += '<p>Restarting in 2 seconds</p>';
-			send_status(res, status, out+'<hr>');				
+			// npm install --no-bin-links
+			run_process('npm',['install','--no-bin-links'],__dirname,DEFAULT_TIMEOUT,function(code,output) {
+				console.log('npm install --no-bin-links -> '+code+': '+output);
+				var status = 200;
+				if (code!==0) {
+					out += '<p>Warning: npm install failed:</p><pre>'+escapeHTML(output)+'</pre>';
+					status = 500;
+				} else {
+					out += '<p>npm install ok</p>';
+				}
+				setTimeout(function() {
+					console.log('Restart...');
+					var child = require('child_process').spawn('sudo',['service','musiccodes','restart'],
+							{detached:true, stdio:['ignore','ignore','ignore']});
+					child.unref();
+				},2000);
+				out += '<p>Restarting in 2 seconds</p>';
+				send_status(res, status, out+'<hr>');
+			});
 		});
 	});
 	
