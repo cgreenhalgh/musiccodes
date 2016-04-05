@@ -1,2 +1,2 @@
-(cd bootstrap; zip ../musiccodes-bootstrap.zip README.md Vagrantfile musiccodes.bat musiccodes.command install.md)
+(cd bootstrap; zip ../musiccodes-bootstrap.zip README.md Vagrantfile musiccodes.bat musiccodes.command install.md provision.bat provision.command)
 
