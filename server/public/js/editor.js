@@ -80,7 +80,34 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 			$scope.formChanged = true;
 		}
 	});
-	
+	$scope.instrumentOptions = [{value:0,name:'Unspecified'}];
+	// vamp parameters
+	$http.get('/vampPlugins').success(function(data) {
+		// TODO generalise
+		if (data['silvet:silvet']!==undefined) {
+			var silvet = data['silvet:silvet'];
+			if (silvet.parameters!==undefined) {
+				var found = false;
+				for (var pi in silvet.parameters) {
+					var parameter = silvet.parameters[pi];
+					if (parameter.name=='instrument') {
+						console.log('Read silvet instrument options: '+parameter.options);
+						$scope.instrumentOptions = parameter.options;
+						found = true;
+					}
+				}
+				if (!found) {
+					console.log('Got silvet info but no instrument parameter: '+JSON.stringify(silvet));					
+				}
+			}
+			else {
+				console.log('Got silvet info but no parameters: '+JSON.stringify(silvet));
+			}
+		}
+		else {
+			console.log('Got vampPlugins  but no silvet plugin: '+JSON.stringify(data));
+		}
+	});
 	// ip
 	$scope.serverProtocol = $location.protocol();
 	$scope.serverHost = $location.host();
@@ -124,22 +151,6 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  monophonicGap: 0.1,
 		  vampParameters: { instrument: 0 }
   };
-  $scope.instrumentOptions = [
-  	{name:"Multiple or unknown instruments",value:0},
-  	{name:"Piano",value:1},
-  	{name:"Guitar",value:2},
-  	{name:"Violin",value:3},
-  	{name:"Viola",value:4},
-  	{name:"Cello",value:5},
-  	{name:"Horn",value:6},
-  	{name:"Flute",value:7},
-  	{name:"Oboe",value:8},
-  	{name:"Clarinet",value:9},
-  	{name:"Tenor Sax",value:10},
-  	{name:"Bassoon",value:11},
-  	{name:"String quartet",value:12},
-  	{name:"Wind ensemble",value:13}
-  ];
   $scope.markers = [];
   $scope.channels = [''];
   $scope.variables = [];

@@ -162,6 +162,143 @@ function run_process(cmd, args, cwd, timeout, cont) {
 }
 var DEFAULT_TIMEOUT = 30000;
 
+var $rdf = require('rdflib');
+var VAMP_PLUGIN = $rdf.sym('http://purl.org/ontology/vamp/Plugin');
+var VAMP_PLUGIN_LIBRARY = $rdf.sym('http://purl.org/ontology/vamp/PluginLibrary');
+var VAMP_IDENTIFIER = $rdf.sym('http://purl.org/ontology/vamp/identifier');
+var VAMP_PARAMETER = $rdf.sym('http://purl.org/ontology/vamp/parameter');
+var VAMP_MIN_VALUE = $rdf.sym('http://purl.org/ontology/vamp/min_value');
+var VAMP_MAX_VALUE = $rdf.sym('http://purl.org/ontology/vamp/max_value');
+var VAMP_DEFAULT_VALUE = $rdf.sym('http://purl.org/ontology/vamp/default_value');
+var VAMP_QUANTIZE_STEP = $rdf.sym('http://purl.org/ontology/vamp/quantize_step');
+var VAMP_VALUE_NAMES = $rdf.sym('http://purl.org/ontology/vamp/value_names');
+var RDF_TYPE = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#type');
+var RDF_FIRST = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#first');
+var RDF_REST = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#rest');
+var RDF_NIL = $rdf.sym('http://www.w3.org/1999/02/22-rdf-syntax-ns#nil');
+var XSD_INTEGER = $rdf.sym('http://www.w3.org/2001/XMLSchema#integer');
+// VAMP plugin metadata
+var vampPlugins = {};
+// unwrap rdflib value
+function unwrapValue(val) {
+	if (val!==undefined && val!==null) {
+		if (val.value!==undefined && val.value!==null && val.datatype!==undefined) {
+			if (XSD_INTEGER.sameTerm(val.datatype))
+				return Number(val.value);
+			//else
+			//	console.log('value '+val.value+' datatype '+val.datatype);
+		}
+		return val.value;
+	}
+	return val;;
+}
+try {
+	// get search path
+	run_process('vamp-live-host',['-p'],__dirname,DEFAULT_TIMEOUT,function(code,output) {
+		if (code!=0) {
+			console.log('Error running vamp-live-host -p: '+code+': '+output);
+			return;
+		}
+		var directories = output.split('\n');
+		for (var di in directories) {
+			// for loop closure
+			(function() {
+				var dir = directories[di];
+				if (dir=='')
+					return;
+				fs.readdir(dir, function(err,fnames) {
+					if (err) {
+						console.log('Could not read vamp plugin directory '+dir+': '+err);
+						return;
+					}
+					for (var fi in fnames) {
+						// for loop closure
+						(function(){
+							var fname = fnames[fi];
+							var ix = fname.indexOf('.');
+							var ext = ix>=0 ? fname.substring(ix+1) : '';
+							if ('n3'==ext) {
+								fs.readFile(dir+'/'+fname, 'utf8', function(err,n3data) {
+									if (err) {
+										console.log('Error reading vamp metadata file '+dir+'/'+fname+': '+err.message);
+										return;
+									}
+									try {
+										var uri= 'file://'+dir+'/'+fname.substring(0,ix);
+										var store = $rdf.graph();
+										// read metadata
+										$rdf.parse(n3data, store, uri, 'text/turtle');
+										console.log('Read vamp metadata from '+fname);
+										// extract singleton PluginLibrary
+										var library = store.any(undefined, RDF_TYPE, VAMP_PLUGIN_LIBRARY);
+										var libraryName = store.any(library, VAMP_IDENTIFIER);
+										// each Plugin...
+										var plugins = store.each(undefined, RDF_TYPE, VAMP_PLUGIN);
+										for (var pi in plugins) {
+											var plugin = plugins[pi];
+											var pluginName = store.any(plugin, VAMP_IDENTIFIER);
+											console.log('Found plugin '+libraryName+':'+pluginName);
+											var pluginInfo = { library: 'libraryName', uri: plugin, pluginName: pluginName, parameters:[] };
+											// TODO cope with multiple plugins
+											if (libraryName=='silvet' && pluginName=='silvet') {
+												vampPlugins[libraryName+':'+pluginName] = pluginInfo;
+											}
+											// each Plugin parameter...
+											var parameters = store.each(plugin, VAMP_PARAMETER);
+											for (var ai in parameters) {
+												var parameter = parameters[ai];
+												var parameterName = unwrapValue(store.any(parameter, VAMP_IDENTIFIER))
+												var paramInfo = { 
+													name: parameterName,
+													min_value: unwrapValue(store.any(parameter, VAMP_MIN_VALUE)),
+													max_value: unwrapValue(store.any(parameter, VAMP_MAX_VALUE)),
+													default_value: unwrapValue(store.any(parameter, VAMP_DEFAULT_VALUE)),
+													quantize_step: unwrapValue(store.any(parameter, VAMP_QUANTIZE_STEP))
+												};
+												var value_names = store.any(parameter, VAMP_VALUE_NAMES);
+												// value_names should be a Collection...
+												if (value_names!==undefined && value_names!==null && value_names.elements!==undefined) {
+													paramInfo.options = [];
+													paramInfo.value_names = [];
+													try {
+														var value = Number(paramInfo.min_value);
+														var step = Number(paramInfo.quantize_step);
+														for (var ei in value_names.elements) {
+															paramInfo.options.push({value:value,name:unwrapValue(value_names.elements[ei])});
+															paramInfo.value_names.push(unwrapValue(value_names.elements[ei]));
+															value += step;
+														}
+													} catch (err) {
+														console.log('Error extracting options for parameter '+parameter+': '+err.message);
+													}
+												}
+												console.log('Found parameter '+parameter+': '+JSON.stringify(paramInfo));
+												// TODO more extensible configuration of parameters to expose
+												if (parameterName=='instrument') {
+													pluginInfo.parameters.push(paramInfo);
+												}
+											}
+										}
+									}
+									catch (err) {
+										console.log('Error reading vamp metadata from '+fname+': '+err.message);
+									}
+								});
+							}
+						})();
+					}
+				});
+			})();
+		}
+	});
+} catch (err) {
+	console.log('Error starting vamp-live-host: '+err.message);
+}
+// get known vamp parameters
+app.get('/vampPlugins',function(req,res) {
+	res.set('Content-Type', 'application/json').send(JSON.stringify(vampPlugins));
+});
+
 function send_status(res, status, out) {
 	// commit: git log --pretty=format:%H -1
 	run_process('git',['status'], __dirname+'/..',DEFAULT_TIMEOUT,function(code,output) {
