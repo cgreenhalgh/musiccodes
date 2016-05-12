@@ -1,4 +1,4 @@
-var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute']);
+var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute','muzicodes.audio']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -43,6 +43,7 @@ editorApp.factory('getIPAddress', ['$window', '$q', function($window, $q) {
 	return function() { return promise; }
 
 }]);
+
 editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scope,$http,$location) {
 	$http.get('/experiences/').success(function(data) {
 		var experiences = [];
@@ -66,7 +67,7 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 	};
 }]);
 
-editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', function ($scope,$http,$routeParams,getIPAddress,$location) {
+editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', function ($scope,$http,$routeParams,getIPAddress,$location,audionotes) {
 	$scope.defaults = {};
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
@@ -152,6 +153,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  vampParameters: { instrument: 0 }
   };
   $scope.markers = [];
+  $scope.examples = [];
   $scope.channels = [''];
   $scope.variables = [];
   $scope.showState = false;
@@ -180,6 +182,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     		  $scope.variables.push(v);
     }
     $scope.markers = data.markers;
+    if (data.examples!==undefined && data.examples!==null)
+    	$scope.examples = data.examples;
+    else
+    	$scope.examples = [];
+    // TODO update group/parameters?
     // vamp plugin instrument
     if (data.parameters.vampParameters===undefined)
       data.parameters.vampParameters = { instrument: 0 };
@@ -323,6 +330,41 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.setFormChanged = function() {
 		$scope.formChanged = true;
 	};
+	// examples...
+	$scope.addingExample = false;
+	$scope.recordingExample = false;
+	audionotes.onNote(function(note) {
+		// TODO
+		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
+	});
+	$scope.startAddExample = function() {
+		$scope.addingExample = true;
+		// TODO midi, etc. aswell
+		audionotes.start($scope.parameters.vampParameters);
+		$scope.recordingExample = true;
+	};
+	$scope.stopRecordingExample = function() {
+		audionotes.stop();
+		// TODO midi, etc. aswell
+		$scope.recordingExample = false;
+	};
+	$scope.doneAddExample = function() {
+		$scope.stopRecordingExample();
+		var example = { title: $scope.newExampleTitle };
+		$scope.examples.push( example );
+		// tidy up
+		$scope.cancelAddExample();
+		$scope.formChanged = true;	
+	};
+	$scope.cancelAddExample = function() {
+		$scope.stopRecordingExample();
+		$scope.addingExample = false;
+		$scope.newExampleTitle = '';		
+	};
+	$scope.deleteExample = function(index) {
+		$scope.examples.splice(index,1);  
+		$scope.formChanged = true;	
+	};
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
@@ -343,4 +385,8 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 		//$scope.experienceForm.$setDirty();
 		$scope.setFormChanged();
 	};
+}]);
+
+editorApp.controller('ExampleCtrl', ['$scope', function ($scope) {
+	$scope.isCollapsed = true;
 }]);

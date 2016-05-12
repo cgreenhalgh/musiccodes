@@ -30,6 +30,7 @@ Event names:
 - `audio.parameters`: audio parameters set, as map (`info`)
 - `log.end`: explicit end of log file
 - `audio.record`: started recording audio
+- `audio.stop`: stopped (recording) audio
 
 `log.start` event info fields:
 - `application`: from `package.json` `name`, `"musiccodes-server"`

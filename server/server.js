@@ -660,6 +660,9 @@ function Client(socket) {
   socket.on('recordAudio', function(msg) {
 	  self.recordAudio();
   });
+  socket.on('stopAudio', function(msg) {
+	  self.stopAudio();
+  });
   socket.on('audioHeader', function(msg) {
 	    self.header(msg);
 	  });
@@ -708,6 +711,7 @@ Client.prototype.parameters = function(parameters) {
 }
 Client.prototype.disconnect = function() {
   console.log('Client disconnected, master='+this.master+', room='+this.room);
+  this.stopAudio();
   if (this.room!==null && this.room!==undefined) {
 	  if (this.master)
 		  log(this.room, 'server', 'master.disconnect', {id:this.socket.id, room:this.room});
@@ -715,20 +719,23 @@ Client.prototype.disconnect = function() {
 		  log(this.room, 'server', 'slave.disconnect', {id:this.socket.id, room:this.room});
 	  roomLeave(this.room, this.socket.id);
   }
-  try {
-    if (this.process!==null) 
-      this.process.kill();
-    this.process = null;
-  } catch (err) {
-    console.log('Error killing process: ', err);
-  }
-  try {
-	  if (this.audioOut!==undefined && this.audioOut!==null)
-		  this.audioOut.end();
-	  this.audioOut = null;
-  } catch (err) {
-	  console.log('Error ending audio out: '+err);
-  }
+};
+Client.prototype.stopAudio = function() {
+	log(this.room, 'server', 'audio.stop', {});
+	try {
+		if (this.process!==null) 
+			this.process.kill();
+		this.process = null;
+	} catch (err) {
+		console.log('Error killing process: ', err);
+	}
+	try {
+		if (this.audioOut!==undefined && this.audioOut!==null)
+			this.audioOut.end();
+		this.audioOut = null;
+	} catch (err) {
+		console.log('Error ending audio out: '+err);
+	}	
 };
 Client.prototype.recordAudio = function() {
 	console.log('RecordAudio');

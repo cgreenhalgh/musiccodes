@@ -14,7 +14,7 @@
   <p><label>Show State:</label> <input type="checkbox" ng-model="showState"></p>
 <form name="experienceForm" ng-submit=""> 
   <!-- dirty isn't working for adding/removing form sections -->
-  <input type="submit" value="save" ng-disabled="!experienceForm.$dirty && !formChanged" ng-click="save()">
+  <input type="submit" value="save" ng-disabled="!experienceForm.$dirty && !formChanged" ng-click="save()" ng-class="{'disabled': !experienceForm.$dirty && !formChanged}">
  {{ experienceForm.$dirty || formChanged ? 'Has unsaved changes' : 'No changes' }}
 
   <h3>General</h3>
@@ -34,13 +34,13 @@
   </tbody></table>
   <h3>Parameters</h3>
   <table><tbody>
-  <tr><td><label>Stream gap (seconds)</label></td>
+  <tr><td><label>Maximum gap between note onsets (seconds)</label></td>
       <td><input type="number" step="0.01" ng-model="parameters.streamGap"></td></tr>
   <tr><td><label>Frequency ratio</label></td>
       <td><input type="number" step="0.01" ng-model="parameters.frequencyRatio"></td></tr>
   <tr><td><label>Monophonic</label></td>
       <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
-  <tr><td><label>Monophonic gap (seconds)</label></td>
+  <tr><td><label>If monophonic, minimum gap between note onsets (seconds)</label></td>
       <td><input type="number" step="0.01" ng-model="parameters.monophonicGap"></td></tr>
   <tr><td><label>Instrument (Silvet plugin)</label></td>
     <td>
@@ -58,6 +58,32 @@
       </div>
   </td></tr>
   </tbody></table>
+
+	<h3>Examples</h3>
+
+	<ul class="examples">
+		<li ng-repeat="example in examples" ng-controller="ExampleCtrl" class="example">
+			<span class="glyphicon" aria-hidden="true" 
+			ng-class="{'glyphicon-triangle-right': isCollapsed, 'glyphicon-triangle-bottom': !isCollapsed}"
+			ng-click="isCollapsed=(!isCollapsed)"></span> 
+			<label>Title:</label> <input type="text" ng-model="example.title">
+			<button ng-click="deleteExample($index)">-</button>
+			<div uib-collapse="isCollapsed">
+			</div>
+		</li>
+	</ul>
+	<li class="example" uib-collapse="addingExample">
+		<button ng-click="startAddExample()" >Record</button>
+		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
+	</li>
+	<li class="example" uib-collapse="!addingExample" >
+		<button ng-click="stopRecordingExample()" ng-disabled="!recordingExample" ng-class="{'disabled': !recordingExample}">Stop</button>
+		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
+		<button ng-click="doneAddExample()" >Done</button>
+		<button ng-click="cancelAddExample()">Cancel</button>
+		<br>
+		
+	</li>
 
   <h3>Codes</h3>
 
