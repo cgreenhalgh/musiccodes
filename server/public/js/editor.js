@@ -1,4 +1,5 @@
-var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute','muzicodes.audio','muzicodes.viz']);
+var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -68,7 +69,8 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 }]);
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
-                                        function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval) {
+                                        'noteGrouperFactory',
+                                        function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,noteGrouperFactory) {
 	$scope.defaults = {};
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
@@ -221,7 +223,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	  if (error.status==404) {
 		  $scope.status = 'File does not exist';
 		  // new file
-		  var data = { parameters: {}, markers: [] };
+		  var data = { parameters: {}, markers: [], examples: [] };
 		  if ($scope.defaults!==undefined) {
 			  data.author = $scope.defaults.author;
 			  data.recordAudio = $scope.defaults.recordAudio;
@@ -267,7 +269,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	  
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  author: $scope.author, recordAudio: $scope.recordAudio,
-			  markers: $scope.markers, parameters: $scope.parameters };
+			  markers: $scope.markers, parameters: $scope.parameters,
+			  examples: $scope.examples };
 	  // refresh channels
 	  $scope.channels = [''];
 	  for (var mi in $scope.markers) {
@@ -341,6 +344,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.addingActiveNotes = {};
 	$scope.addingTime = 0;
 	$scope.recordingTimer = null;
+	$scope.addingGrouper = null;
+	$scope.addingGroups = [];
 	audionotes.onNote(function(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 		if ($scope.addingReftime===null) {
@@ -348,16 +353,20 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 			$scope.addingReftimeLocal = new Date().getTime();
 		}
 		note.time = note.time-$scope.addingReftime;
-		if (!note.velocity) {
-			var n = $scope.addingActiveNotes[note.note];
-			if (n!==undefined) {
-				n.duration = note.time-n.time;
-				delete $scope.addingActiveNotes[note.note];
-			}
-		} else {
+		var n = $scope.addingActiveNotes[note.note];
+		if (n!==undefined) {
+			n.duration = note.time-n.time;
+			delete $scope.addingActiveNotes[note.note];
+		}
+		if (!!note.velocity){
 			if (note.time > $scope.addingTime)
 				$scope.addingTime = note.time;
 			note.id = $scope.nextNoteId++;
+			if ($scope.addingGrouper!==null && $scope.addingGrouper!==undefined) {
+				var gid = $scope.addingGrouper.addNote(note);
+				if (gid!==undefined && gid!==null)
+					$scope.addingGroups = $scope.addingGrouper.getGroups();
+			}
 			$scope.addingExampleNotes.push(note);
 			$scope.addingActiveNotes[note.note] = note;
 		}
@@ -366,6 +375,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.startAddExample = function() {
 		$scope.addingExample = true;
 		// TODO midi, etc. aswell
+		$scope.addingGroups = [];
+		$scope.addingGrouper = noteGrouperFactory.create($scope.parameters);
 		audionotes.start($scope.parameters.vampParameters);
 		$scope.recordingExample = true;
 		$scope.recordingTimer = $interval(function() {
@@ -388,7 +399,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	};
 	$scope.doneAddExample = function() {
 		$scope.stopRecordingExample();
-		var example = { title: $scope.newExampleTitle };
+		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes };
 		$scope.examples.push( example );
 		// tidy up
 		$scope.cancelAddExample();
@@ -402,12 +413,25 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		$scope.addingReftime = null;
 		$scope.addingActiveNotes = {};
 		$scope.addingTime = 0;
+		$scope.addingGrouper = null;
+		$scope.addingGroups = [];
 	};
 	$scope.deleteExample = function(index) {
 		$scope.examples.splice(index,1);  
 		$scope.formChanged = true;	
 	};
-
+	$scope.$watch('parameters', function(newVals, oldVals) {
+		console.log('updated parameters -> update groups');
+		if ($scope.addingExampleNotes.length>0) {
+			$scope.addingGroups = [];
+			$scope.addingGrouper = noteGrouperFactory.create($scope.parameters);
+			for (var i in $scope.addingExampleNotes) {
+				var note = $scope.addingExampleNotes[i];
+				$scope.addingGrouper.addNote(note);
+			}
+			$scope.addingGroups = $scope.addingGrouper.getGroups();
+		}
+	}, true);
 
 }]);
 

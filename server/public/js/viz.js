@@ -1,5 +1,5 @@
 //visualisation stuff
-var viz = angular.module('muzicodes.viz', [])
+var viz = angular.module('muzicodes.viz', ['muzicodes.stream'])
 
 //d3 injector - see http://www.ng-newsletter.com/posts/d3-on-angular.html
 viz.factory('d3Service', ['$document', '$q', '$rootScope',
@@ -31,14 +31,16 @@ viz.factory('d3Service', ['$document', '$q', '$rootScope',
 	}
 ]);
 
-viz.directive('noteRoll', ['d3Service', '$window', function(d3Service,$window) {
+viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', function(d3Service,$window,noteGrouperFactory) {
 	console.log('note-roll...');
 	return {
 		restrict: 'EA',
 		// directive code
 		scope: {
 	        notes: '=', // bi-directional data-binding
-	        time: '='
+	        time: '=',
+	        groups: '=',
+	        parameters: '='
 		},
 		link: function(scope, element, attrs) {
 			console.log('link note-roll...');
@@ -60,29 +62,60 @@ viz.directive('noteRoll', ['d3Service', '$window', function(d3Service,$window) {
 					//console.log('resize window');
 					return angular.element($window)[0].innerWidth;
 				}, function() {
-					scope.render(scope.notes,scope.time);
+					scope.render(scope.notes,scope.time, scope.groups);
 				});
 				scope.$watch(function() {
 					//console.log('resize element');
 					return d3.select(element[0]).node().offsetWidth;
 				}, function() {
-					scope.render(scope.notes,scope.time);
+					scope.render(scope.notes,scope.time, scope.groups);
 				});
 
 				// watch for data changes and re-render
+				// danger: gross change, i.e. new array only - causes re-grouping of notes
 				scope.$watch('notes', function(newVals, oldVals) {
-					return scope.render(newVals, scope.time);
+					return scope.regroup(newVals, scope.parameters);
+				});
+				// fine-grained change, e.g. allocation to new group causes re-render, not regroup!
+				scope.$watch('notes', function(newVals, oldVals) {
+					return scope.render(newVals, scope.time, scope.groups);
 				}, true);
 				scope.$watch('time', function(newVal, oldVal) {
-					return scope.render(scope.notes, newVal);
+					return scope.render(scope.notes, newVal, scope.groups);
+				}, true);
+				scope.$watch('groups', function(newVal, oldVal) {
+					return scope.render(scope.notes, scope.time, newVal);
+				}, true);
+				// parameters affect grouping, which changes notes, which trigger render
+				scope.$watch('parameters', function(newVals, oldVals) {
+					return scope.regroup(scope.notes, newVals);
 				}, true);
 
-				scope.render = function(notes, time) {
+				var localGroups = [];
+				scope.regroup = function(notes, parameters) {
+					if (!!parameters && !!notes) {
+						console.log('viz re-grouping notes');
+						var noteGrouper = noteGrouperFactory.create(parameters);
+						for (var i in notes) {
+							var n = notes[i];
+							noteGrouper.addNote(n);
+							localGroups = noteGrouper.getGroups();
+						}
+					}
+				}
+				
+				scope.render = function(notes, time, extgroups) {
 					// our custom d3 code
 					// remove all previous items before render
+					var groups = extgroups;
 					if (!notes)
 						notes = [];
-
+					if (!time)
+						time = 0;
+					if (!groups) {
+						// only use our own grouping if no explicit grouping provided
+						groups = localGroups;
+					}
 					var timeref = notes.length>0 ? notes[0].time : 0;
 					var DEFAULT_TIME = 10;
 					var ysize = 100;
@@ -118,11 +151,14 @@ viz.directive('noteRoll', ['d3Service', '$window', function(d3Service,$window) {
 					
 					var sel = svg.selectAll('rect.note').data(notes, function(d) { return d.id; });
 					sel.attr('width', function(d) { return d.duration!==undefined ? xscale(d.time+d.duration)-xscale(d.time) : (time>d.time ? xscale(time)-xscale(d.time) : DEFAULT_WIDTH); })
-					  	.attr('x', function(d) { return xscale(d.time); });
+					  	.attr('x', function(d) { return xscale(d.time); })
+					    .classed('note-included', function(d) { return d.group!==undefined; })
+					    .classed('note-discarded', function(d) { return d.group===undefined; });
+
 					sel.enter().append('rect')
 					    .classed('note', true)
-					    .classed('note-included', function(d) { return d.discarded===undefined || !d.discarded ; })
-					    .classed('note-discarded', function(d) { return d.discarded!==undefined ? d.discarded : false; })
+					    .classed('note-included', function(d) { return d.group!==undefined; })
+					    .classed('note-discarded', function(d) { return d.group===undefined; })
 					    .attr('height', function(d) { return 2*vscale(d.velocity); })
 					    .attr('width', function(d) { return d.duration!==undefined ? xscale(d.time+d.duration)-xscale(d.time) : DEFAULT_WIDTH; })
 					    .attr('x', function(d) { return xscale(d.time); })
@@ -137,6 +173,17 @@ viz.directive('noteRoll', ['d3Service', '$window', function(d3Service,$window) {
 					    .attr('x', function(d) { return xscale(d.time); })
 					    .attr('y', function(d) { return yscale(d.freq); });
 					notenames.exit().remove();
+
+					var groups = svg.selectAll('rect.group').data(groups, function(d) { return d.id; });
+					groups.attr('width', function(d) { return xscale(d.lastTime)-xscale(d.time)+2; })
+					    .attr('x', function(d) { return xscale(d.time)-1; });
+					groups.enter().append('rect')
+					    .classed('group', true)
+					    .attr('height', function(d) { return yscale(d.lowFreq)-yscale(d.highFreq); })
+					    .attr('width', function(d) { return xscale(d.lastTime)-xscale(d.time)+2; })
+					    .attr('x', function(d) { return xscale(d.time)-1; })
+					    .attr('y', function(d) { return yscale(d.highFreq); });
+					groups.exit().remove();
 
 				}			
 			});

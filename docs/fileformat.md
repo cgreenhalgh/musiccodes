@@ -16,6 +16,10 @@ Single top-level JSON object with properties:
 - `vampParameters` - map of VAMP plugin parameters, default (for silvet plugin) `mode` = `0` (live), `instrument` = `0` (various/unknown).
 - `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
 - `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
+- `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
+- `maxFrequency` (float, Hz, default 20000), maximum frequency of note to include in group(s)
+- `minVelocity` (int, 0-127, default 0), minimum midi note velocity of note to include in group(s)
+- `maxVelocity` (int, 0-127, default 127), maximum note velocity of note to include in group(s)
 - `initstate` (map of name to value), initial state, used in code `precondition`s.
 - `midiInput` (string, default undefined), name of midi input device, if any
 - `midiOutput` (string, default undefined), name of midi output device, if any
