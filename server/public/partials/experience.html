@@ -76,6 +76,8 @@
 			ng-click="isCollapsed=(!isCollapsed)"></span> 
 			<label>Title:</label> <input type="text" ng-model="example.title">
 			<button ng-click="deleteExample($index)">-</button>
+			<codeformat data="example.codeformat"></codeformat>
+			<muzicode notes="example.rawnotes" codeformat="example.codeformat"></muzicode>
 			<div uib-collapse="isCollapsed">
 				<div note-roll notes="example.rawnotes" parameters="parameters"></div>
 			</div>
@@ -84,10 +86,13 @@
 	<li class="example" uib-collapse="addingExample">
 		<button ng-click="startAddExample()" >Record</button>
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
+		<codeformat data="addingExampleCodeformat"></codeformat>
 	</li>
 	<li class="example" uib-collapse="!addingExample" >
 		<button ng-click="stopRecordingExample()" ng-disabled="!recordingExample" ng-class="{'disabled': !recordingExample}">Stop</button>
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
+		<codeformat data="addingExampleCodeformat"></codeformat>
+		<muzicode notes="addingExampleNotes" codeformat="addingExampleCodeformat"></muzicode>
 		<button ng-click="doneAddExample()" >Done</button>
 		<button ng-click="cancelAddExample()">Cancel</button>
 		<br>

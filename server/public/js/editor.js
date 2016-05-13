@@ -346,6 +346,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.recordingTimer = null;
 	$scope.addingGrouper = null;
 	$scope.addingGroups = [];
+	// default...
+	$scope.addingExampleCodeformat = 'no';
 	audionotes.onNote(function(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 		if ($scope.addingReftime===null) {
@@ -399,7 +401,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	};
 	$scope.doneAddExample = function() {
 		$scope.stopRecordingExample();
-		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes };
+		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes, codeformat: $scope.addingExampleCodeformat };
 		$scope.examples.push( example );
 		// tidy up
 		$scope.cancelAddExample();
@@ -457,4 +459,65 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 
 editorApp.controller('ExampleCtrl', ['$scope', function ($scope) {
 	$scope.isCollapsed = true;
+}]);
+
+editorApp.directive('codeformat', [function() {
+	return {
+		restrict: 'E',
+		scope: {
+			 data: '='
+		},
+		template: '<select ng-model="data">'+
+	        '<option value=""></option>'+
+			'<option value="n">n</option>'+
+			'<option value="no">no</option>'+
+			'<option value="no/crle4,">no/crle4,</option>'+
+			'<option value="no/crfe4,">no/crfe4,</option>'+
+			'<option value="mrle0/crle4,">mrle0/crle4,</option>'+
+	      '</select>'
+	};
+}]);
+
+editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
+	function link(scope, element, attrs) {
+		scope.code = '';
+		function update() {
+			var groups = [];
+			for (var i in scope.notes) {
+				var note = scope.notes[i];
+				if (note.group!==undefined)
+					if (groups.indexOf(note.group)<0)
+						groups.push(note.group);
+			}
+			var text = '';
+			for (var gi in groups) {
+				var gid = groups[gi];
+				if (text.length>0)
+					text = text+' ';
+				var notes = [];
+				if (!!scope.notes) {
+					for (var i in scope.notes) {
+						var note = scope.notes[i];
+						if (note.group==gid)
+							notes.push(note);
+						//text = text+note.note;
+					}
+				}
+				text = text + noteCoder.code(scope.codeformat, notes);
+			}
+			scope.code = text;
+		}
+		scope.$watch('notes', update, true);
+		scope.$watch('codeformat', update);
+		update();
+	}
+	return {
+		restrict: 'E',
+		scope: {
+			 notes: '=',
+			 codeformat: '='
+		},
+		template: '<input type="text" ng-model="code" readonly="readonly">',
+		link: link
+	};
 }]);
