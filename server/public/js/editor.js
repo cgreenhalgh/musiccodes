@@ -1,4 +1,4 @@
-var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute','muzicodes.audio']);
+var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute','muzicodes.audio','muzicodes.viz']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -67,7 +67,8 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 	};
 }]);
 
-editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', function ($scope,$http,$routeParams,getIPAddress,$location,audionotes) {
+editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
+                                        function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval) {
 	$scope.defaults = {};
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
@@ -332,18 +333,55 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	};
 	// examples...
 	$scope.addingExample = false;
+	$scope.addingExampleNotes = [];
 	$scope.recordingExample = false;
+	$scope.nextNoteId = 1;
+	$scope.addingReftime = null;
+	$scope.addingReftimeLocal = null;
+	$scope.addingActiveNotes = {};
+	$scope.addingTime = 0;
+	$scope.recordingTimer = null;
 	audionotes.onNote(function(note) {
-		// TODO
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
+		if ($scope.addingReftime===null) {
+			$scope.addingReftime = note.time;
+			$scope.addingReftimeLocal = new Date().getTime();
+		}
+		note.time = note.time-$scope.addingReftime;
+		if (!note.velocity) {
+			var n = $scope.addingActiveNotes[note.note];
+			if (n!==undefined) {
+				n.duration = note.time-n.time;
+				delete $scope.addingActiveNotes[note.note];
+			}
+		} else {
+			if (note.time > $scope.addingTime)
+				$scope.addingTime = note.time;
+			note.id = $scope.nextNoteId++;
+			$scope.addingExampleNotes.push(note);
+			$scope.addingActiveNotes[note.note] = note;
+		}
 	});
+	var RECORDING_TIMESTEP = 100;
 	$scope.startAddExample = function() {
 		$scope.addingExample = true;
 		// TODO midi, etc. aswell
 		audionotes.start($scope.parameters.vampParameters);
 		$scope.recordingExample = true;
+		$scope.recordingTimer = $interval(function() {
+			if ($scope.addingReftime!==null) {
+				var now = 0.001*((new Date().getTime())-$scope.addingReftimeLocal);
+				console.log('now '+now+' vs '+$scope.addingTime);
+				if (now > $scope.addingTime)
+					$scope.addingTime = now;
+			}
+		}, RECORDING_TIMESTEP);
 	};
 	$scope.stopRecordingExample = function() {
+		if ($scope.recordingTimer) {
+			$interval.cancel($scope.recordingTimer);
+			$scope.recordingTimer = null;
+		}
 		audionotes.stop();
 		// TODO midi, etc. aswell
 		$scope.recordingExample = false;
@@ -359,12 +397,18 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.cancelAddExample = function() {
 		$scope.stopRecordingExample();
 		$scope.addingExample = false;
-		$scope.newExampleTitle = '';		
+		$scope.newExampleTitle = '';
+		$scope.addingExampleNotes = [];
+		$scope.addingReftime = null;
+		$scope.addingActiveNotes = {};
+		$scope.addingTime = 0;
 	};
 	$scope.deleteExample = function(index) {
 		$scope.examples.splice(index,1);  
 		$scope.formChanged = true;	
 	};
+
+
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
