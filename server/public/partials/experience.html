@@ -88,7 +88,7 @@
 		</li>
 	</ul>
 	<li class="example" uib-collapse="addingExample">
-		<button ng-click="startAddExample()" >Record</button> {{ parameters.midiInput.length==0 ? 'Audio' : 'Midi ('+parameters.midiInput+')' }} 
+		<button ng-click="startAddExample()" >Record</button> {{ !!parameters.midiInput ? 'Midi ('+parameters.midiInput+')' : 'Audio' }} 
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
 		<codeformat data="addingExampleCodeformat"></codeformat>
 	</li>

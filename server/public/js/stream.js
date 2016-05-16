@@ -89,7 +89,7 @@ stream.factory('noteGrouperFactory', function() {
 		for (var id in this.groups) {
 			var group = this.groups[id];
 			// close
-			if (group.lastTime<time-this.parameters.streamGap) {
+			if (!group.closed && group.lastTime<time-this.parameters.streamGap) {
 				group.closed = true;
 				console.log("close group "+group.id);
 			} 
@@ -102,7 +102,7 @@ stream.factory('noteGrouperFactory', function() {
 
 // convert notes to code string
 stream.factory('noteCoder', [function() {
-	function code(codeformat, notes) {
+	function code(codeformat, notes, closed) {
 		var cf = /^(([mn])(o)?(r[lf](e([0-9A-Za-z]+))?)?)?([^A-Za-z0-9]*)(([tc])(r[lf](e([0-9]+(\.[0-9]+)?))?)?)?([^A-Za-z0-9]*)$/.exec(codeformat);
 		if (cf==null) {
 			return ('*ERROR* Invalid codeformat '+codeformat);
@@ -176,8 +176,8 @@ stream.factory('noteCoder', [function() {
 			if (timeseparator!==undefined && i+1<notes.length)
 				code = code+timeseparator;
 		}
-		//if (group.closed)
-		//	code = code+'$';
+		if (!!closed)
+			code = code+'$';
 
 		// TODO: generalise...
 		if (codeformat=='mrle0/crle4,') {
@@ -203,8 +203,8 @@ stream.factory('noteCoder', [function() {
 				length++;
 				prevnote = note;
 			}
-			//if (group.closed)
-			//	code = code+'$';
+			if (!!closed)
+				code = code+'$';
 			console.log('custom built '+codeformat+': '+code);
 			return code;
 		}

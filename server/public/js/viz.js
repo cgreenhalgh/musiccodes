@@ -43,9 +43,10 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        parameters: '='
 		},
 		link: function(scope, element, attrs) {
-			console.log('link note-roll...');
+			console.log('link note-roll, period='+scope.period+'...');
 			d3Service.d3().then(function(d3) {
 				var margin = parseInt(attrs.margin) || 10;
+				var period = parseInt(attrs.period) || 0;
 				// our d3 code will go here
 				var svg = d3.select(element[0])
 				    .append('svg')
@@ -117,7 +118,7 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						groups = localGroups;
 					}
 					var timeref = notes.length>0 ? notes[0].time : 0;
-					var DEFAULT_TIME = 10;
+					var DEFAULT_TIME = period || 10;
 					var ysize = 100;
 					// setup variables
 					var width = d3.select(element[0]).node().offsetWidth - margin,
@@ -125,13 +126,13 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						height = ysize+2*margin,
 						// our xScale
 						xscale = d3.scale.linear()
-						  .domain([timeref, Math.max(timeref+DEFAULT_TIME, time,
+						  .domain([period>0 ? Math.max(timeref, time-period) : timeref, Math.max(timeref+DEFAULT_TIME, time,
 								  d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }))])
 						  .range([margin, width]);
 					var yscale = d3.scale.log().domain([25,2500]).range([margin+ysize,margin]);
 					var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
 					
-					console.log('width='+width);
+					//console.log('width='+width);
 					if (width<=0)
 						return;
 					

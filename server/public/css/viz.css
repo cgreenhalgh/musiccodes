@@ -1,0 +1,27 @@
+/* note visualisation */
+svg.note-roll {
+	background: #f0f0f0;
+}
+.note-included {
+	fill: #0f0;
+}
+
+.note-discarded {
+	fill: #444;
+	opacity: 0.3;
+}
+
+.time-cursor {
+	stroke: #888;
+	stroke-width: 1;
+}
+
+.code {
+	fill: #000;
+}
+
+.group {
+	stroke: #f00;
+	stroke-width: 1;
+	fill-opacity: 0;
+}
