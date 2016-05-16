@@ -26,9 +26,10 @@
   <tr><td><label>Author</label></td>
       <td><input type="text" ng-model="author"></td></tr>
   <tr><td><label>Midi Input</label></td>
-      <td><input type="text" ng-model="parameters.midiInput" placeholder="(none)"></td></tr>
+      <td><!-- <input type="text" ng-model="parameters.midiInput" placeholder="(none)"> -->
+          <midi-input-selector ng-model="parameters.midiInput"></midi-input-selector></td></tr>
   <tr><td><label>Midi Output</label></td>
-      <td><input type="text" ng-model="parameters.midiOutput" placeholder="(none)"></td></tr>
+      <td><midi-output-selector ng-model="parameters.midiOutput"></midi-output-selector></td></tr>
   <tr><td><label>Record Audio</label></td>
       <td><input type="checkbox" ng-model="recordAudio"></td></tr>
   </tbody></table>
@@ -87,7 +88,7 @@
 		</li>
 	</ul>
 	<li class="example" uib-collapse="addingExample">
-		<button ng-click="startAddExample()" >Record</button>
+		<button ng-click="startAddExample()" >Record</button> {{ parameters.midiInput.length==0 ? 'Audio' : 'Midi ('+parameters.midiInput+')' }} 
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
 		<codeformat data="addingExampleCodeformat"></codeformat>
 	</li>
