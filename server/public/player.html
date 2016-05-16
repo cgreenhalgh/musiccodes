@@ -33,7 +33,10 @@
 	</div>
 	<div class="row">
 		<div class="col-md-4" id="partcodes"></div>
-		<div class="col-md-4"  id="state"></div>
+		<div class="col-md-4"  id="state">
+			<p>State (variables):</p>
+			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>
+		</div>
 		<url-view class="col-md-4 output" action-url="actionUrl"></url-view>
 	</div>
 </body>

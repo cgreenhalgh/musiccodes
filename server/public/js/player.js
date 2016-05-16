@@ -2,9 +2,9 @@ var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
-                                    'noteGrouperFactory', 'midinotes', 'noteCoder',
+                                    'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
-                                    		noteGrouperFactory, midinotes, noteCoder) {
+                                    		noteGrouperFactory, midinotes, noteCoder, safeEvaluate) {
 	console.log('url: '+$location.absUrl());
 	var params = $location.search();
 	console.log('params', params);
@@ -32,6 +32,22 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.nextNoteId = 1;
 	$scope.actionUrl = 'data:text/plain,Testing';
 	
+	$scope.experienceState = {};
+	function updateState(state) {
+		var output = {};
+		for (var name in state) {
+			var expression = state[name];
+			output[name] = safeEvaluate($scope.experienceState, expression);
+			console.log('State '+name+' = '+output[name]+' = '+expression);
+		}
+		for (var name in output) {
+			if ($scope.experienceState [name]!==output[name]) {
+				$scope.experienceState [name] = output[name];
+			}
+		}
+		socket.emit('log', {event:'state.update', info:$scope.experienceState });
+	};
+	
 	// midi message url prefix
 	var MIDI_HEX_PREFIX = 'data:text/x-midi-hex,';
 
@@ -45,7 +61,12 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		var codes = {};
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
-			// TODO check precondition
+			if (marker.precondition===undefined)
+				marker.preconditionok = true;
+			else
+				marker.preconditionok = true==safeEvaluate($scope.experienceState, marker.precondition);
+			if (!marker.preconditionok)
+				continue;
 			if (marker.codeformat!==undefined && marker.codeformat!==null && marker.codeformat.length>0 && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
 				var code = codes[marker.codeformat];
 				if (code===undefined) {
@@ -55,9 +76,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					if (marker.code == code) {
 						console.log('Matched marker '+marker.title+' code '+marker.codeformat+':'+code);
 						socket.emit('action',marker);
-						// TODO 
-						//if (marker.poststate!==undefined)
-						//  this.updateState(marker.poststate);
+						if (marker.poststate!==undefined)
+							updateState(marker.poststate);
 						for (var ai in marker.actions) {
 							var action = marker.actions[ai];
 							if ($scope.channel==action.channel && action.url) {
@@ -190,6 +210,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			audionotes.start(parameters.vampParameters);
 		}
 		$scope.noteGrouper = noteGrouperFactory.create(parameters);
+		
+		if (experience.parameters.initstate!==undefined)
+			updateState(experience.parameters.initstate);
+
 	};
 	
 	$http.get(experienceFile).then(function(res) {
@@ -224,3 +248,39 @@ playerApp.directive('urlView', ['$http', '$sce', function($http, $sce) {
 		}
 	};
 }]);
+
+// messy function!!
+playerApp.factory('safeEvaluate', function() {
+	return function(state, expression) {
+		window.scriptstate = {};
+		for (var si in state)
+			window.scriptstate[si] = state[si];
+		window.scriptstate['false'] = false;
+		window.scriptstate['true'] = true;
+		window.scriptstate['null'] = null;
+		var result = null;
+		// is expression safe? escape all names as window.scriptstate. ...
+		var vpat = /([A-Za-z_][A-Za-z_0-9]*)|([^A-Za-z_])/g;
+		var match = null;
+		var safeexpression = '';
+		while((match=vpat.exec(expression))!==null) {
+			if (match[1]!==undefined) 
+				safeexpression = safeexpression+'(window.scriptstate.'+match[1]+')';
+			else if (match[2]!==undefined)
+				safeexpression = safeexpression+match[2];
+		}
+		try {
+			result = eval(safeexpression);
+			if (result===undefined) {
+				var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': undefined';
+				console.log(msg);
+				alert(msg);
+			}
+		} catch (ex) {
+			var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': '+ex.message;
+			console.log(msg);
+			alert(msg);
+		}
+		return result;
+	};
+});
