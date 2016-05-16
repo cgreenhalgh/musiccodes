@@ -528,3 +528,53 @@ editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
 		link: link
 	};
 }]);
+
+editorApp.directive('urlchecker', ['$http', '$timeout', function($http, $timeout) {
+	return {
+		restrict: 'E',
+		scope: {
+			ngModel: '='
+		},
+		template: '<span>{{ status }}</span>',
+		link: function(scope, element, attrs) {
+			var timeout = null;
+			function reallyCheckurl(url) {
+				timeout = null;
+				//console.log('test url '+url);
+				if (url===undefined || url===null || (url.indexOf('http:')!=0 && url.indexOf('https:')!=0)) {
+					scope.status = '';
+					return;
+				}
+				scope.status = 'checking...';
+				$http.get('/testiframeurl/?u='+encodeURIComponent(url)).success(function(data) {
+					//console.log('test url (get) '+url);
+					if (url!=scope.ngModel)
+						return;
+					if (data=='0')
+						scope.status = 'OK';
+					else if (data=='-1')
+						scope.status = 'HTTP error';
+					else if (data=='-2')
+						scope.status = 'Cannot use in iframe';
+					else if (data=='-3')
+						scope.status = 'Badly formed URL';
+					else
+						scope.status = 'HTTP error ('+data+')';
+					//scope.status = scope.status+' ('+data+')';
+				}).error(function(data) {
+					console.log('test url error '+data);
+				});
+			};
+			function checkurl(url) {
+				if (timeout!=null)
+					$timeout.cancel(timeout);
+				scope.status = '';
+				timeout = $timeout(function() { reallyCheckurl(url); }, 1000);
+			}
+			scope.$watch('ngModel', function(newValue) {
+				checkurl(newValue);
+			});
+			checkurl(scope.ngModel);
+		}
+	};
+}]);

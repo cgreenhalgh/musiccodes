@@ -107,24 +107,38 @@ app.get('/testiframeurl', function(req,res) {
 		return;
 	}
 	console.log('test http get '+url);
-	var r = require('http');
-	if (url.indexOf('https:')==0)
-		r = require('https');
-	r.get(url, function(urlres) {
-		var options = urlres.headers['x-frame-options'];
-		console.log('URL '+url+' -> x-frame-options '+options);
-		if (options!==undefined) {
-			options = options.toLowerCase();
-			if (options.indexOf('deny')>=0 || options.indexOf('sameorigin')>=0) {
-				res.send('-2');
+	var request = require('request');
+	console.log('check URL '+url);
+	try {
+		request({uri: url, method: 'GET', followRedirect:true}).on('response', function(urlres) {
+
+			if (urlres.statusCode!=200) {
+				console.log('URL '+url+' -> status '+urlres.statusCode);
+				//if (urlres.statusCode==301 || urlres.statusCode==302 || urlres.statusCode)
+				res.send(''+urlres.statusCode);
 				return;
 			}
-		}
-		res.send('0');
-	}).on('error', function(err) {
+			var options = urlres.headers['x-frame-options'];
+			console.log('URL '+url+' -> x-frame-options '+options);
+			if (options!==undefined) {
+				options = options.toLowerCase();
+				if (options.indexOf('deny')>=0 || options.indexOf('sameorigin')>=0) {
+					res.send('-2');
+					return;
+				}
+			}
+			res.send('0');
+
+		}).on('error', function(err) {
+			console.log('Error getting '+url+': '+err.message);
+			res.send('-3');
+		});
+	}
+	catch (err) {
+		console.log('URL '+url+' -> error '+err.message);
 		console.log('Error getting '+url+': '+err.message);
-		res.status(200).send('-1');
-	});
+		res.send('-3');		
+	}
 });
 
 

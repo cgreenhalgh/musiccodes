@@ -136,7 +136,7 @@
           <label>Channel:</label>
           <input type="text" size="10" ng-model="action.channel">
           <label>URL:</label>
-          <input type="text" ng-model="action.url">
+          <input type="text" ng-model="action.url"> <urlchecker ng-model="action.url"></urlchecker>
           <button ng-click="deleteAction($index)">-</button>
         </li>
         <li >
@@ -144,7 +144,7 @@
           <label>Channel:</label>
           <input type="text" size="10" ng-model="marker.newActionChannel">
           <label>URL:</label>
-          <input type="text" ng-model="marker.newActionUrl">
+          <input type="text" ng-model="marker.newActionUrl"> <urlchecker ng-model="marker.newActionUrl"></urlchecker>
         </li>
       </ul>
       </div>
