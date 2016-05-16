@@ -1,5 +1,5 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
-                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream']);
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {

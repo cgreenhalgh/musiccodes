@@ -1,5 +1,5 @@
 //visualisation stuff
-var viz = angular.module('muzicodes.viz', ['muzicodes.stream'])
+var viz = angular.module('muzicodes.viz', ['muzicodes.stream']);
 
 //d3 injector - see http://www.ng-newsletter.com/posts/d3-on-angular.html
 viz.factory('d3Service', ['$document', '$q', '$rootScope',

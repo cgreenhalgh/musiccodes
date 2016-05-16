@@ -35,17 +35,20 @@
   <h3>Parameters</h3>
   <table><tbody>
   <tr><td><label>Minimum Frequency</label></td>
-      <td><input type="number" step="1" ng-model="parameters.minFrequency"></td></tr>
+      <td><input type="number" step="1" ng-model="parameters.minFrequency">
+          <span>{{ parameters.minFrequency | freq2note }}</span></td></tr>
   <tr><td><label>Maxmimum Frequency</label></td>
-      <td><input type="number" step="1" ng-model="parameters.maxFrequency"></td></tr>
+      <td><input type="number" step="1" ng-model="parameters.maxFrequency">
+          <span>{{ parameters.maxFrequency | freq2note }}</span></td></tr>
   <tr><td><label>Minimum Velocity (amplitude)</label></td>
-      <td><input type="number" step="1" ng-model="parameters.minVelocity">(0-127)</td></tr>
+      <td><input type="number" step="1" ng-model="parameters.minVelocity"> (0-127)</td></tr>
   <tr><td><label>Maxmimum Velocity (amplitude)</label></td>
-      <td><input type="number" step="1" ng-model="parameters.maxVelocity">(0-127)</td></tr>
+      <td><input type="number" step="1" ng-model="parameters.maxVelocity"> (0-127)</td></tr>
   <tr><td><label>Maximum gap between note onsets (seconds)</label></td>
       <td><input type="number" step="0.01" ng-model="parameters.streamGap"></td></tr>
   <tr><td><label>Frequency ratio</label></td>
-      <td><input type="number" step="0.01" ng-model="parameters.frequencyRatio"></td></tr>
+      <td><input type="number" step="0.01" ng-model="parameters.frequencyRatio">
+          <span>{{ parameters.frequencyRatio | ratio2interval }}</span></td></tr>
   <tr><td><label>Monophonic</label></td>
       <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
   <tr><td><label>If monophonic, minimum gap between note onsets (seconds)</label></td>
