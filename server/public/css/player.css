@@ -8,3 +8,38 @@
 	/*height:100%;*/
 	overflow: scroll;
 }
+
+ul.partcodes {
+	padding: 0;
+}
+
+.prefix {
+	
+}
+
+.prefix-label {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.prefix-matched {
+	color: red;
+	font-weight: bold;
+}
+
+.prefix-unmatched {
+	font-weight: bold;
+}
+
+.prefix-precondition-false {
+	color: grey;
+}
+
+.precondition-true {
+	color: red;
+}
+
+.precondition-false {
+	color: grey;
+}

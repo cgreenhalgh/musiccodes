@@ -1,0 +1,10 @@
+<p>Part-codes:</p>
+<ul class="partcodes">
+	<li ng-repeat="partcode in partcodes | orderBy: ['-preconditionok','-longestPrefix','code.length']  track by partcode.id" class="partcode">
+		<div class="prefix-label">({{ partcode.codeformat }}) {{ partcode.marker.title!==undefined ? '"'+partcode.marker.title+'" ' : '' }}-> {{ partcode.marker.actions | actionsToText }}</div>
+		<div class="prefixes">
+			<span class="precondition" ng-class="{'precondition-true':  partcode.preconditionok, 'precondition-false': !partcode.preconditionok }">{{ partcode.precondition }}</span>
+			<span ng-repeat="prefix in partcode.prefixes" class="prefix" ng-class="{'prefix-matched': prefix.matched, 'prefix-unmatched': !prefix.matched && prefix.preconditionok, 'prefix-precondition-false': !prefix.preconditionok }">{{ prefix.text }}</span>
+		</div>
+	</li>
+</ul>

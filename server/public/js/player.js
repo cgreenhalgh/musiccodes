@@ -10,7 +10,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	console.log('url: '+$location.absUrl());
 	var params = $location.search();
 	console.log('params', params);
-	var experienceFile = params['f'];
+	var experienceFile = $scope.experienceFile = params['f'];
 	$scope.room = params['r']===undefined ? 'default' : params['r'];
 	var pin = params['p']===undefined ? '' : params['p'];
 	$scope.channel = params['c']===undefined ? '' : params['c'];
@@ -33,6 +33,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.reftimeLocal = null;
 	$scope.nextNoteId = 1;
 	$scope.actionUrl = 'data:text/plain,Testing';
+	var codeMatchers = {};
 	
 	$scope.experienceState = {};
 	function updateState(state) {
@@ -50,6 +51,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		socket.emit('log', {event:'state.update', info:$scope.experienceState });
 	};
 	
+	$scope.lastGroup = null;
+	
 	function checkGroup(group) {
 		var notes = [];
 		for (var i in $scope.notes) {
@@ -57,7 +60,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (note.group==group.id)
 				notes.push(note);
 		}
+		// publish to partcodes view
+		console.log('update lastGroup');
+		$scope.lastGroup = { notes: notes, closed: group.closed };
 		var codes = {};
+		
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
 			if (marker.precondition===undefined)
@@ -71,8 +78,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				if (code===undefined) {
 					codes[marker.codeformat] = code = noteCoder.code(marker.codeformat, notes, group.closed);
 				}
-				if (code!==undefined) {
-					if (marker.code == code) {
+				if (code!==undefined && codeMatchers[marker.code]!==undefined) {
+					if ( codeMatchers[marker.code].regex.test( code ) ) {
 						console.log('Matched marker '+marker.title+' code '+marker.codeformat+':'+code);
 						socket.emit('action',marker);
 						if (marker.poststate!==undefined)
@@ -101,7 +108,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		// TODO GC old groups				
 		for (var id in $scope.activeGroups) {
 			var group = $scope.activeGroups[id];
-			if (!!group.closed) {
+			if (!group.closed && group.lastTime<time-$scope.parameters.streamGap) {
+				group.closed = true;
 				console.log('closed group '+group.id);
 				delete $scope.activeGroups[group.id];
 				checkGroup(group);
@@ -135,14 +143,15 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			$scope.reftimeLocal -= note.time - now;
 		}
 		note.time = note.time-$scope.reftime;
+		
 		var n = $scope.activeNotes[note.note];
-		if (n!==undefined) {
+		if (n!==undefined && !!n.velocity) {
 			n.duration = note.time-n.time;
 			delete $scope.activeNotes[note.note];
 		}
+		if (note.time > $scope.time)
+			$scope.time = note.time;
 		if (!!note.velocity){
-			if (note.time > $scope.time)
-				$scope.time = note.time;
 			note.id = $scope.nextNoteId++;
 			$scope.notes.push(note);
 			if ($scope.noteGrouper!==null && $scope.noteGrouper!==undefined) {
@@ -161,10 +170,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 							checkGroup(group);
 					}
 				}
-				checkClosedGroups(note.time);
 			}
 			$scope.activeNotes[note.note] = note;
 		}
+		checkClosedGroups(note.time);
 	};
 	audionotes.onNote(onNote);
 	midinotes.onNote(onNote);
@@ -192,9 +201,25 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				delete marker.action;
 			}
 		}
+		for (var mi in experience.markers) {
+			var marker = experience.markers[mi];
+			if (marker.code && marker.code.length>0) {
+				var code = marker.code;
+				if (code[code.length-1]=='$') 
+					// escape to match exact
+					code = code.substring(0, code.length-1)+'\\$$';
+				else
+					// to end
+					code = code+'$';
+				codeMatchers[marker.code] = { regex: new RegExp(code) };
+			}
+		}
 		$scope.markers = experience.markers;
 
 		var parameters = experience.parameters;
+		$scope.parameters = parameters;
+		if ($scope.parameters.streamGap===undefined)
+			$scope.parameters.streamGap = 2; // default 2s
 		if ($scope.midiInputName===undefined)
 			$scope.midiInputName = parameters.midiInput;
 		if ($scope.midiOutputName===undefined)
@@ -285,5 +310,162 @@ playerApp.factory('safeEvaluate', function() {
 			alert(msg);
 		}
 		return result;
+	};
+});
+
+playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteCoder, safeEvaluate) {
+	return {
+		restrict: 'E',
+		scope: {
+			markers: '=',
+			lastGroup: '=',
+			experienceState: '='
+		},
+		templateUrl: 'partials/mus-partcodes.html',
+		link: function(scope, element, attrs) {
+			// state
+			scope.partcodes = [];
+			
+			// methods
+			function setupPartcode(partcode) {
+				// split into prefix codes, build regexes and state
+				// has partcode.code, partcode.codeformat, partcode.marker
+				var prefixes = [];
+				var ppat = /((\\[0-7]{1,3})|(\\x[a-fA-F0-9]{2})|(\\u[a-fA-F0-9]{4})|(\\[^0-7xu])|(\[[^\]]*\]))|([+*?]|[{][0-9]+(,[0-9]*)?[}])|([()])|([^()[\\*+?{])/g
+				var match;
+				var patt = '';
+
+				console.log('find prefixes of '+partcode.code);
+				while( (match=ppat.exec(partcode.code)) != null ) {
+					var metachar = match[1];
+					var quantifier = match[7];
+					var bracket = match[9];
+					var string = match[10];
+					//console.log('  metachar='+metachar+', quant='+quantifier+', bracket='+bracket+', string='+string);
+					if (quantifier!==undefined) {
+						// no-op
+					} else if (patt.length>0 && patt!='^') {
+						console.log('Found prefix '+patt+' for '+partcode.code);
+						var text = patt;
+						if (prefixes.length>0)
+							text = text.substring(prefixes[prefixes.length-1].length);
+						var prefix = { patt: patt, text: text, matched: false, regex: new RegExp(patt+'$'), length: patt.length };
+						prefixes.push(prefix);
+						// bracket?
+						if (bracket=='(') {
+							var depth = 1;
+							patt = patt+match[0];
+							while( (match=ppat.exec(partcode.code)) != null) {
+								var bracket = match[9];
+								if (bracket=='(')
+									depth++;
+								else if (bracket==')') {
+									depth--;
+									if (depth==0)
+										break;
+								}
+								patt = patt+match[0];
+							}
+
+						}
+					}
+					patt = patt+match[0];
+				}
+				partcode.prefixes = prefixes;
+			};
+			function initMarkers(markers) {
+				console.log('partcodes init markers');
+				scope.partcodes = [];
+
+				for (var mi in markers) {
+					var marker = markers[mi];
+					if (marker.code && marker.code.length>0) {
+						var code = marker.code;
+						if (code[code.length-1]=='$') 
+							// escape to match exact
+							code = code.substring(0, code.length-1)+'\\$$';
+						else
+							// to end
+							code = code+'$';
+						if (marker.codeformat!==undefined) {
+							var partcode = { code: code, codeformat: marker.codeformat, marker: marker, precondition: marker.precondition, preconditionok: true };
+							partcode.id = scope.partcodes.length;
+							scope.partcodes.push(partcode);
+							setupPartcode(partcode);
+						}
+					}
+				}
+			};
+			
+			function update(lastGroup, experienceState) {
+				for (var pi in scope.partcodes) {
+					var partcode = scope.partcodes[pi];
+					if (partcode.precondition===undefined)
+						partcode.preconditionok = true;
+					else {
+						partcode.preconditionok = true==safeEvaluate(experienceState, partcode.precondition);
+						console.log('precondition '+partcode.precondition+'='+partcode.preconditionok+' in '+JSON.stringify(experienceState));
+					}
+				}
+				if (!lastGroup)
+					return;
+				console.log('update partcodes...');
+				var codes = {};
+				for (var pi in scope.partcodes) {
+					var partcode = scope.partcodes[pi];
+					if (partcode.codeformat!==undefined && partcode.codeformat!==null && partcode.codeformat.length>0) {
+						var code = codes[partcode.codeformat];
+						if (code===undefined) {
+							codes[partcode.codeformat] = code = noteCoder.code(partcode.codeformat, lastGroup.notes, lastGroup.closed);
+						}
+
+						var longest = 0;
+						for (var i=partcode.prefixes.length-1; partcode.preconditionok && i>=0; i--) {
+							var prefix = partcode.prefixes[i];
+							if (prefix.regex.test(code)) {
+								longest = prefix.length;
+								break;
+							}
+						}
+						partcode.longestPrefix = longest;
+						for (var i in partcode.prefixes) {
+							partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
+							partcode.prefixes[i].preconditionok = partcode.preconditionok;
+						}
+					}
+				};
+			};
+			// not fine-grained - just assign on load experience!
+			scope.$watch('markers', function(newValue) {
+				initMarkers(newValue);
+				update(scope.notes);
+			});
+			
+			scope.$watch('lastGroup', function(newValue) {
+				update(newValue, scope.experienceState);
+			});
+			scope.$watch('experienceState', function(newValue) {
+				update(scope.lastGroup, newValue);
+			}, true);
+
+			initMarkers(scope.markers);
+			update(scope.lastGroup, scope.experienceState);
+		}
+	};
+}]);
+
+//frequency ratio as a musical interval - for editor feedback
+playerApp.filter('actionsToText', function() {
+	return function(actions) {
+		var text = '';
+		for (var ai in actions) {
+			var action = actions[ai];
+			if (action.channel===undefined || action.channel=='')
+				text = text+'(default) ';
+			else
+				text = text+'('+action.channel+') ';
+			text = text+action.url+';';
+		}
+		return text;
 	};
 });

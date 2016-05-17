@@ -22,17 +22,18 @@
 <body ng-controller='PlayerCtrl'>
 
 	<div id='header' class="row">
-		<div class="col-xs-6 col-md-4">
-			<span>{{ state }}</span>
+		<div class="col-md-12">
+			<span>{{ state=='audioinput' ? 'Running with Audio' : ( state=='midiinput' ? 'Running with Midi' : ( state=='loading' ? 'Loading...' : (state=='loaded' ? 'Initialising...' : (state=='error' ? 'Sorry, something went wrong' : 'Unknown state ('+state+')' )))) }}</span>
+			<span>; Experience {{ experienceFile }}; Room "{{ room }}"; Channel "{{ channel }}"</span>
 		</div>
 	</div>
 	<div class="row">
 		<div class="col-md-12">
-			<note-roll id='note-roll' notes="notes" time="time" groups="groups" period="30"></note-roll>
+			<note-roll id='note-roll' notes="notes" time="time" groups="groups" period="30" height="200"></note-roll>
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-md-4" id="partcodes"></div>
+		<mus-partcodes class="col-md-4" markers="markers" last-group="lastGroup" experience-state="experienceState"></mus-partcodes>
 		<div class="col-md-4"  id="state">
 			<p>State (variables):</p>
 			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>

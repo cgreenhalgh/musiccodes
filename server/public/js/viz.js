@@ -40,13 +40,15 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        notes: '=', // bi-directional data-binding
 	        time: '=',
 	        groups: '=',
-	        parameters: '='
+	        parameters: '=',
+	        height: '@'
 		},
 		link: function(scope, element, attrs) {
 			console.log('link note-roll, period='+scope.period+'...');
 			d3Service.d3().then(function(d3) {
 				var margin = parseInt(attrs.margin) || 10;
 				var period = parseInt(attrs.period) || 0;
+				var height = parseInt(attrs.height) || 100+2*margin;
 				// our d3 code will go here
 				var svg = d3.select(element[0])
 				    .append('svg')
@@ -119,11 +121,10 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 					}
 					var timeref = notes.length>0 ? notes[0].time : 0;
 					var DEFAULT_TIME = period || 10;
-					var ysize = 100;
+					var ysize = height-2*margin;
 					// setup variables
 					var width = d3.select(element[0]).node().offsetWidth - margin,
-						// calculate the height
-						height = ysize+2*margin,
+						// specified height
 						// our xScale
 						xscale = d3.scale.linear()
 						  .domain([period>0 ? Math.max(timeref, time-period) : timeref, Math.max(timeref+DEFAULT_TIME, time,
