@@ -5,6 +5,7 @@ The initial standalone proof of concept loads the default experience file `serve
 Single top-level JSON object with properties:
 - `parameters` - map of parameter name/value
 - `markers` - list of `marker` objects
+- `examples` - list of `example` objects
 
 ## `parameters`:
 
@@ -15,6 +16,10 @@ Single top-level JSON object with properties:
 - `vampParameters` - map of VAMP plugin parameters, default (for silvet plugin) `mode` = `0` (live), `instrument` = `0` (various/unknown).
 - `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
 - `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
+- `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
+- `maxFrequency` (float, Hz, default 20000), maximum frequency of note to include in group(s)
+- `minVelocity` (int, 0-127, default 0), minimum midi note velocity of note to include in group(s)
+- `maxVelocity` (int, 0-127, default 127), maximum note velocity of note to include in group(s)
 - `initstate` (map of name to value), initial state, used in code `precondition`s.
 - `midiInput` (string, default undefined), name of midi input device, if any
 - `midiOutput` (string, default undefined), name of midi output device, if any
@@ -23,7 +28,7 @@ not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
 
 
-##Â `marker`
+## `marker`
 
 This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
@@ -176,3 +181,27 @@ E.g. format 1 = `no`; format 2 = `mrle0/crle4,`.
 Code variables, e.g. `x`. Constraints, e.g. `x<10`. Variable corresponds to `([A-G]#?[0-9]*)|([0-9]+(\.[0-9]+)?)`, i.e. note name with optional octave number or number (integer or float).
 
 Compound code, prefix `:` code (opt.) `:` constraint expression
+
+## `example`
+
+(added 2016-05-12; not yet implemented)
+
+An example of some playing, including its raw notes (and potentially audio), and its associated code-like representation. Encoded as a JSON objects with properties:
+- `title` - the name of the clip
+- `rawnotes` - an array of raw `note`s (see below)
+- `codeformat` - codeformat to use
+
+A `note` is a JSON object with properties:
+- `freq` - the frequency of the note in Hz
+- `time`: time, seconds, since 'start'
+- `velocity`: MIDI-style note velocity (volume), 0-127
+- `duration` - the duration of the notes, seconds
+- `group` - ID (number) of stream group note is assigned to with current parameters, or undefined.
+
+## Future Work
+
+Future work:
+- rework codeformat specification, perhaps as separate file-wide set of options
+- rework stream group parameters to include more options: minfreq, maxfreq, minvelocity, maxvelocity, mergepolicy (generalises monophonic)
+- support multiple stream group parameter sets per file
+ 

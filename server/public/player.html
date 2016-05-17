@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" ng-app="playerApp">
+<head>
+<meta charset="utf-8">
+<title>Editor</title>
+<link rel="stylesheet" href="/vendor/bootstrap/dist/css/bootstrap.css">
+<link rel="stylesheet" href="/css/player.css">
+<link rel="stylesheet" href="/css/viz.css">
+<script src="/vendor/angular/angular.js"></script>
+<script src="/vendor/angular-route/angular-route.js"></script>
+<script src="/vendor/angular-resource/angular-resource.js"></script>
+<script src="/vendor/angular-animate/angular-animate.js"></script>
+<script src="/vendor/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+<script src="/js/audio.js"></script>
+<script src="/js/player.js"></script>
+<script src="/js/viz.js"></script>
+<script src="/js/stream.js"></script>
+<!-- <script src="/js/filters.js"></script> -->
+<script src="/js/midi.js"></script>
+<script src="/vendor/socket.io-1.2.0.js"></script>
+</head>
+<body ng-controller='PlayerCtrl'>
+
+	<div id='header' class="row">
+		<div class="col-xs-6 col-md-4">
+			<span>{{ state }}</span>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<note-roll id='note-roll' notes="notes" time="time" groups="groups" period="30"></note-roll>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-4" id="partcodes"></div>
+		<div class="col-md-4"  id="state">
+			<p>State (variables):</p>
+			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>
+		</div>
+		<url-view class="col-md-4 output" action-url="actionUrl"></url-view>
+	</div>
+</body>
+</html>
