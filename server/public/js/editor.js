@@ -1,5 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
-                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket']);
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
+                                             'muzicodes.softkeyboard']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -353,6 +354,14 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.addingExampleCodeformat = 'no';
 	var onNote = function(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
+		if (!!note.localTime && !note.time) {
+			if ($scope.addingReftime===null) {
+				// fudge
+				$scope.addingReftime = 0;
+				$scope.addingReftimeLocal = note.localTime;
+			}
+			note.time = (note.localTime-$scope.addingReftimeLocal)*0.001+$scope.addingReftime;
+		}
 		if ($scope.addingReftime===null) {
 			$scope.addingReftime = note.time;
 			$scope.addingReftimeLocal = new Date().getTime();
@@ -376,6 +385,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 			$scope.addingActiveNotes[note.note] = note;
 		}
 	};
+	$scope.onNote = onNote;
+	
 	audionotes.onNote(onNote);
 	midinotes.onNote(onNote);
 	var RECORDING_TIMESTEP = 100;

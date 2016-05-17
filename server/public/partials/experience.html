@@ -96,6 +96,7 @@
 	</li>
 	<li class="example" uib-collapse="!addingExample" >
 		<button ng-click="stopRecordingExample()" ng-disabled="!recordingExample" ng-class="{'disabled': !recordingExample}">Stop</button>
+		<softkeyboard on-note="onNote(note)"></softkeyboard>
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
 		<codeformat data="addingExampleCodeformat"></codeformat>
 		<muzicode notes="addingExampleNotes" codeformat="addingExampleCodeformat"></muzicode>

@@ -1,5 +1,6 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
-                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging']);
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging',
+                                             'muzicodes.softkeyboard']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
@@ -164,6 +165,14 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	function onNote(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 
+		if (!!note.localTime && !note.time) {
+			if ($scope.reftime===null) {
+				// fudge
+				$scope.reftime = 0;
+				$scope.reftimeLocal = note.localTime;
+			}
+			note.time = (note.localTime-$scope.reftimeLocal)*0.001+$scope.reftime;
+		}
 		if ($scope.reftime===null) {
 			$scope.reftime = note.time;
 			$scope.reftimeLocal = new Date().getTime();
@@ -205,6 +214,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		checkClosedGroups(note.time);
 	};
+	$scope.onNote = onNote;
 	audionotes.onNote(onNote);
 	midinotes.onNote(onNote);
 	

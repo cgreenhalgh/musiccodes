@@ -1,0 +1,9 @@
+<button ng-focus="showKeys()" ng-blur="hideKeys()" ng-keydown="keydown($event)" ng-keyup="keyup($event)">Keys</button>
+<div class="softkey-holder">
+	<div class="softkey-frame" ng-style="{display: visible? 'block' : 'none'}" ng-keydown="keydown($event)" ng-keyup="keyup($event)">
+ <pre>Note:  C#4 D#4     F#4 G#4 A#4
+Key:    w   e       t   y   u
+Note: C4  D4  E4  F4  G4  A4  B4  C5
+Key:  a   s   d   f   g   h   j   k</pre>
+	</div>
+</div>

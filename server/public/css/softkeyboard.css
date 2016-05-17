@@ -1,0 +1,13 @@
+/* softkeyboard... */
+div.softkey-holder {
+	display: inline;
+}
+div.softkey-frame {
+	position: fixed;
+	left: 0px;
+	bottom: 0px;
+	width: 300px;
+	height: 100px;
+	z-index: 10000;
+	background-color:rgba(255,255,255,0.9);
+}
