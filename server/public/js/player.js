@@ -106,8 +106,16 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 
+	$scope.maxTimeWindow = 30;
+	
 	function checkClosedGroups(time) {
-		// TODO GC old groups				
+		// check max duration
+		for (var i in $scope.notes) {
+			var note = $scope.notes[i];
+			if (note.duration===undefined && !!$scope.parameters.maxDuration && time-note.time > $scope.parameters.maxDuration) {
+				note.duration = time-note.time;
+			}
+		}
 		for (var id in $scope.activeGroups) {
 			var group = $scope.activeGroups[id];
 			if (!group.closed && group.lastTime<time-$scope.parameters.streamGap) {
@@ -115,6 +123,25 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				console.log('closed group '+group.id);
 				delete $scope.activeGroups[group.id];
 				checkGroup(group);
+			}
+		}
+		// GC old notes
+		for (var i=0; i<$scope.notes.length; i++) {
+			var note = $scope.notes[i];
+			if (time-note.time > $scope.maxTimeWindow) {
+				$scope.notes.splice(i,1);
+				i--;				
+			}
+			// TODO suppress start of group matching if group shrunk?
+			if ($scope.activeGroups[note.group]!==undefined)
+				$scope.activeGroups[note.group].truncated = true;
+		}
+		// GC old groups
+		for (var i=0; i<$scope.groups.length; i++) {
+			var group = $scope.groups[i];
+			if (time-group.lastTime > $scope.maxTimeWindow) {
+				$scope.groups.splice(i,1);
+				i--;				
 			}
 		}
 	}
@@ -148,7 +175,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		
 		var n = $scope.activeNotes[note.note];
 		if (n!==undefined && !!n.velocity) {
-			n.duration = note.time-n.time;
+			if (n.duration===undefined) 
+				n.duration = note.time-n.time;
 			delete $scope.activeNotes[note.note];
 		}
 		if (note.time > $scope.time)

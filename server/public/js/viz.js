@@ -41,13 +41,14 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        time: '=',
 	        groups: '=',
 	        parameters: '=',
-	        height: '@'
+	        height: '@',
+	        period: '='
 		},
 		link: function(scope, element, attrs) {
 			console.log('link note-roll, period='+scope.period+'...');
 			d3Service.d3().then(function(d3) {
 				var margin = parseInt(attrs.margin) || 10;
-				var period = parseInt(attrs.period) || 0;
+				var period = parseInt(scope.period) || 0;
 				var height = parseInt(attrs.height) || 100+2*margin;
 				// our d3 code will go here
 				var svg = d3.select(element[0])
@@ -123,13 +124,17 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 					var DEFAULT_TIME = period || 10;
 					var ysize = height-2*margin;
 					// setup variables
-					var width = d3.select(element[0]).node().offsetWidth - margin,
-						// specified height
-						// our xScale
-						xscale = d3.scale.linear()
-						  .domain([period>0 ? Math.max(timeref, time-period) : timeref, Math.max(timeref+DEFAULT_TIME, time,
-								  d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }))])
+					var width = d3.select(element[0]).node().offsetWidth - margin;
+					var xscale;
+					// our xScale#
+					if (period>0) 
+						xscale = d3.scale.linear().domain([time-period, time])
 						  .range([margin, width]);
+					else
+						xscale = d3.scale.linear()
+							.domain([0, Math.max(DEFAULT_TIME, time,
+							  d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }))])
+					  .range([margin, width]);
 					var yscale = d3.scale.log().domain([25,2500]).range([margin+ysize,margin]);
 					var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
 					
