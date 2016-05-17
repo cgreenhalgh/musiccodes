@@ -1,5 +1,5 @@
 // midi stuff
-var midi = angular.module('muzicodes.midi', []);
+var midi = angular.module('muzicodes.midi', ['muzicodes.logging']);
 
 midi.factory('midiAccess', function() {
 	var midiAccess = navigator.requestMIDIAccess();
@@ -120,7 +120,7 @@ midi.directive('helloMidi', [function() {
 }]);
 
 // wrapper for midi note input. cf audio audionote
-audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$rootScope) {
+audio.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAccess,$rootScope, logger) {
 
 	// state
 	var onNote = null;
@@ -140,6 +140,7 @@ audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$root
 		var time = (Date.now()-time0)*0.001;
 		var event = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
+		logger.log('midi.note', note);
 		if (onNote!==null)
 			$rootScope.$apply(onNote(event));
 	}
@@ -168,6 +169,7 @@ audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$root
 				console.log('check input '+input.name+' ('+input+')');
 				if (input.name==inputName && midiInputPort==null) {
 					console.log('connecting to midi input '+inputName);
+					logger.log('midi.config.in',{id:id, name:midiInputPort.name});
 					midiInputPort = input;
 					// monitor input...
 					midiInputPort.onmidimessage = function(event) {
@@ -202,7 +204,7 @@ audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$root
 audio.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
 
 //wrapper for midi note input. cf audio audionote
-audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX',function(midiAccess,MIDI_HEX_PREFIX) {
+audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAccess,MIDI_HEX_PREFIX,logger) {
 	var midiOutputPort = null;
 	function setOutput(outputName) {
 		midiOutputPort = null;
@@ -211,6 +213,7 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX',function(midiAccess,MID
 				if (output.name==outputName) {
 					midiOutputPort = output;
 					console.log('found midi output '+outputName);
+					logger.log('midi.config.out',{id:id, name:midiOutputPort.name});
 				}
 			});
 			if (midiOutputPort==null) {

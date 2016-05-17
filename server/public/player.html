@@ -11,6 +11,8 @@
 <script src="/vendor/angular-resource/angular-resource.js"></script>
 <script src="/vendor/angular-animate/angular-animate.js"></script>
 <script src="/vendor/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/logging.js"></script>
 <script src="/js/audio.js"></script>
 <script src="/js/player.js"></script>
 <script src="/js/viz.js"></script>
@@ -22,7 +24,10 @@
 <body ng-controller='PlayerCtrl'>
 
 	<div id='header' class="row">
-		<div class="col-md-12">
+		<div class="col-md-4" uib-collapse="!recording && !listening">
+			<span id="recordingstatus" class="recordingstatus">{{recordingStatus}}</span><button id="stoprecording" class="recording" ng-click="stopRecording()" ng-disabled="recordingStopped" ng-class="{disabled: recordingStopped}">Stop</button><button class="recording" id="reload" ng-click="reload()">Reload</button>
+		</div>
+		<div class="col-md-8">
 			<span>{{ state=='audioinput' ? 'Running with Audio' : ( state=='midiinput' ? 'Running with Midi' : ( state=='loading' ? 'Loading...' : (state=='loaded' ? 'Initialising...' : (state=='error' ? 'Sorry, something went wrong' : 'Unknown state ('+state+')' )))) }}</span>
 			<span>; Experience {{ experienceFile }}; Room "{{ room }}"; Channel "{{ channel }}"</span>
 		</div>

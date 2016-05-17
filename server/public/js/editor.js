@@ -1,5 +1,5 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
-                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi']);
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -69,8 +69,9 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 }]);
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
-                                        'noteGrouperFactory', 'midinotes',
-                                        function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,noteGrouperFactory,midinotes) {
+                                        'noteGrouperFactory', 'midinotes', 'socket',
+                                        function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,
+                                        		noteGrouperFactory,midinotes,socket) {
 	$scope.defaults = {};
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
@@ -299,7 +300,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
   $scope.openMaster = function() {
 	// Note: remote access to microphone requires https if not localhost
 	// so no remote master for now
-	window.open('/master.html?f='+encodeURIComponent('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')),'musiccodes_master');  
+	window.open('/player.html#?f='+encodeURIComponent('/experiences/'+$scope.filename+($scope.version!==undefined ? '/'+$scope.version : '')),'musiccodes_master');  
   };
   $scope.openSlave = function(ci) {
 	window.open($scope.serverProtocol+'://'+$scope.serverHost+':'+$scope.serverPort+'/fullscreenslave.html?c='+
@@ -384,8 +385,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		$scope.addingGrouper = noteGrouperFactory.create($scope.parameters);
 		if (!!$scope.parameters.midiInput)
 			midinotes.start($scope.parameters.midiInput);
-		else
+		else {
+			console.log('start recording');
+			socket.emit('recordAudio', true);
 			audionotes.start($scope.parameters.vampParameters);
+		}
 		$scope.recordingExample = true;
 		$scope.recordingTimer = $interval(function() {
 			if ($scope.addingReftime!==null) {
@@ -445,7 +449,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
-	$scope.isCollapsed = true;
+	$scope.isCollapsed = false;
 	console.log('new MarkerCtrl');
 	// nested...
 	$scope.addAction = function() {
@@ -465,7 +469,7 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 }]);
 
 editorApp.controller('ExampleCtrl', ['$scope', function ($scope) {
-	$scope.isCollapsed = true;
+	$scope.isCollapsed = false;
 }]);
 
 editorApp.directive('codeformat', [function() {

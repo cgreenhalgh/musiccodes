@@ -43,3 +43,16 @@ ul.partcodes {
 .precondition-false {
 	color: grey;
 }
+
+.recordingstatus {
+	/*font-size: 120%;*/
+	color: red;
+}
+
+.recording {
+	/*font-size: 120%;*/
+}
+
+button.disabled, input.disabled{
+	opacity: 0.3;
+}

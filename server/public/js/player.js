@@ -1,12 +1,12 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
-                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi']);
+                                             'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
-                                    'MIDI_HEX_PREFIX', 'midiout',
+                                    'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
-                                    		MIDI_HEX_PREFIX, midiout) {
+                                    		MIDI_HEX_PREFIX, midiout, logger, $window) {
 	console.log('url: '+$location.absUrl());
 	var params = $location.search();
 	console.log('params', params);
@@ -26,6 +26,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.activeGroups = {};
 	
 	$scope.markers = [];
+	
+	$scope.recording = false;
 	
 	$scope.state = 'loading';
 	$scope.noteGrouper = null;
@@ -48,7 +50,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				$scope.experienceState [name] = output[name];
 			}
 		}
-		socket.emit('log', {event:'state.update', info:$scope.experienceState });
+		logger.log( 'state.update', $scope.experienceState );
 	};
 	
 	$scope.lastGroup = null;
@@ -231,6 +233,16 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		} else {
 			$scope.state = 'audioinput';
 			console.log('using Audio input');
+			if (!!experience.recordAudio) {
+				socket.emit('recordAudio', true);
+				$scope.recording = true;
+				$scope.recordingStatus = "Recording";
+				$scope.recordingStopped = false;
+			} else {
+				$scope.listening = true;
+				$scope.recordingStatus = "Listening";
+				$scope.recordingStopped = false;
+			}
 			audionotes.start(parameters.vampParameters);
 		}
 		if ($scope.midiOutputName!==undefined && $scope.midiOutputName!='') {
@@ -243,6 +255,21 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			updateState(experience.parameters.initstate);
 
 	};
+	
+	$scope.stopRecording = function() {
+		 console.log('stop recording');
+		 audionotes.stop();
+		 $scope.recordingStatus = "Stopped";
+		 $scope.recordingStopped = true;
+		 if ($scope.recordingTimer) {
+			 $interval.cancel($scope.recordingTimer )
+			 $scope.recordingTimer = null;
+		 }
+	}
+	$scope.reload = function() {
+		console.log('reload...');
+		$window.location.reload();
+	}
 	
 	$http.get(experienceFile).then(function(res) {
 		var data = res.data;

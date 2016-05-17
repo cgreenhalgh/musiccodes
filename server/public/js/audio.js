@@ -1,31 +1,6 @@
 // Audio stuff - get audio, send to server, get notes back
 
-var audio = angular.module('muzicodes.audio', []);
-
-// socket.io wrapper, exposes on() and emit()
-audio.factory('socket', function ($rootScope) {
-	var socket = io.connect();
-	return {
-		on: function (eventName, callback) {
-			socket.on(eventName, function () {  
-				var args = arguments;
-				$rootScope.$apply(function () {
-					callback.apply(socket, args);
-				});
-			});
-		},
-		emit: function (eventName, data, callback) {
-			socket.emit(eventName, data, function () {
-				var args = arguments;
-				$rootScope.$apply(function () {
-					if (callback) {
-						callback.apply(socket, args);
-					}
-				});
-			})
-		}
-	};
-});
+var audio = angular.module('muzicodes.audio', ['muzicodes.socket']);
 
 // wrapper for audio capture/stream to note extraction
 audio.factory('audionotes', ['socket', function(socket) {
@@ -243,6 +218,8 @@ audio.factory('audionotes', ['socket', function(socket) {
 	var sendStop = function() {
 		console.log('audio stop');
 		mute = true;
+		socket.emit('stopAudio', {});
+		state = STATE_SEND_PARAMETERS;
 	};
 	var setParameters = function (parameters) {
 		console.log('audio setParameters '+JSON.stringify(parameters));
