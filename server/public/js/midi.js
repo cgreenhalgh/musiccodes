@@ -120,7 +120,7 @@ midi.directive('helloMidi', [function() {
 }]);
 
 // wrapper for midi note input. cf audio audionote
-audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$scope) {
+audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$rootScope) {
 
 	// state
 	var onNote = null;
@@ -140,7 +140,7 @@ audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$scop
 		var time = (Date.now()-time0)*0.001;
 		var event = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
-		if (onNode!==null)
+		if (onNote!==null)
 			$rootScope.$apply(onNote(event));
 	}
 	function processMidiMessage( data ) {
@@ -196,5 +196,51 @@ audio.factory('midinotes', ['midiAccess','$rootScope', function(midiAccess,$scop
 			console.log('midi start');
 			setInput(inputName);
 		}
+	};
+}]);
+
+audio.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
+
+//wrapper for midi note input. cf audio audionote
+audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX',function(midiAccess,MIDI_HEX_PREFIX) {
+	var midiOutputPort = null;
+	function setOutput(outputName) {
+		midiOutputPort = null;
+		midiAccess.then(function(midiAccess) {
+			midiAccess.outputs.forEach( function( output ) {
+				if (output.name==outputName) {
+					midiOutputPort = output;
+					console.log('found midi output '+outputName);
+				}
+			});
+			if (midiOutputPort==null) {
+				console.log('Cannot find midi output '+outputName);
+				alert('Could not find Midi output '+outputName);				  
+			}
+		});
+	};
+	function send(url) {
+		var hex = url;
+		if (hex.indexOf(MIDI_HEX_PREFIX)==0)
+			hex = hex.substring(MIDI_HEX_PREFIX.length);
+		if (midiOutputPort===null) {
+			console.log('discard midi send '+hex+' (no output)');
+			return;
+		}
+		var message = [];
+		for (var i=0; i+1<hex.length; i+=2) {
+			var b = hex.substring(i,i+2);
+			message.push(parseInt(b, 16));
+		}
+		console.log('midiSend: '+hex);
+		midiOutputPort.send( message );
+	};
+	
+	return {
+		start: function(outputName) {
+			console.log('midiout start');
+			setOutput(outputName);
+		},
+		send: send
 	};
 }]);

@@ -3,8 +3,10 @@ var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
+                                    'MIDI_HEX_PREFIX', 'midiout',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
-                                    		noteGrouperFactory, midinotes, noteCoder, safeEvaluate) {
+                                    		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
+                                    		MIDI_HEX_PREFIX, midiout) {
 	console.log('url: '+$location.absUrl());
 	var params = $location.search();
 	console.log('params', params);
@@ -48,9 +50,6 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		socket.emit('log', {event:'state.update', info:$scope.experienceState });
 	};
 	
-	// midi message url prefix
-	var MIDI_HEX_PREFIX = 'data:text/x-midi-hex,';
-
 	function checkGroup(group) {
 		var notes = [];
 		for (var i in $scope.notes) {
@@ -84,7 +83,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 								console.log('open '+action.url);
 								if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
 									// midi output
-									//TODO midiSend( action.url.substring(MIDI_HEX_PREFIX.length) );
+									midiout.send( action.url );
 								} else {
 									$scope.actionUrl = action.url;
 								}
@@ -201,13 +200,17 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		if ($scope.midiOutputName===undefined)
 			$scope.midiOutputName = parameters.midiOutput;
 		if ($scope.midiInputName!==undefined && $scope.midiInputName!='') {
-			console.log('using Midi input '+midiInputName);
+			console.log('using Midi input '+$scope.midiInputName);
 			$scope.state = 'midiinput';
 			midinotes.start($scope.midiInputName);
 		} else {
 			$scope.state = 'audioinput';
 			console.log('using Audio input');
 			audionotes.start(parameters.vampParameters);
+		}
+		if ($scope.midiOutputName!==undefined && $scope.midiOutputName!='') {
+			console.log('Using midi output '+$scope.midiOutputName);
+			midiout.start($scope.midiOutputName);
 		}
 		$scope.noteGrouper = noteGrouperFactory.create(parameters);
 		
