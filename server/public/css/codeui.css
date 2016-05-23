@@ -1,1 +1,23 @@
 /* codeui CSS classes */
+muz-code {
+	display: block;
+	padding: 3px;
+	border: solid 1px;
+}
+.muz-node {
+	display: inline;
+}
+.muz-part {
+	display: inline;
+}
+.muz-part span {
+	font-family: monospace;
+}
+.muz-caret {
+	background-color: #aaa;
+	display: inline-block;
+	width: 1px;
+}
+muz-code:focus .muz-caret {
+	background-color: #444;
+}
