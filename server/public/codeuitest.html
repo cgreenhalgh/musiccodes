@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en" ng-app="codeuitestApp">
+<head>
+  <meta charset="utf-8">
+  <title>Editor</title>
+  <link rel="stylesheet" href="/vendor/bootstrap/dist/css/bootstrap.css">
+  <link rel="stylesheet" href="/css/codeui.css">
+  <script src="/vendor/angular/angular.js"></script>
+  <script src="/vendor/angular-route/angular-route.js"></script>
+  <script src="/vendor/angular-resource/angular-resource.js"></script>
+  <script src="/vendor/angular-animate/angular-animate.js"></script>
+  <script src="/vendor/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+  <script src="/js/codeui.js"></script>
+  <script src="/js/codeuitest.js"></script>
+</head>
+<body>
+
+  <div ng-controller='codeuitestCtrl'>
+  	<muz-code ng-model='testcode'></muz-code>
+  </div>
+
+</body>
+</html>
