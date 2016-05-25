@@ -3,6 +3,8 @@ Vagrant.configure(2) do |config|
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 1024
+    # for tests (chrome)
+    v.gui = true
   end
 
   # node server for vamp
@@ -48,6 +50,8 @@ Vagrant.configure(2) do |config|
 =end
 
   config.vm.provision "shell", privileged: false, path:"scripts/install.sh"
+  # x-windows based test stuff
+  config.vm.provision "shell", privileged: false, path:"scripts/pretest.sh"
 
   # lots of trouble trying to make musiccodes start on boot... (at least in Vagrant pre-1.8.1)
   config.vm.provision "shell", run:"always", privileged: false, path:"scripts/run.sh"
