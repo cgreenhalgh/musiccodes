@@ -243,4 +243,153 @@ describe('muzicodes.codeui module', function() {
 			});
 		});
 	});
+	describe('CodeMatcher class', function() {
+		it('should match 60 as C', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ midinote: 60 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+
+		it('should not match 61 as C', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ midinote: 61 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
+		it('should match /1 as /1', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("/1");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ beats: 1 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should not match /2 as /1', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("/1");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ beats: 2 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
+		it('should match 60,62 as C,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ midinote: 60 }, {midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 62 as C|D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C|D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 62 as C?,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C?,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 60,62 as C?,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C?,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60},{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should not match 60,60,62 as C?,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C?,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60},{midinote: 60},{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
+
+
+	});
 });

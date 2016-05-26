@@ -336,6 +336,182 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 	return CodeParser;
 }]);
 
+codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
+	var debug = true;
+	
+	function CodeMatcher(node) {
+		this.compile(node);
+	};
+	CodeMatcher.prototype.compile = function(node) {
+		this.node = node;
+		// TODO
+	};
+	// return true/false and decorate notes with match status for vis'n
+	// normalised input notes, i.e. note.freq or delay.beats
+	CodeMatcher.prototype.match = function(notes) {
+		// alternative part-match states, each with place in code hierarchy
+		this.states = [ { nodes: [this.node], counts: [0], matched: [] } ];
+		
+		var matched = true;
+		for (var ni in notes) {
+			var note = notes[ni];
+			matched = this.matchNext(note);
+		}
+		
+		if(debug)
+			console.log('end match '+matched+' with states '+JSON.stringify(this.states));
+		
+		return matched;
+	};
+	var SMALL_PITCH = 0.1;
+	var SMALL_DELAY = 0.1;
+	CodeMatcher.prototype.matchNext = function(note) {
+		// each state possibility...
+		var newStates = [];
+		// expand possible states
+		while(this.states.length>0) {
+			var state = this.states.splice(0,1)[0];
+			var depth = state.nodes.length-1;
+
+			var node = state.nodes[depth];
+			if (node.type==CodeNode.SEQUENCE) {
+				state.nodes.splice(depth+1, 0, node.children[state.counts[depth]]);
+				state.counts.splice(depth+1, 0, 0);
+				if (debug)
+					console.log('down into sequence child '+state.counts[depth]);
+				this.states.push(state);
+			} else if (node.type==CodeNode.DELAY || node.type==CodeNode.NOTE ||
+						node.type==CodeNode.DELAY_RANGE || node.type==CodeNode.NOTE_RANGE) {
+				// OK
+				newStates.push(state);
+			} else if (node.type==CodeNode.CHOICE) {
+				// each choice is an option...
+				for (var ci in node.children) {
+					var child = node.children[ci];
+					var newState = { nodes: state.nodes.concat(child), counts: state.counts.concat(0), matched: state.matched.slice(0) };
+					// go down in each choice...
+					this.states.push(newState);
+					console.log('down into choice child '+ci);
+				}
+			} else {
+				console.log('unhandled state node '+JSON.stringify(node));
+			}
+		}
+		this.states = newStates;
+		newStates = [];
+		for (var si in this.states) {
+			var state = this.states[si];
+			// check leaf state
+			var node = state.nodes[state.nodes.length-1];
+			if (note.midinote!==undefined && note.midinote!==null) {
+				if (node.type==CodeNode.NOTE) {
+					if (Math.abs(node.midinote-note.midinote)<SMALL_PITCH) {
+						state.matched.push(node);
+						state.counts[state.nodes.length-1]++;
+						newStates.push(state);
+					}
+					else {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE '+note.midinote+' expected '+node.midinote);
+					}
+				} else if (node.type==CodeNode.NOTE_RANGE) {
+					if (node.minMidinote!==undefined && node.minMidinote!==null && node.minMidinote-SMALL_PITCH>note.midinote) {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE min '+note.midinote+' expected '+node.minMidinote);
+					} else if (node.maxMidinote!==undefined && node.maxMidinote!==null && node.maxMidinote+SMALL_PITCH<note.midinote) {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE max '+note.midinote+' expected '+node.maxMidinote);
+					} else {
+						// OK
+						state.matched.push(node);
+						state.counts[state.nodes.length-1]++;
+						newStates.push(state);
+					}
+				} else {
+					// failed - can't match against...
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE '+note.midinote);
+				}
+			} else if (note.beats!==undefined && note.beats!==null) {
+				if (node.type==CodeNode.DELAY) {
+					if (Math.abs(node.beats-note.beats)<SMALL_DELAY) {
+						state.matched.push(node);
+						state.counts[state.nodes.length-1]++;
+						newStates.push(state);
+					}
+					else {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY '+note.beats+' expected '+node.beats);
+					}
+				} else if (node.type==CodeNode.DELAY_RANGE) {
+					if (node.minBeats!==undefined && node.minBeats!==null && node.minBeats-SMALL_DELAY>note.beats) {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY min '+note.beats+' expected '+node.minBeats);
+					} else if (node.maxBeats!==undefined && node.maxBeats!==null && node.maxBeats+SMALL_DELAY<note.beats) {
+						// failed
+						if (debug) 
+							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY max '+note.beats+' expected '+node.maxBeats);
+					} else {
+						// OK
+						state.matched.push(node);
+						state.counts[state.nodes.length-1]++;
+						newStates.push(state);
+					}
+				} else {
+					// failed - can't match against...
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY '+note.beats);
+				}
+			}
+		}
+		this.states = newStates;
+
+		newStates = [];
+		// close finished states 
+		var matched = false;
+		while(this.states.length>0) {
+			var state = this.states.splice(0,1)[0];
+			var depth = state.nodes.length-1;
+			// close finished states
+			while (depth>=0 && state.counts[depth]>0) {
+				// atom
+				if ((state.nodes[depth].type==CodeNode.DELAY || state.nodes[depth].type==CodeNode.NOTE ||
+						state.nodes[depth].type==CodeNode.DELAY_RANGE || state.nodes[depth].type==CodeNode.NOTE_RANGE ||
+						state.nodes[depth].type==CodeNode.CHOICE) ||
+						// sequence
+						(state.nodes[depth].type==CodeNode.SEQUENCE && state.counts[depth]>=state.nodes[depth].children.length)) {
+					// done 
+					console.log('done match at depth '+depth+' on '+JSON.stringify(state.nodes[depth]));
+					if (state.matched.length==0 || state.matched[state.matched.length-1]!==state.nodes[depth]) {
+						state.matched.push(state.nodes[depth]);
+					}
+					state.nodes.splice(depth,1);
+					state.counts.splice(depth,1);
+					depth--;
+					if (depth>=0)
+						state.counts[depth]++;
+				}
+				else 
+					break;
+			}
+			if (depth<0) {
+				// finished
+				matched = true;
+			} else {
+				newStates.push(state);
+			}
+		}
+		this.states = newStates;
+		return matched;
+	}
+	return CodeMatcher;
+}]);
+
 codeui.directive('muzCode', [function() {
 	return {
 		restrict: 'E',
