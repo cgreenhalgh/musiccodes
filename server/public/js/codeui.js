@@ -316,6 +316,19 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 					return null;
 				}
 			}
+			if (node.type==CodeNode.REPEAT_0_OR_MORE) {
+				node.minRepeat = 0;
+				delete node.maxRepeat;
+				node.type = CodeNode.REPEAT;
+			} else if (node.type==CodeNode.REPEAT_1_OR_MORE) {
+				node.minRepeat = 1;
+				delete node.maxRepeat;
+				node.type = CodeNode.REPEAT;
+			} else if (node.type==CodeNode.REPEAT_0_OR_1) {
+				node.minRepeat = 0;
+				node.maxRepeat = 1;
+				node.type = CodeNode.REPEAT;
+			} 
 			break;
 		case CodeNode.NOTE_RANGE:
 			if (node.minNote!==undefined && node.minNote!==null) {
@@ -393,6 +406,14 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					this.states.push(newState);
 					console.log('down into choice child '+ci);
 				}
+			} else if (node.type==CodeNode.REPEAT) {
+				// maybe can be skipped?
+				// TODO
+				// maybe it can be matched again?
+				// TODO
+				// Note: to avoid state explosion perhaps need to suppress skip state if match state succeeds?!
+				// Or perhaps we only insert the skip state if the match state fails?
+				console.log('unhandled REPEAT '+node.minRepeat+'-'+node.maxRepeat);
 			} else {
 				console.log('unhandled state node '+JSON.stringify(node));
 			}
