@@ -203,5 +203,44 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		it('should parse and normalise C#,C#,C# as a sequence of three notes', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(parser.normalise(parser.parse('C#,C#,C#').node)).toEqual({
+					// Left or right associative?!
+					type: CodeNode.SEQUENCE,
+					children: 
+						[
+						 { type: CodeNode.NOTE, midinote: 61 },
+						 { type: CodeNode.NOTE, midinote: 61 },
+						 { type: CodeNode.NOTE, midinote: 61 }
+						 ]
+				});
+			});
+		});
+		it('should parse and normalise [C-D] as a note range', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(parser.normalise(parser.parse('[C-D]').node)).toEqual({
+					// Left or right associative?!
+					type: CodeNode.NOTE_RANGE,
+					minMidinote: 60,
+					maxMidinote: 62
+				});
+			});
+		});
+		it('should parse and normalise /1,/1 as a /2', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(parser.normalise(parser.parse('/1,/1').node)).toEqual({
+					// Left or right associative?!
+					type: CodeNode.DELAY,
+					beats: 2
+				});
+			});
+		});
 	});
 });

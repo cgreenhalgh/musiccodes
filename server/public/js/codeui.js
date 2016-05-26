@@ -190,8 +190,147 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 			};
 		}
 	};
+	var NOTE_NAMES = {
+		'C': 60,
+		'D': 62,
+		'E': 64,
+		'F': 65,
+		'G': 67,
+		'A': 69,
+		'B': 71,
+		'c': 72,
+		'd': 74,
+		'e': 76,
+		'f': 77,
+		'g': 79,
+		'a': 81,
+		'b': 83
+	};
+	var ACCIDENTALS = {
+		'#': 1,
+		'b': -1
+		// TODO double, etc.
+	};
 	CodeParser.prototype.normalise = function(node) {
-		// TODO
+		switch(node.type) {
+		case CodeNode.NOTE:
+			// middle C = 60 = C4; 'C' = C4, 'c' = C5 (ABC - Helmholz is two octaves lower)
+			if (node.name!==undefined && node.name!==null) {
+				var n = NOTE_NAMES[node.name];
+				if (n!==undefined) {
+					node.midinote = n;
+					delete node.name;
+				} else {
+					console.log('Unknown note name '+node.name);
+					node.midinote = 60;
+					delete node.name;
+				}
+			}
+			// octave before accidental!
+			if (node.octave!==undefined && node.octave!==null) {
+				if (node.midinote!==undefined) {
+					var oct = Math.floor((node.midinote-60+4*12+0.5)/12);
+					var p = node.midinote-60+(4-oct)*12;
+					node.midinote = 60+12*(oct-4)+p;
+				}
+				else {
+					node.midinote = 60+12*(oct-4);
+				}
+				delete node.octave;
+			}
+			if (node.accidental!==undefined && node.accidental!==null) {
+				var a = ACCIDENTALS[node.accidental];
+				if (a!==undefined) {
+					node.midinote += a;
+					delete node.accidental;
+				}
+				else {
+					console.log('Unknown accidental '+node.accidental);
+					delete node.accidental;
+				}
+			}
+			break;
+		case CodeNode.DELAY:
+			if (node.beats===null || node.beats===undefined || node.beats===0 || node.beats<0) {
+				// ignore
+				return null;
+			}
+			break;
+		case CodeNode.GROUP:
+			// not needed at abstract syntax level
+			if (node.children!==null && node.children!==undefined && node.children.length>0)
+				return this.normalise(node.children[0]);
+			return null;
+		case CodeNode.SEQUENCE:
+		case CodeNode.CHOICE:
+			// merge child nodes of same type
+			var children = node.children;
+			node.children = [];
+			while (children.length>0) {
+				var child = children.splice(0,1)[0];
+				if (child===null) {
+					// ignore
+					
+				} else if (child.type==node.type) {
+					// replace with children in place/order
+					if (child.children!==undefined && child.children!==null) {
+						var j = 0;
+						for (var ci in child.children) {
+							if (child.children[ci]!==null)
+								children.splice(j++, 0, child.children[ci]);
+						}
+					}
+				} else {
+					// OK to include anything else
+					child = this.normalise(child);
+					if (child!==null) {
+						// except we want to merge consecutive delays in a sequence...
+						if (node.type==CodeNode.SEQUENCE && child.type==CodeNode.DELAY && node.children.length>0 && node.children[node.children.length-1].type==CodeNode.DELAY) {
+							var prev = node.children[node.children.length-1];
+							prev.beats += child.beats;
+						} else {
+							node.children.push(child);
+						}
+					}
+				}
+			}
+			if (node.children===null || node.children===undefined || node.children.length==0)
+				// ignore
+				return null;
+			if (node.children.length==1) {
+				// only one!
+				return node.children[0];
+			}
+			break;
+		case CodeNode.REPEAT:
+		case CodeNode.REPEAT_0_OR_MORE:
+		case CodeNode.REPEAT_1_OR_MORE:
+		case CodeNode.REPEAT_0_OR_1:
+			// not needed at abstract syntax level
+			if (node.children!==null && node.children!==undefined && node.children.length>0) {
+				var child = this.normalise(node.children[0]);
+				if (child!==null)
+					node.children = [child];
+				else {
+					// meaningless
+					return null;
+				}
+			}
+			break;
+		case CodeNode.NOTE_RANGE:
+			if (node.minNote!==undefined && node.minNote!==null) {
+				node.minMidinote = this.normalise(node.minNote).midinote;
+				delete node.minNote;
+			}
+			if (node.maxNote!==undefined && node.maxNote!==null) {
+				node.maxMidinote = this.normalise(node.maxNote).midinote;
+				delete node.maxNote;
+			}
+			break;
+		case CodeNode.DELAY_RANGE:
+			break;
+		}
+		return node;
 	};
 	
 	return CodeParser;
