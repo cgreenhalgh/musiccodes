@@ -136,17 +136,12 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
-		it('should parse , as a sequence of two null notes', function() {
+		it('should refuse ,', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				// jasmine.objectContaining()
 				expect(parser.parse(',')).toEqual({
-					state: CodeParser.OK,
-					node: {
-						type: CodeNode.SEQUENCE,
-						children: 
-							[ null, null ]
-					}
+					state: CodeParser.ERROR
 				});
 			});
 		});

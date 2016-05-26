@@ -18,11 +18,13 @@
     "karma-chrome-launcher": "^1.0.1",
     "karma-firefox-launcher": "^1.0.0",
     "karma-jasmine": "^1.0.2",
-    "karma-junit-reporter": "^1.0.0"
+    "karma-junit-reporter": "^1.0.0",
+    "pegjs": "^0.9.0"
   },
   "scripts": {
     "pretest": "npm install --no-bin-links",
     "test": "karma start karma.conf.js",
-    "test-single-run": "karma start karma.conf.js --single-run"
+    "test-single-run": "karma start karma.conf.js --single-run",
+    "prepublish": "./node_modules/pegjs/bin/pegjs -e codeuiparser public/js/codeuiparser.pegjs"
   }
 }
