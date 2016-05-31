@@ -24,6 +24,7 @@ unit
   / it:group { return it; }
   / it:noterange { return it; }
   / it:delayrange { return it; }
+  / "." { return { type: 12 }; }
   
 group
   = "(" choice ")" { return { type: 3, children: [ choice ] }; }

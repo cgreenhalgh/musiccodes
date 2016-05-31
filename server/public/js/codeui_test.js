@@ -2,6 +2,7 @@ describe('muzicodes.codeui module', function() {
 	beforeEach(module('muzicodes.codeui'));
 
 	describe('CodeNode class', function() {
+		// 1
 		it('should be defined', function() {
 			inject(function(CodeNode) {
 				expect(CodeNode).toBeDefined();
@@ -9,11 +10,13 @@ describe('muzicodes.codeui module', function() {
 		});
 	});
 	describe('Jasmine object matcher', function() {
+		// 2
 		it('should match objects', function() {
 			expect({a:1,b:'2'}).toEqual({a:1,b:'2'});
 		});
 	});
 	describe('CodeParser class', function() {
+		// 3
 		it('should parse C as a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -27,6 +30,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 4
 		it('should parse C# as a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -41,6 +45,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 5
 		it('should parse Cb as a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -55,6 +60,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 6
 		it('should parse C#5 as a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -70,6 +76,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 7
 		it('should refuse C5# as a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -79,6 +86,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 8
 		it('should parse C? as a repeat of a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -98,6 +106,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 9
 		it('should parse C* as a repeat of a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -117,6 +126,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 10
 		it('should parse C+ as a repeat of a note', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -136,6 +146,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 11
 		it('should refuse ,', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -145,6 +156,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 12
 		it('should parse C,C as a sequence of two notes', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -162,6 +174,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 13
 		it('should parse C#,C# as a sequence of two notes', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -179,6 +192,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 14
 		it('should parse C#,C#,C# as a sequence of three notes', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -203,6 +217,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 15
 		it('should parse and normalise C#,C#,C# as a sequence of three notes', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -219,6 +234,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 16
 		it('should parse and normalise [C-D] as a note range', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -231,6 +247,7 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		// 17
 		it('should parse and normalise /1,/1 as a /2', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -244,6 +261,7 @@ describe('muzicodes.codeui module', function() {
 		});
 	});
 	describe('CodeMatcher class', function() {
+		// 18
 		it('should match 60 as C', function() {
 			inject(function(CodeMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -341,6 +359,38 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(true);
 			});
 		});
+		it('should match 62 as .', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match /1 as .', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{beats: 1}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
 		it('should match 62 as C?,D', function() {
 			inject(function(CodeMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -389,7 +439,69 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(false);
 			});
 		});
-
-
+		it('should match 60 as .*', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".*");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 60,60,62 as .*', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".*");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60},{midinote: 60},{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 60,62 as C,.*,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,.*,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60},{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match 60,60,62,62 as C,.*,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,.*,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60},{midinote: 60},{midinote: 62},{midinote: 62}];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
 	});
 });

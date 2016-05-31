@@ -86,6 +86,7 @@ codeui.factory('CodeNode', function() {
 	CodeNode.REPEAT_0_OR_1 = 9;
 	CodeNode.NOTE_RANGE = 10;
 	CodeNode.DELAY_RANGE = 11;
+	CodeNode.WILDCARD = 12;
 	CodeNode.prototype.initParts = function() {
 		switch(this.type) {
 		case CodeNode.NOTE:
@@ -119,6 +120,9 @@ codeui.factory('CodeNode', function() {
 		case CodeNode.DELAY_RANGE:
 			this.parts = [CodeToken.newFixedText('['), CodeToken.newFixedText('-'), CodeToken.newFixedText(']')];
 			// TODO min/max?
+			break;
+		case CodeNode.WILDCARD:
+			this.parts = [CodeToken.newFixedText('.')];
 			break;
 		default:
 			this.parts = [];
@@ -306,6 +310,7 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 		case CodeNode.REPEAT_0_OR_MORE:
 		case CodeNode.REPEAT_1_OR_MORE:
 		case CodeNode.REPEAT_0_OR_1:
+			// TODO extend to REPEAT as child of REPEAT
 			// not needed at abstract syntax level
 			if (node.children!==null && node.children!==undefined && node.children.length>0) {
 				var child = this.normalise(node.children[0]);
@@ -341,6 +346,9 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 			}
 			break;
 		case CodeNode.DELAY_RANGE:
+			break;
+		case CodeNode.WILDCARD:
+			// OK
 			break;
 		}
 		return node;
@@ -384,6 +392,7 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		// expand possible states
 		while(this.states.length>0) {
 			var state = this.states.splice(0,1)[0];
+			console.log('expand next state '+JSON.stringify(state));
 			var depth = state.nodes.length-1;
 
 			var node = state.nodes[depth];
@@ -394,7 +403,8 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					console.log('down into sequence child '+state.counts[depth]);
 				this.states.push(state);
 			} else if (node.type==CodeNode.DELAY || node.type==CodeNode.NOTE ||
-						node.type==CodeNode.DELAY_RANGE || node.type==CodeNode.NOTE_RANGE) {
+						node.type==CodeNode.DELAY_RANGE || node.type==CodeNode.NOTE_RANGE ||
+						node.type==CodeNode.WILDCARD) {
 				// OK
 				newStates.push(state);
 			} else if (node.type==CodeNode.CHOICE) {
@@ -407,13 +417,32 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					console.log('down into choice child '+ci);
 				}
 			} else if (node.type==CodeNode.REPEAT) {
-				// maybe can be skipped?
-				// TODO
+				// maybe can be skipped? but still need to eat a token
+				if (depth>0 && state.counts[depth]==0 && (node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=0)) {
+					// special case here on pre-check is to match with 0 occurrences; otherwise it would have appeared
+					// as a candidate match on the way out!
+					console.log('done match 0-repeat at depth '+depth+' on '+JSON.stringify(node));
+					// clone/alt!
+					var newState = { nodes: state.nodes.slice(0,depth), counts: state.counts.slice(0,depth), matched: state.matched.slice(0) };
+					if (newState.matched.length==0 || newState.matched[newState.matched.length-1]!==node) {
+						newState.matched.push(node);
+					}
+					// match at parent
+					newState.counts[depth-1]++;
+					// what else if matched ?! any new repeat is in states for drill-down 
+					this.checkCloseState(newState, this.states);
+					if (newState.nodes.length>0)
+						this.states.push(newState);
+				}
 				// maybe it can be matched again?
-				// TODO
+				if ((node.maxRepeat===undefined || node.maxRepeat===null || node.maxRepeat>state.counts[depth]) && node.children!==undefined && node.children.length>0) {
+					var newState = { nodes: state.nodes.concat(node.children[0]), counts: state.counts.concat(0), matched: state.matched.slice(0) };
+					// go down in each choice...
+					this.states.push(newState);
+					console.log('down into repeat child '+JSON.stringify(node.children[0]));
+				}
 				// Note: to avoid state explosion perhaps need to suppress skip state if match state succeeds?!
 				// Or perhaps we only insert the skip state if the match state fails?
-				console.log('unhandled REPEAT '+node.minRepeat+'-'+node.maxRepeat);
 			} else {
 				console.log('unhandled state node '+JSON.stringify(node));
 			}
@@ -451,6 +480,11 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 						state.counts[state.nodes.length-1]++;
 						newStates.push(state);
 					}
+				} else if (node.type==CodeNode.WILDCARD) {
+					// OK
+					state.matched.push(node);
+					state.counts[state.nodes.length-1]++;
+					newStates.push(state);					
 				} else {
 					// failed - can't match against...
 					if (debug) 
@@ -483,6 +517,11 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 						state.counts[state.nodes.length-1]++;
 						newStates.push(state);
 					}
+				} else if (node.type==CodeNode.WILDCARD) {
+					// OK
+					state.matched.push(node);
+					state.counts[state.nodes.length-1]++;
+					newStates.push(state);					
 				} else {
 					// failed - can't match against...
 					if (debug) 
@@ -497,30 +536,8 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		var matched = false;
 		while(this.states.length>0) {
 			var state = this.states.splice(0,1)[0];
-			var depth = state.nodes.length-1;
-			// close finished states
-			while (depth>=0 && state.counts[depth]>0) {
-				// atom
-				if ((state.nodes[depth].type==CodeNode.DELAY || state.nodes[depth].type==CodeNode.NOTE ||
-						state.nodes[depth].type==CodeNode.DELAY_RANGE || state.nodes[depth].type==CodeNode.NOTE_RANGE ||
-						state.nodes[depth].type==CodeNode.CHOICE) ||
-						// sequence
-						(state.nodes[depth].type==CodeNode.SEQUENCE && state.counts[depth]>=state.nodes[depth].children.length)) {
-					// done 
-					console.log('done match at depth '+depth+' on '+JSON.stringify(state.nodes[depth]));
-					if (state.matched.length==0 || state.matched[state.matched.length-1]!==state.nodes[depth]) {
-						state.matched.push(state.nodes[depth]);
-					}
-					state.nodes.splice(depth,1);
-					state.counts.splice(depth,1);
-					depth--;
-					if (depth>=0)
-						state.counts[depth]++;
-				}
-				else 
-					break;
-			}
-			if (depth<0) {
+			this.checkCloseState(state, newStates);
+			if (state.nodes.length==0) {
 				// finished
 				matched = true;
 			} else {
@@ -530,6 +547,45 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		this.states = newStates;
 		return matched;
 	}
+	CodeMatcher.prototype.checkCloseState = function(state, newStates) {
+		var depth = state.nodes.length-1;
+		// close finished states
+		while (depth>=0 && state.counts[depth]>0) {
+			var node = state.nodes[depth];
+			// a successfully matched repeat which could match again has to fork here
+			if (node.type==CodeNode.REPEAT && 
+					(node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=state.counts[depth]) &&
+					(node.maxRepeat===undefined || node.maxRepeat===null || node.maxRepeat>state.counts[depth])) {
+				// clone!
+				console.log('clone matched repeat '+JSON.stringify(node));
+				var newState = { nodes: state.nodes.slice(0), counts: state.counts.slice(0), matched: state.matched.slice(0) };
+				newStates.push(newState);
+			}
+			// atom
+			if ((node.type==CodeNode.DELAY || node.type==CodeNode.NOTE ||
+					node.type==CodeNode.DELAY_RANGE ||node.type==CodeNode.NOTE_RANGE ||
+					node.type==CodeNode.CHOICE || node.type==CodeNode.WILDCARD) ||
+					// sequence
+					(node.type==CodeNode.SEQUENCE && state.counts[depth]>=node.children.length) ||
+					// repeat
+					(node.type==CodeNode.REPEAT && 
+					 (node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=state.counts[depth]))) {
+				// done 
+				console.log('done match at depth '+depth+' on '+JSON.stringify(node));
+				if (state.matched.length==0 || state.matched[state.matched.length-1]!==node) {
+					state.matched.push(node);
+				}
+				state.nodes.splice(depth,1);
+				state.counts.splice(depth,1);
+				depth--;
+				if (depth>=0)
+					state.counts[depth]++;
+			}
+			else 
+				break;
+		}
+
+	};
 	return CodeMatcher;
 }]);
 
