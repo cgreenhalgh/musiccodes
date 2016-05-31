@@ -152,6 +152,134 @@ codeui.factory('CodeNode', function() {
 	CodeNode.newChoice = function() {
 		return new CodeNode(CodeNode.CHOICE);
 	}
+	var NOTES = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
+	var midinoteToString = function(midinote) {
+		// C4 = 60
+		var pitch = Math.floor(midinote+0.5 - 60);
+		var octave = Math.floor( pitch / 12);
+		pitch = pitch - 12*octave;
+		octave = octave+4;
+		console.log('midinote '+midinote+' -> pitch '+pitch+', octave '+octave);
+		// TODO: alt print forms?
+		var res = NOTES[pitch] + String(octave);
+		return res;
+	};
+	var beatsToString = function(beats) {
+		// centibeats?!
+		var res = String(Number(beats).toFixed(2));
+		if (res.substring(res.length-3)=='.00') {
+			res = res.substring(0, res.length-3);
+		} else if (res.substring(res.length-1)=='0') {
+			res = res.substring(0, res.length-1);
+		}
+		return res;
+	}
+	var PRECEDENCE_CHOICE = 1;
+	var PRECEDENCE_SEQUENCE = 2;
+	var PRECEDENCE_REPEAT = 3;
+	CodeNode.toString = function(node, precedence) {
+		console.log('Codeode.toString('+JSON.stringify(node)+')');
+		var res = '';
+		switch(node.type) {
+		case CodeNode.NOTE:
+			res += midinoteToString(node.midinote);
+			break;
+		case CodeNode.DELAY:
+			res += '/'+beatsToString(node.beats);
+			break;
+		case CodeNode.SEQUENCE:
+			if (precedence!==undefined && precedence>PRECEDENCE_SEQUENCE) {
+				res += '(';
+			}
+			for (var ci = 0; ci<node.children.length; ci++) {
+				var child = node.children[ci];
+				if (ci>0)
+					res += ',';
+				res += CodeNode.toString(child, PRECEDENCE_SEQUENCE);
+			}
+			if (precedence!==undefined && precedence>PRECEDENCE_SEQUENCE) {
+				res += ')';
+			}
+			break;
+		case CodeNode.CHOICE:
+			if (precedence!==undefined && precedence>PRECEDENCE_CHOICE) {
+				res += '(';
+			}
+			for (var ci = 0; ci<node.children.length; ci++) {
+				var child = node.children[ci];
+				if (ci>0)
+					res += '|';
+				res += CodeNode.toString(child, PRECEDENCE_CHOICE);
+			}
+			if (precedence!==undefined && precedence>PRECEDENCE_CHOICE) {
+				res += ')';
+			}
+			break;
+		case CodeNode.REPEAT:
+		case CodeNode.REPEAT_0_OR_1:
+		case CodeNode.REPEAT_0_OR_MORE:
+		case CodeNode.REPEAT_1_OR_MORE:
+			var child = node.children[0];
+			if (child.type!=CodeNode.NOTE && child.type!=CodeNode.DELAY &&
+					child.type!=CodeNode.NOTE_RANGE && child.type!=CodeNode.DELAY_RANGE &&
+					child.type!=CodeNode.WILDCARD && child.type!=CodeNode.GROUP) {
+				res += '(';
+			}
+			res += CodeNode.toString(child);
+			if (child.type!=CodeNode.NOTE && child.type!=CodeNode.DELAY &&
+					child.type!=CodeNode.NOTE_RANGE && child.type!=CodeNode.DELAY_RANGE &&
+					child.type!=CodeNode.WILDCARD && child.type!=CodeNode.GROUP) {
+				res += ')';
+			}
+			if (node.type==CodeNode.REPEAT_0_OR_1) {
+				res += '?';
+			} else if (node.type==CodeNode.REPEAT_1_OR_MORE) {
+				res += '+';
+			} else if (node.type==CodeNode.REPEAT_0_OR_MORE) {
+				res += '*';
+			} else {
+				res += '{';
+				if (node.minRepeat!==undefined && node.minRepeat!==null)
+					res += node.minRepeat;
+				res += '-';
+				if (node.maxRepeat!==undefined && node.maxRepeat!==null)
+					res += node.maxRepeat;
+				res += '}';
+			}
+			break;
+		case CodeNode.NOTE_RANGE:
+			res += '[';
+			if (node.minMidinote!==undefined && node.minMidinote!==null) 
+				res += midinoteToString(node.minMidinote);
+			res += '-';
+			if (node.maxMidinote!==undefined && node.maxMidinote!==null) 
+				res += midinoteToString(node.maxMidinote);
+			res += ']';
+			break;
+		case CodeNode.DELAY_RANGE:
+			res += '/[';
+			if (node.minBeats!==undefined && node.minBeats!==null) 
+				res += beatsToString(node.minBeats);
+			res += '-';
+			if (node.maxBeats!==undefined && node.maxBeats!==null) 
+				res += beatsToString(node.maxBeats);
+			res += ']';
+			break;
+		case CodeNode.WILDCARD:
+			res += '.';
+			break;
+		case CodeNode.GROUP:
+			res += '(';
+			var child = node.children[0];
+			res += CodeNode.toString(child);
+			res += ')';
+			break;
+		default:
+			res += '<ERROR:unknown type '+node.type+'>';
+			break;
+		}		
+		return res;
+	};
 	return CodeNode;
 });
 
@@ -188,7 +316,7 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 		}
 		catch (err) {
 			console.log("Error parsing "+text+(err.location ? ' at '+JSON.stringify(err.location.start) : ''), err);
-			
+			console.log(err);
 			return {
 				state: CodeParser.ERROR
 			};
@@ -215,44 +343,73 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 		'b': -1
 		// TODO double, etc.
 	};
+	CodeParser.prototype.normaliseNote = function(node) {
+		// middle C = 60 = C4; 'C' = C4, 'c' = C5 (ABC - Helmholz is two octaves lower)
+		if (node.name!==undefined && node.name!==null) {
+			var n = NOTE_NAMES[node.name];
+			if (n!==undefined) {
+				node.midinote = n;
+				delete node.name;
+			} else {
+				console.log('Unknown note name '+node.name);
+				node.midinote = 60;
+				delete node.name;
+			}
+		}
+		// octave before accidental!
+		if (node.octave!==undefined && node.octave!==null) {
+			if (node.midinote!==undefined) {
+				var oct = Math.floor((node.midinote-60+4*12+0.5)/12);
+				var p = node.midinote-60+(4-oct)*12;
+				node.midinote = 60+12*(oct-4)+p;
+			}
+			else {
+				node.midinote = 60+12*(oct-4);
+			}
+			delete node.octave;
+		}
+		if (node.accidental!==undefined && node.accidental!==null) {
+			var a = ACCIDENTALS[node.accidental];
+			if (a!==undefined) {
+				node.midinote += a;
+				delete node.accidental;
+			}
+			else {
+				console.log('Unknown accidental '+node.accidental);
+				delete node.accidental;
+			}
+		}		
+	}
+	CodeParser.prototype.normaliseNotes = function(node) {
+		switch(node.type) {
+		case CodeNode.NOTE:
+			this.normaliseNote(node);
+			break;
+		case CodeNode.NOTE_RANGE:
+			if (node.minNote!==undefined && node.minNote!==null) {
+				node.minMidinote = this.normalise(node.minNote).midinote;
+				delete node.minNote;
+			}
+			if (node.maxNote!==undefined && node.maxNote!==null) {
+				node.maxMidinote = this.normalise(node.maxNote).midinote;
+				delete node.maxNote;
+			}
+			break;
+		default:
+			break;
+		}
+		if (node.children!==undefined && node.children!==null) {
+			for (var ci in node.children) {
+				var child = node.children[ci];
+				this.normaliseNotes(child);
+			}
+		}
+		return node;		
+	}
 	CodeParser.prototype.normalise = function(node) {
 		switch(node.type) {
 		case CodeNode.NOTE:
-			// middle C = 60 = C4; 'C' = C4, 'c' = C5 (ABC - Helmholz is two octaves lower)
-			if (node.name!==undefined && node.name!==null) {
-				var n = NOTE_NAMES[node.name];
-				if (n!==undefined) {
-					node.midinote = n;
-					delete node.name;
-				} else {
-					console.log('Unknown note name '+node.name);
-					node.midinote = 60;
-					delete node.name;
-				}
-			}
-			// octave before accidental!
-			if (node.octave!==undefined && node.octave!==null) {
-				if (node.midinote!==undefined) {
-					var oct = Math.floor((node.midinote-60+4*12+0.5)/12);
-					var p = node.midinote-60+(4-oct)*12;
-					node.midinote = 60+12*(oct-4)+p;
-				}
-				else {
-					node.midinote = 60+12*(oct-4);
-				}
-				delete node.octave;
-			}
-			if (node.accidental!==undefined && node.accidental!==null) {
-				var a = ACCIDENTALS[node.accidental];
-				if (a!==undefined) {
-					node.midinote += a;
-					delete node.accidental;
-				}
-				else {
-					console.log('Unknown accidental '+node.accidental);
-					delete node.accidental;
-				}
-			}
+			this.normaliseNote(node);
 			break;
 		case CodeNode.DELAY:
 			if (node.beats===null || node.beats===undefined || node.beats===0 || node.beats<0) {

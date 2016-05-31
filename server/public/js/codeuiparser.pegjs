@@ -5,7 +5,7 @@ start
   
 choice 
   = left:sequence "|" right:choice { return { type: 5, children: [left,right] }; }
-  / it:sequence{ return it; } 
+  / it:sequence { return it; } 
   
 sequence
   = left:repeat "," right:sequence { return { type: 4, children: [left,right] }; }
@@ -27,7 +27,7 @@ unit
   / "." { return { type: 12 }; }
   
 group
-  = "(" choice ")" { return { type: 3, children: [ choice ] }; }
+  = "(" choice:choice ")" { return { type: 3, children: [ choice ] }; }
 
 note
   = name:notename accidental:accidental? octave:integer? { return { type: 1, name: name, accidental: accidental, octave: octave }; }

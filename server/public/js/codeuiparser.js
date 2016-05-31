@@ -66,7 +66,7 @@ codeuiparser = (function() {
         peg$c27 = { type: "literal", value: "(", description: "\"(\"" },
         peg$c28 = ")",
         peg$c29 = { type: "literal", value: ")", description: "\")\"" },
-        peg$c30 = function() { return { type: 3, children: [ choice ] }; },
+        peg$c30 = function(choice) { return { type: 3, children: [ choice ] }; },
         peg$c31 = function(name, accidental, octave) { return { type: 1, name: name, accidental: accidental, octave: octave }; },
         peg$c32 = /^[A-Ga-g]/,
         peg$c33 = { type: "class", value: "[A-Ga-g]", description: "[A-Ga-g]" },
@@ -621,7 +621,7 @@ codeuiparser = (function() {
           }
           if (s3 !== peg$FAILED) {
             peg$savedPos = s0;
-            s1 = peg$c30();
+            s1 = peg$c30(s2);
             s0 = s1;
           } else {
             peg$currPos = s0;

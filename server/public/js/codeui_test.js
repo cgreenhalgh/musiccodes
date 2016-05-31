@@ -259,9 +259,37 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		it('should parse and print C as C4', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normalise(parser.parse('C').node))).toEqual('C4');
+			});
+		});
+		it('should parse and print C,D|E as C4,D4|E4', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('C,D|E').node))).toEqual('C4,D4|E4');
+			});
+		});
+		it('should parse and print (C,D) (C4,D4)', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('(C,D)').node))).toEqual('(C4,D4)');
+			});
+		});
+		it('should parse and print (C?,D*|E)+ as (C4?,D4*|E4)+', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('(C?,D*|E)+').node))).toEqual('(C4?,D4*|E4)+');
+			});
+		});
 	});
 	describe('CodeMatcher class', function() {
-		// 18
+		// 19
 		it('should match 60 as C', function() {
 			inject(function(CodeMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
