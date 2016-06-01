@@ -532,7 +532,7 @@ editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 						//text = text+note.note;
 					}
 				}
-				// TODO - convert to note/delay format, 
+				// convert to note/delay format, 
 				// project notes through context and projection, normalise 
 				// to String
 				console.log('raw note: '+JSON.stringify(notes));

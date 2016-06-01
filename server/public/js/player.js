@@ -1,14 +1,17 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging',
-                                             'muzicodes.softkeyboard']);
+                                             'muzicodes.softkeyboard','muzicodes.codeui','muzicodes.noteprocessor']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
-                                    'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window',
+                                    'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
+                                    'CodeNode','CodeMatcher','CodeParser',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
-                                    		MIDI_HEX_PREFIX, midiout, logger, $window) {
+                                    		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
+                                    		CodeNode, CodeMatcher, CodeParser) {
 	console.log('url: '+$location.absUrl());
+	var proc = new NoteProcessor();
 	var params = $location.search();
 	console.log('params', params);
 	var experienceFile = $scope.experienceFile = params['f'];
@@ -20,6 +23,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	
 	console.log('experience='+experienceFile+', room='+$scope.room+', pin='+pin+', channel='+$scope.channel+', midiin='+$scope.midiInputName+', midiout='+$scope.midiOutputName);
 	
+	$scope.context = {};
 	$scope.notes = [];
 	$scope.time = 0;
 	$scope.groups = [];
@@ -76,14 +80,21 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				marker.preconditionok = true==safeEvaluate($scope.experienceState, marker.precondition);
 			if (!marker.preconditionok)
 				continue;
-			if (marker.codeformat!==undefined && marker.codeformat!==null && marker.codeformat.length>0 && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
-				var code = codes[marker.codeformat];
+			if (marker.projection!==undefined && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
+				var code = codes[marker.projection.id];
 				if (code===undefined) {
-					codes[marker.codeformat] = code = noteCoder.code(marker.codeformat, notes, group.closed);
+					// generate...
+					console.log('raw note: '+JSON.stringify(notes));
+					var newNotes = proc.mapRawNotes($scope.context, notes);
+					console.log('context mapped: '+JSON.stringify(newNotes));
+					code = proc.projectNotes(marker.projection, newNotes);
+					console.log('projected: '+proc.notesToString(code));
+
+					codes[marker.projection.id] = code;
 				}
-				if (code!==undefined && codeMatchers[marker.code]!==undefined) {
-					if ( codeMatchers[marker.code].regex.test( code ) ) {
-						console.log('Matched marker '+marker.title+' code '+marker.codeformat+':'+code);
+				if (code!==undefined && codeMatchers[marker.code]!==undefined && (!marker.atEnd || group.closed)) {
+					if ( codeMatchers[marker.code].match( code ) ) {
+						console.log('Matched marker '+marker.title+' code '+proc.notesToString(code));
 						socket.emit('action',marker);
 						if (marker.poststate!==undefined)
 							updateState(marker.poststate);
@@ -241,17 +252,31 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				delete marker.action;
 			}
 		}
+		$scope.context = experience.defaultContext;
+		var parser = new CodeParser();
 		for (var mi in experience.markers) {
 			var marker = experience.markers[mi];
 			if (marker.code && marker.code.length>0) {
 				var code = marker.code;
-				if (code[code.length-1]=='$') 
-					// escape to match exact
-					code = code.substring(0, code.length-1)+'\\$$';
-				else
-					// to end
-					code = code+'$';
-				codeMatchers[marker.code] = { regex: new RegExp(code) };
+				if (!marker.atStart) {
+					// anything at start...
+					code = '.*,('+code+')';
+				}
+				var res = parser.parse(code);
+				if (res.state==CodeParser.OK) {
+					codeMatchers[marker.code] = new CodeMatcher(parser.normalise(res.node));
+				} else {
+					console.log('error parsing code '+code+': '+res.message);
+				}
+			}
+			if (marker.projection) {
+				var id = marker.projection;
+				delete marker.projection;
+				for (var pi in experience.projections) {
+					var projection = experience.projections[pi];
+					if (projection.id==id)
+						marker.projection = projection;
+				}
 			}
 		}
 		$scope.markers = experience.markers;

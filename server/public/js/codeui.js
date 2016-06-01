@@ -363,7 +363,7 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 			if (node.midinote!==undefined) {
 				var oct = Math.floor((node.midinote-60+4*12+0.5)/12);
 				var p = node.midinote-60+(4-oct)*12;
-				node.midinote = 60+12*(oct-4)+p;
+				node.midinote = 60+12*(node.octave-4)+p;
 			}
 			else {
 				node.midinote = 60+12*(oct-4);

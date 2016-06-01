@@ -44,14 +44,15 @@ not yet implemented:
 - `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 
-## `marker`
+##ï¿½`marker`
 
 This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
 Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
-- `codeformat` (string, default any code, but SHOULD be defined), format of code - see below (e.g. `no`)
 - `projection` - `id` of `projection` applied to notes for matching with marker (v2)
+- `atStart` (boolean, default false), require code to appear at start of group
+- `atEnd` (boolean, default false), require code to appear at end of group
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
@@ -61,6 +62,9 @@ Object with properties:
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `precondition` (string, default true, i.e. code can always be matched), expression which if true enables code to be matched, can depend only on state variables.
 - `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
+
+No longer supported (v2):
+- `codeformat` 
 
 ## State
 

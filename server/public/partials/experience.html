@@ -139,6 +139,8 @@
       </div>
       <label>Description:</label>
       <input type="text" ng-model="marker.description">
+      <label>At start:</label><input type="checkbox" ng-model="marker.atStart">
+      <label>At end:</label><input type="checkbox" ng-model="marker.atEnd">
       <label>Actions:</label>
       <ul>
         <li ng-repeat="action in marker.actions">

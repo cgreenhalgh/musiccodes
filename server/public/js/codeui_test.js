@@ -81,9 +81,7 @@ describe('muzicodes.codeui module', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				// jasmine.objectContaining()
-				expect(parser.parse('C5#')).toEqual({
-					state: CodeParser.ERROR
-				});
+				expect(parser.parse('C5#').state).toEqual(CodeParser.ERROR);
 			});
 		});
 		// 8
@@ -151,9 +149,7 @@ describe('muzicodes.codeui module', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				// jasmine.objectContaining()
-				expect(parser.parse(',')).toEqual({
-					state: CodeParser.ERROR
-				});
+				expect(parser.parse(',').state).toEqual(CodeParser.ERROR);
 			});
 		});
 		// 12
@@ -264,6 +260,13 @@ describe('muzicodes.codeui module', function() {
 				var parser = new CodeParser();
 				// jasmine.objectContaining()
 				expect(CodeNode.toString(parser.normalise(parser.parse('C').node))).toEqual('C4');
+			});
+		});
+		it('should parse and print C3 as C3', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normalise(parser.parse('C3').node))).toEqual('C3');
 			});
 		});
 		it('should parse and print C,D|E as C4,D4|E4', function() {
