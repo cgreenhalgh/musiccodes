@@ -153,7 +153,7 @@ codeui.factory('CodeNode', function() {
 		return new CodeNode(CodeNode.CHOICE);
 	}
 	var NOTES = [ 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B' ];
-	var midinoteToString = function(midinote) {
+	CodeNode.midinoteToString = function(midinote) {
 		// C4 = 60
 		var pitch = Math.floor(midinote+0.5 - 60);
 		var octave = Math.floor( pitch / 12);
@@ -164,7 +164,7 @@ codeui.factory('CodeNode', function() {
 		var res = NOTES[pitch] + String(octave);
 		return res;
 	};
-	var beatsToString = function(beats) {
+	CodeNode.beatsToString = function(beats) {
 		// centibeats?!
 		var res = String(Number(beats).toFixed(2));
 		if (res.substring(res.length-3)=='.00') {
@@ -182,10 +182,10 @@ codeui.factory('CodeNode', function() {
 		var res = '';
 		switch(node.type) {
 		case CodeNode.NOTE:
-			res += midinoteToString(node.midinote);
+			res += CodeNode.midinoteToString(node.midinote);
 			break;
 		case CodeNode.DELAY:
-			res += '/'+beatsToString(node.beats);
+			res += '/'+CodeNode.beatsToString(node.beats);
 			break;
 		case CodeNode.SEQUENCE:
 			if (precedence!==undefined && precedence>PRECEDENCE_SEQUENCE) {
@@ -250,19 +250,19 @@ codeui.factory('CodeNode', function() {
 		case CodeNode.NOTE_RANGE:
 			res += '[';
 			if (node.minMidinote!==undefined && node.minMidinote!==null) 
-				res += midinoteToString(node.minMidinote);
+				res += CodeNode.midinoteToString(node.minMidinote);
 			res += '-';
 			if (node.maxMidinote!==undefined && node.maxMidinote!==null) 
-				res += midinoteToString(node.maxMidinote);
+				res += CodeNode.midinoteToString(node.maxMidinote);
 			res += ']';
 			break;
 		case CodeNode.DELAY_RANGE:
 			res += '/[';
 			if (node.minBeats!==undefined && node.minBeats!==null) 
-				res += beatsToString(node.minBeats);
+				res += CodeNode.beatsToString(node.minBeats);
 			res += '-';
 			if (node.maxBeats!==undefined && node.maxBeats!==null) 
-				res += beatsToString(node.maxBeats);
+				res += CodeNode.beatsToString(node.maxBeats);
 			res += ']';
 			break;
 		case CodeNode.WILDCARD:

@@ -97,7 +97,6 @@
 			ng-click="isCollapsed=(!isCollapsed)"></span> 
 			<label>Title:</label> <input type="text" ng-model="example.title">
 			<button ng-click="deleteExample($index)">-</button>
-			<codeformat data="example.codeformat"></codeformat>
 			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
 			<muzicode notes="example.rawnotes" codeformat="example.codeformat" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<div uib-collapse="isCollapsed">

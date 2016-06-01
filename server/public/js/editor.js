@@ -1,6 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard','muzicodes.codeui']);
+                                             'muzicodes.softkeyboard','muzicodes.noteprocessor']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -516,10 +516,18 @@ editorApp.directive('codeformat', [function() {
 	};
 }]);
 
-editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
+editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 	function link(scope, element, attrs) {
+		var proc = new NoteProcessor();
 		scope.code = '';
 		function update() {
+			var projection = {};
+			for (var pi in scope.projections) {
+				var p = scope.projections[pi];
+				if (scope.projection == p.id) 
+					projection = p;
+			}
+			console.log('projection '+scope.projection+' = '+JSON.stringify(projection)+' (from '+JSON.stringify(scope.projections)+')');
 			var groups = [];
 			for (var i in scope.notes) {
 				var note = scope.notes[i];
@@ -544,12 +552,18 @@ editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
 				// TODO - convert to note/delay format, 
 				// project notes through context and projection, normalise 
 				// to String
-				text = text + noteCoder.code(scope.codeformat, notes);
+				console.log('raw note: '+JSON.stringify(notes));
+				var newNotes = proc.mapRawNotes(scope.context, notes);
+				console.log('context mapped: '+JSON.stringify(newNotes));
+				newNotes = proc.projectNotes(projection, newNotes);
+				console.log('projected: '+JSON.stringify(newNotes));
+				var code = proc.notesToString(newNotes);
+				console.log('core = '+code);
+				text = text + code;
 			}
 			scope.code = text;
 		}
 		scope.$watch('notes', update, true);
-		scope.$watch('codeformat', update);
 		scope.$watch('projection', update);
 		scope.$watch('projections', update, true);
 		scope.$watch('context', update, true);
@@ -559,7 +573,9 @@ editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
 		restrict: 'E',
 		scope: {
 			 notes: '=',
-			 codeformat: '='
+			 context: '=',
+			 projection: '=',
+			 projections: '='
 		},
 		template: '<input type="text" ng-model="code" readonly="readonly">',
 		link: link
@@ -643,7 +659,7 @@ editorApp.directive('musProjectionChoice', [function() {
 			 projection: '='
 		},
 		template: '<label>Projection:</label><select ng-model="projection">'+
-	        '<option ng-repeat="projection in projections" value="projection.id">{{projection.id}}</option>'+
+	        '<option ng-repeat="projection in projections" value="{{projection.id}}">{{projection.id}}</option>'+
 	      '</select>'
 	};
 }]);
