@@ -26,3 +26,10 @@ button.disabled, input.disabled{
 	opacity: 0.3;
 }
 
+mus-projection {
+	display: inline-block;
+}
+
+div.projection button {
+	vertical-align: top;
+}

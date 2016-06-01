@@ -6,6 +6,8 @@ Single top-level JSON object with properties:
 - `parameters` - map of parameter name/value
 - `markers` - list of `marker` objects
 - `examples` - list of `example` objects
+- `defaultContext` - context config (v2)
+- `projections` - list of `projection` objects (v2)
 
 ## `parameters`:
 
@@ -28,6 +30,19 @@ Single top-level JSON object with properties:
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
 
+## `defaultContext`:
+
+(v2)
+
+- `tempo` (float, beats per minute, default 60)
+
+## `projection`: 
+
+(v2)
+
+- `id` (string), id/name by which projection is referred to in markers and examples
+- `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
+- `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 
 ## `marker`
 
@@ -36,6 +51,7 @@ This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
 - `codeformat` (string, default any code, but SHOULD be defined), format of code - see below (e.g. `no`)
+- `projection` - `id` of `projection` applied to notes for matching with marker (v2)
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
@@ -185,12 +201,14 @@ Compound code, prefix `:` code (opt.) `:` constraint expression
 
 ## `example`
 
-(added 2016-05-12; not yet implemented)
+(added 2016-05-12)
 
 An example of some playing, including its raw notes (and potentially audio), and its associated code-like representation. Encoded as a JSON objects with properties:
 - `title` - the name of the clip
 - `rawnotes` - an array of raw `note`s (see below)
 - `codeformat` - codeformat to use
+- `context` - `context` in which example is interpretted (v2)
+- `projection` - `id` of `projection` applied to example (v2)
 
 A `note` is a JSON object with properties:
 - `freq` - the frequency of the note in Hz

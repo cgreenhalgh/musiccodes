@@ -1,6 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard']);
+                                             'muzicodes.softkeyboard','muzicodes.codeui']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -132,8 +132,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 
   $scope.addMarker = function() {
 	  console.log('addMarker');
-	var marker = {codeformat: $scope.newMarkerCodeformat, code: $scope.newMarkerCode, title: $scope.newMarkerTitle, actions:[]};
-	$scope.newMarkerCodeformat = '';
+	var marker = {codeformat: $scope.newMarkerCodeformat, code: $scope.newMarkerCode, title: $scope.newMarkerTitle, 
+			projection: $scope.newMarkerProjection, actions:[]};
 	$scope.newMarkerCode = '';
 	$scope.newMarkerTitle = '';
 	$scope.markers.push( marker );
@@ -159,6 +159,9 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  midiInput: '',
 		  midiOutput: ''
   };
+  $scope.defaultContext = {};
+  $scope.projections = [];
+  $scope.newProjection = {};
   $scope.markers = [];
   $scope.examples = [];
   $scope.channels = [''];
@@ -211,6 +214,9 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     		data.parameters.initstate[name] = '';
     }
     $scope.parameters = data.parameters;
+    $scope.defaultContext = data.defaultContext!==undefined ? data.defaultContext : {};
+    $scope.projections = data.projections!==undefined ? data.projections : [];
+    $scope.newProjection = {};
     $scope.name = data.name;
     $scope.description = data.description;
     $scope.formChanged = false;
@@ -270,11 +276,14 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	    $scope.addMarker();
 	  if ($scope.newInitstateName)
 		  $scope.addInitstate();
+	  if ($scope.newProjection.countsPerBeat || $scope.newProjection.pitchesPerSemitone)
+		  $scope.addProjection();
 	  
 	  var experience = { name: $scope.name, description: $scope.description, 
 			  author: $scope.author, recordAudio: $scope.recordAudio,
 			  markers: $scope.markers, parameters: $scope.parameters,
-			  examples: $scope.examples };
+			  examples: $scope.examples, defaultContext: $scope.defaultContext, 
+			  projections: $scope.projections };
 	  // refresh channels
 	  $scope.channels = [''];
 	  for (var mi in $scope.markers) {
@@ -350,8 +359,6 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.recordingTimer = null;
 	$scope.addingGrouper = null;
 	$scope.addingGroups = [];
-	// default...
-	$scope.addingExampleCodeformat = 'no';
 	var onNote = function(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 		if (!!note.localTime && !note.time) {
@@ -423,7 +430,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	};
 	$scope.doneAddExample = function() {
 		$scope.stopRecordingExample();
-		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes, codeformat: $scope.addingExampleCodeformat };
+		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes };
+		example.context = JSON.parse(JSON.stringify($scope.defaultContext));
 		$scope.examples.push( example );
 		// tidy up
 		$scope.cancelAddExample();
@@ -456,7 +464,15 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 			$scope.addingGroups = $scope.addingGrouper.getGroups();
 		}
 	}, true);
-
+	$scope.addProjection = function() {
+		$scope.projections.push($scope.newProjection);
+		$scope.newProjection = "";
+		$scope.formChanged = true;
+	};
+	$scope.deleteProjection = function(index) {
+		$scope.projections.splice(index,1);
+		$scope.formChanged = true;
+	}
 }]);
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
@@ -525,12 +541,18 @@ editorApp.directive('muzicode', ['noteCoder', function(noteCoder) {
 						//text = text+note.note;
 					}
 				}
+				// TODO - convert to note/delay format, 
+				// project notes through context and projection, normalise 
+				// to String
 				text = text + noteCoder.code(scope.codeformat, notes);
 			}
 			scope.code = text;
 		}
 		scope.$watch('notes', update, true);
 		scope.$watch('codeformat', update);
+		scope.$watch('projection', update);
+		scope.$watch('projections', update, true);
+		scope.$watch('context', update, true);
 		update();
 	}
 	return {
@@ -593,3 +615,36 @@ editorApp.directive('urlchecker', ['$http', '$timeout', function($http, $timeout
 		}
 	};
 }]);
+editorApp.directive('musContext', [function() {
+	return {
+		restrict: 'E',
+		scope: {
+			context: '='
+		},
+		templateUrl: '/partials/mus-context.html',
+		link: function(scope, element, attrs) {
+		}
+	};
+}]);
+editorApp.directive('musProjection', [function() {
+	return {
+		restrict: 'E',
+		scope: {
+			projection: '='
+		},
+		templateUrl: '/partials/mus-projection.html'
+	};
+}]);
+editorApp.directive('musProjectionChoice', [function() {
+	return {
+		restrict: 'E',
+		scope: {
+			 projections: '=',
+			 projection: '='
+		},
+		template: '<label>Projection:</label><select ng-model="projection">'+
+	        '<option ng-repeat="projection in projections" value="projection.id">{{projection.id}}</option>'+
+	      '</select>'
+	};
+}]);
+

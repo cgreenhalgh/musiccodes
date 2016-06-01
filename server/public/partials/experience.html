@@ -73,6 +73,21 @@
   </td></tr>
   </tbody></table>
 
+	<h3>Default Context</h3>
+	
+	<mus-context context="defaultContext"></mus-context> 
+	
+	<h3>Projections</h3>
+	
+	<div ng-repeat="projection in projections" class="projection">
+		<mus-projection projection="projection"></mus-projection> 
+		<button ng-click="deleteProjection($index)">-</button>
+	</div>
+	<div class="projection">
+    	<button ng-click="addProjection()">+</button>
+		<mus-projection projection="newProjection"></mus-projection> 
+	</div>
+	
 	<h3>Examples</h3>
 
 	<ul class="examples">
@@ -83,23 +98,22 @@
 			<label>Title:</label> <input type="text" ng-model="example.title">
 			<button ng-click="deleteExample($index)">-</button>
 			<codeformat data="example.codeformat"></codeformat>
-			<muzicode notes="example.rawnotes" codeformat="example.codeformat"></muzicode>
+			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
+			<muzicode notes="example.rawnotes" codeformat="example.codeformat" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<div uib-collapse="isCollapsed">
 				<div note-roll notes="example.rawnotes" parameters="parameters"></div>
+				<mus-context context="example.context"></mus-context>
 			</div>
 		</li>
 	</ul>
 	<li class="example" uib-collapse="addingExample">
 		<button ng-click="startAddExample()" >Record</button> {{ !!parameters.midiInput ? 'Midi ('+parameters.midiInput+')' : 'Audio' }} 
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
-		<codeformat data="addingExampleCodeformat"></codeformat>
 	</li>
 	<li class="example" uib-collapse="!addingExample" >
 		<button ng-click="stopRecordingExample()" ng-disabled="!recordingExample" ng-class="{'disabled': !recordingExample}">Stop</button>
 		<softkeyboard on-note="onNote(note)"></softkeyboard>
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
-		<codeformat data="addingExampleCodeformat"></codeformat>
-		<muzicode notes="addingExampleNotes" codeformat="addingExampleCodeformat"></muzicode>
 		<button ng-click="doneAddExample()" >Done</button>
 		<button ng-click="cancelAddExample()">Cancel</button>
 		<br>
@@ -119,6 +133,7 @@
 		<option value="no/crfe4,">no/crfe4,</option>
 		<option value="mrle0/crle4,">mrle0/crle4,</option>
       </select>
+      <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
       <input type="text" ng-model="marker.code">
       <label>Title:</label>
       <input type="text" ng-model="marker.title">
@@ -162,6 +177,7 @@
 		<option value="no/crfe4,">no/crfe4,</option>
 		<option value="mrle0/crle4,">mrle0/crle4,</option>
       </select>
+      <mus-projection-choice projection="newMarkerProjection" projections="projections"></mus-projection-choice>
       <input type="text" ng-model="newMarkerCode">
       <label>Title:</label>
       <input type="text" ng-model="newMarkerTitle">
