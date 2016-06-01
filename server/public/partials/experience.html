@@ -98,7 +98,7 @@
 			<label>Title:</label> <input type="text" ng-model="example.title">
 			<button ng-click="deleteExample($index)">-</button>
 			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
-			<muzicode notes="example.rawnotes" codeformat="example.codeformat" projection="example.projection" projections="projections" context="example.context"></muzicode>
+			<muzicode notes="example.rawnotes" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<div uib-collapse="isCollapsed">
 				<div note-roll notes="example.rawnotes" parameters="parameters"></div>
 				<mus-context context="example.context"></mus-context>
@@ -124,18 +124,10 @@
   <ul class="markers">
     <li ng-repeat="marker in markers" ng-controller="MarkerCtrl" class="marker">
       <span class="glyphicon" aria-hidden="true" ng-class="{'glyphicon-triangle-right': isCollapsed, 'glyphicon-triangle-bottom': !isCollapsed}" ng-click="isCollapsed=(!isCollapsed)"></span>
-      <select ng-model="marker.codeformat">
-        <option value=""></option>
-		<option value="n">n</option>
-		<option value="no">no</option>
-		<option value="no/crle4,">no/crle4,</option>
-		<option value="no/crfe4,">no/crfe4,</option>
-		<option value="mrle0/crle4,">mrle0/crle4,</option>
-      </select>
-      <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
-      <input type="text" ng-model="marker.code">
       <label>Title:</label>
       <input type="text" ng-model="marker.title">
+      <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
+      <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <button ng-click="deleteMarker($index)">-</button>
       <div uib-collapse="isCollapsed">
       <div uib-collapse="!showState">
@@ -168,18 +160,10 @@
     </li>
     <li class="marker">
       <button ng-click="addMarker()">+</button>
-      <select ng-model="newMarkerCodeformat">
-        <option value=""></option>
-		<option value="n">n</option>
-		<option value="no">no</option>
-		<option value="no/crle4,">no/crle4,</option>
-		<option value="no/crfe4,">no/crfe4,</option>
-		<option value="mrle0/crle4,">mrle0/crle4,</option>
-      </select>
-      <mus-projection-choice projection="newMarkerProjection" projections="projections"></mus-projection-choice>
-      <input type="text" ng-model="newMarkerCode">
       <label>Title:</label>
       <input type="text" ng-model="newMarkerTitle">
+      <mus-projection-choice projection="newMarkerProjection" projections="projections"></mus-projection-choice>
+      <mus-code-input type="text" ng-model="newMarkerCode"></mus-code-input>
    </li>
 </ul>
 </form>

@@ -1,6 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard','muzicodes.noteprocessor']);
+                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -132,7 +132,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 
   $scope.addMarker = function() {
 	  console.log('addMarker');
-	var marker = {codeformat: $scope.newMarkerCodeformat, code: $scope.newMarkerCode, title: $scope.newMarkerTitle, 
+	var marker = { code: $scope.newMarkerCode, title: $scope.newMarkerTitle, 
 			projection: $scope.newMarkerProjection, actions:[]};
 	$scope.newMarkerCode = '';
 	$scope.newMarkerTitle = '';
@@ -272,7 +272,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	    		delete marker.poststate[name];
 	    }
 	  }
-	  if ($scope.newMarkerCodeformat || $scope.newMarkerCode || $scope.newMarkerTitle)
+	  if ($scope.newMarkerCode || $scope.newMarkerTitle)
 	    $scope.addMarker();
 	  if ($scope.newInitstateName)
 		  $scope.addInitstate();
@@ -499,23 +499,6 @@ editorApp.controller('ExampleCtrl', ['$scope', function ($scope) {
 	$scope.isCollapsed = false;
 }]);
 
-editorApp.directive('codeformat', [function() {
-	return {
-		restrict: 'E',
-		scope: {
-			 data: '='
-		},
-		template: '<select ng-model="data">'+
-	        '<option value=""></option>'+
-			'<option value="n">n</option>'+
-			'<option value="no">no</option>'+
-			'<option value="no/crle4,">no/crle4,</option>'+
-			'<option value="no/crfe4,">no/crfe4,</option>'+
-			'<option value="mrle0/crle4,">mrle0/crle4,</option>'+
-	      '</select>'
-	};
-}]);
-
 editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 	function link(scope, element, attrs) {
 		var proc = new NoteProcessor();
@@ -661,6 +644,37 @@ editorApp.directive('musProjectionChoice', [function() {
 		template: '<label>Projection:</label><select ng-model="projection">'+
 	        '<option ng-repeat="projection in projections" value="{{projection.id}}">{{projection.id}}</option>'+
 	      '</select>'
+	};
+}]);
+editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
+	var parser = new CodeParser();
+	return {
+		restrict: 'E',
+		scope: {
+			 ngModel: '='
+		},
+		template: '<input type="text" ng-model="ngModel"><span ng-class="{\'code-error\': error}">{{ feedback }}</span>',
+		link: function(scope, element, attrs) {
+			function update() {
+				scope.feedback = '';
+				scope.error = false;
+				var code = scope.ngModel;
+				if (code) {
+					var res = parser.parse(code);
+					if (res.state==CodeParser.OK) {
+						scope.feedback = 'OK';
+					} else if (res.state==CodeParser.ERROR) {
+						scope.error = true;
+						scope.feedback = 'Error'+(res.location ? ' at char '+(res.location+1) : '')+': '+res.message;
+					} else {
+						scope.error = true;
+						scope.feedback = JSON.stringify(res);
+					}
+				}
+			}
+			scope.$watch('ngModel', update);
+			update();
+		}
 	};
 }]);
 

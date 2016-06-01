@@ -33,3 +33,7 @@ mus-projection {
 div.projection button {
 	vertical-align: top;
 }
+
+span.code-error {
+	color: red;
+}

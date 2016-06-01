@@ -318,7 +318,9 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 			console.log("Error parsing "+text+(err.location ? ' at '+JSON.stringify(err.location.start) : ''), err);
 			console.log(err);
 			return {
-				state: CodeParser.ERROR
+				state: CodeParser.ERROR,
+				location: (err.location ? err.location.start.offset : undefined),
+				message: err.message
 			};
 		}
 	};
