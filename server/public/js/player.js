@@ -130,7 +130,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		for (var id in $scope.activeGroups) {
 			var group = $scope.activeGroups[id];
-			if (!group.closed && group.lastTime<time-$scope.parameters.streamGap) {
+			if (group.closed || (!group.closed && group.lastTime<time-$scope.parameters.streamGap)) {
 				group.closed = true;
 				console.log('closed group '+group.id);
 				delete $scope.activeGroups[group.id];
