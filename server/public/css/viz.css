@@ -16,6 +16,11 @@ svg.note-roll {
 	stroke-width: 1;
 }
 
+.beat {
+	stroke: #bbb;
+	stroke-width: 1;
+}
+
 .code {
 	fill: #000;
 }

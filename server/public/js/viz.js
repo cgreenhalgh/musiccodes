@@ -42,7 +42,8 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        groups: '=',
 	        parameters: '=',
 	        height: '@',
-	        period: '='
+	        period: '=',
+	        context: '='
 		},
 		link: function(scope, element, attrs) {
 			console.log('link note-roll, period='+scope.period+'...');
@@ -94,6 +95,11 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				scope.$watch('parameters', function(newVals, oldVals) {
 					return scope.regroup(scope.notes, newVals);
 				}, true);
+				// context - wait for other updates??
+				scope.$watch('context', function(newVals, oldVals) {
+					//console.log('re-render on change of context');
+					return scope.render(scope.notes, scope.time, scope.groups);
+				}, true);
 
 				var localGroups = [];
 				scope.regroup = function(notes, parameters) {
@@ -107,6 +113,7 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						}
 					}
 				}
+				var beats = [];
 				
 				scope.render = function(notes, time, extgroups) {
 					// our custom d3 code
@@ -127,14 +134,17 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 					var width = d3.select(element[0]).node().offsetWidth - margin;
 					var xscale;
 					// our xScale#
+					var maxTime = time;
 					if (period>0) 
 						xscale = d3.scale.linear().domain([time-period, time])
 						  .range([margin, width]);
-					else
+					else {
+						maxTime = Math.max(DEFAULT_TIME, time,
+								d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }));
 						xscale = d3.scale.linear()
-							.domain([0, Math.max(DEFAULT_TIME, time,
-							  d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }))])
+							.domain([0, maxTime])
 					  .range([margin, width]);
+					}
 					var yscale = d3.scale.log().domain([25,2500]).range([margin+ysize,margin]);
 					var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
 					
@@ -155,7 +165,41 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						.attr('y1',margin).attr('y2',margin+ysize)
 						.attr('x1', function(d) { return xscale(d); })
 						.attr('x2', function(d) { return xscale(d); });
-					
+
+					var tempo = scope.context!==undefined ? scope.context.tempo : 60;
+					if (!tempo)
+						tempo = 60;
+					if (period>0) {
+						if (beats.length==0) {
+							beats.push(time);
+						} else {
+							while (beats[beats.length-1]+60/tempo <= time) {
+								beats.push(beats[beats.length-1]+60/tempo);
+								if (period>0 && beats[0]<time-period) {
+									beats.splice(0,1);
+								}
+							}
+						}
+					} else {
+						beats.splice(0,beats.length);
+						var t = 0;
+						while (t<maxTime) {
+							beats.push(t);
+							t += 60/tempo;
+						}
+					}
+					//console.log('Beats: '+JSON.stringify(beats));
+					var beatlines = svg.selectAll('line.beat').data(beats);
+					beatlines
+						.attr('x1', function(d) { return xscale(d); })
+						.attr('x2', function(d) { return xscale(d); });
+					beatlines.enter().append('line')
+						.classed('beat', true)
+						.attr('y1',margin).attr('y2',margin+ysize)
+						.attr('x1', function(d) { return xscale(d); })
+						.attr('x2', function(d) { return xscale(d); });
+					beatlines.exit().remove();
+			
 					var sel = svg.selectAll('rect.note').data(notes, function(d) { return d.id; });
 					sel.attr('width', function(d) { return d.duration!==undefined ? xscale(d.time+d.duration)-xscale(d.time) : (time>d.time ? xscale(time)-xscale(d.time) : DEFAULT_WIDTH); })
 					  	.attr('x', function(d) { return xscale(d.time); })

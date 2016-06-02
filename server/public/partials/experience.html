@@ -100,7 +100,7 @@
 			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
 			<muzicode notes="example.rawnotes" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<div uib-collapse="isCollapsed">
-				<div note-roll notes="example.rawnotes" parameters="parameters"></div>
+				<div note-roll notes="example.rawnotes" parameters="parameters" context="example.context"></div>
 				<mus-context context="example.context"></mus-context>
 			</div>
 		</li>
@@ -116,7 +116,7 @@
 		<button ng-click="doneAddExample()" >Done</button>
 		<button ng-click="cancelAddExample()">Cancel</button>
 		<br>
-		<div note-roll notes="addingExampleNotes" time="addingTime" groups="addingGroups"></div>
+		<div note-roll notes="addingExampleNotes" time="addingTime" groups="addingGroups" parameters="parameters" context="defaultContext"></div>
 	</li>
 
   <h3>Codes</h3>
