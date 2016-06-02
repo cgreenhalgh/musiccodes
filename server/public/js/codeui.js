@@ -159,7 +159,7 @@ codeui.factory('CodeNode', function() {
 		var octave = Math.floor( pitch / 12);
 		pitch = pitch - 12*octave;
 		octave = octave+4;
-		console.log('midinote '+midinote+' -> pitch '+pitch+', octave '+octave);
+		//console.log('midinote '+midinote+' -> pitch '+pitch+', octave '+octave);
 		// TODO: alt print forms?
 		var res = NOTES[pitch] + String(octave);
 		return res;
@@ -178,7 +178,6 @@ codeui.factory('CodeNode', function() {
 	var PRECEDENCE_SEQUENCE = 2;
 	var PRECEDENCE_REPEAT = 3;
 	CodeNode.toString = function(node, precedence) {
-		console.log('Codeode.toString('+JSON.stringify(node)+')');
 		var res = '';
 		switch(node.type) {
 		case CodeNode.NOTE:
@@ -285,7 +284,7 @@ codeui.factory('CodeNode', function() {
 
 // PEGJS parser
 codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
-	var debug = true;
+	var debug = false;
 	
 	function CodeParser() {
 		
@@ -517,41 +516,59 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 }]);
 
 codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
-	var debug = true;
+	var debug = false;
 	
 	function CodeMatcher(node) {
 		this.compile(node);
 	};
 	CodeMatcher.prototype.compile = function(node) {
 		this.node = node;
-		// TODO
+		this.nextId = 1;
+		var self = this;
+		function label(node) {
+			if (node===undefined)
+				return;
+			node.id = self.nextId++;
+			if (node.children!==undefined && node.children!==null) {
+				for (var ci in node.children) {
+					var child = node.children[ci];
+					label(child);
+				}
+			}
+		}
+		label(node);
 	};
 	// return true/false and decorate notes with match status for vis'n
 	// normalised input notes, i.e. note.freq or delay.beats
 	CodeMatcher.prototype.match = function(notes) {
-		// alternative part-match states, each with place in code hierarchy
-		this.states = [ { nodes: [this.node], counts: [0], matched: [] } ];
-		
+		this.reset();
 		var matched = true;
 		for (var ni in notes) {
 			var note = notes[ni];
 			matched = this.matchNext(note);
 		}
 		
-		if(debug)
-			console.log('end match '+matched+' with states '+JSON.stringify(this.states));
+		//if(debug)
+			console.log('end match '+matched+' with states '+JSON.stringify(this.states)+' and matchedIds '+JSON.stringify(this.matchedIds));
 		
 		return matched;
 	};
+	CodeMatcher.prototype.reset = function() {
+		// alternative part-match states, each with place in code hierarchy
+		this.states = [ { nodes: [this.node], counts: [0], matched: [] } ];	
+		this.matchedIds = null;
+	}
 	var SMALL_PITCH = 0.1;
 	var SMALL_DELAY = 0.1;
 	CodeMatcher.prototype.matchNext = function(note) {
+		this.matchedIds = null;
 		// each state possibility...
 		var newStates = [];
 		// expand possible states
 		while(this.states.length>0) {
 			var state = this.states.splice(0,1)[0];
-			console.log('expand next state '+JSON.stringify(state));
+			if (debug)
+				console.log('expand next state '+JSON.stringify(state));
 			var depth = state.nodes.length-1;
 
 			var node = state.nodes[depth];
@@ -573,14 +590,16 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					var newState = { nodes: state.nodes.concat(child), counts: state.counts.concat(0), matched: state.matched.slice(0) };
 					// go down in each choice...
 					this.states.push(newState);
-					console.log('down into choice child '+ci);
+					if (debug)
+						console.log('down into choice child '+ci);
 				}
 			} else if (node.type==CodeNode.REPEAT) {
 				// maybe can be skipped? but still need to eat a token
 				if (depth>0 && state.counts[depth]==0 && (node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=0)) {
 					// special case here on pre-check is to match with 0 occurrences; otherwise it would have appeared
 					// as a candidate match on the way out!
-					console.log('done match 0-repeat at depth '+depth+' on '+JSON.stringify(node));
+					if (debug)
+						console.log('done match 0-repeat at depth '+depth+' on '+JSON.stringify(node));
 					// clone/alt!
 					var newState = { nodes: state.nodes.slice(0,depth), counts: state.counts.slice(0,depth), matched: state.matched.slice(0) };
 					if (newState.matched.length==0 || newState.matched[newState.matched.length-1]!==node) {
@@ -598,7 +617,8 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					var newState = { nodes: state.nodes.concat(node.children[0]), counts: state.counts.concat(0), matched: state.matched.slice(0) };
 					// go down in each choice...
 					this.states.push(newState);
-					console.log('down into repeat child '+JSON.stringify(node.children[0]));
+					if (debug)
+						console.log('down into repeat child '+JSON.stringify(node.children[0]));
 				}
 				// Note: to avoid state explosion perhaps need to suppress skip state if match state succeeds?!
 				// Or perhaps we only insert the skip state if the match state fails?
@@ -699,6 +719,7 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 			if (state.nodes.length==0) {
 				// finished
 				matched = true;
+				this.matchedIds = this.getMatchedIds([state]);
 			} else {
 				newStates.push(state);
 			}
@@ -716,7 +737,8 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					(node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=state.counts[depth]) &&
 					(node.maxRepeat===undefined || node.maxRepeat===null || node.maxRepeat>state.counts[depth])) {
 				// clone!
-				console.log('clone matched repeat '+JSON.stringify(node));
+				if (debug)
+					console.log('clone matched repeat '+JSON.stringify(node));
 				var newState = { nodes: state.nodes.slice(0), counts: state.counts.slice(0), matched: state.matched.slice(0) };
 				newStates.push(newState);
 			}
@@ -730,7 +752,8 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 					(node.type==CodeNode.REPEAT && 
 					 (node.minRepeat===undefined || node.minRepeat===null || node.minRepeat<=state.counts[depth]))) {
 				// done 
-				console.log('done match at depth '+depth+' on '+JSON.stringify(node));
+				if (debug)
+					console.log('done match at depth '+depth+' on '+JSON.stringify(node));
 				if (state.matched.length==0 || state.matched[state.matched.length-1]!==node) {
 					state.matched.push(node);
 				}
@@ -745,6 +768,26 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		}
 
 	};
+	// map with ids as keys (for speed)
+	CodeMatcher.prototype.getMatchedIds = function(states) {
+		if (states===undefined && this.matchedIds!==null) {
+			// cached from success
+			return this.matchedIds;
+		}
+		var matched = {};
+		if (states===undefined)
+			states = this.states;
+		for (var si in states) {
+			var state = states[si];
+			for (var mi in state.matched) {
+				var node = state.matched[mi];
+				if (node.id!==undefined && node.id!==null) {
+					matched[node.id] = node;
+				}
+			}
+		}
+		return matched;
+	}
 	return CodeMatcher;
 }]);
 

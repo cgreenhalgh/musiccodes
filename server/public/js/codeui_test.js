@@ -534,5 +534,22 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(true);
 			});
 		});
+		it('should part-match C,D with 60 as *C*,D', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{midinote: 60}];
+				expect(matcher.match(notes)).toEqual(false);
+				
+				expect(matcher.getMatchedIds()).toEqual({2:{type:CodeNode.NOTE,midinote:60,id:2}});
+			});
+		});
 	});
 });

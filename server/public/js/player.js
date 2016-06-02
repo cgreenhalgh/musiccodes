@@ -41,6 +41,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.nextNoteId = 1;
 	$scope.actionUrl = 'data:text/plain,Testing';
 	var codeMatchers = {};
+	$scope.codeMatchers = codeMatchers;
 	
 	$scope.experienceState = {};
 	function updateState(state) {
@@ -74,6 +75,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
+			if (codeMatchers[marker.code]!==undefined) {
+				// for partMaching's benefit
+				codeMatchers[marker.code].reset();
+			}
 			if (marker.precondition===undefined)
 				marker.preconditionok = true;
 			else
@@ -92,8 +97,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 
 					codes[marker.projection.id] = code;
 				}
-				if (code!==undefined && codeMatchers[marker.code]!==undefined && (!marker.atEnd || group.closed)) {
-					if ( codeMatchers[marker.code].match( code ) ) {
+				// always check code for partial feedback
+				if (code!==undefined && codeMatchers[marker.code]!==undefined &&
+					codeMatchers[marker.code].match( code ) ) {
+					if (!marker.atEnd || group.closed) {
 						console.log('Matched marker '+marker.title+' code '+proc.notesToString(code));
 						socket.emit('action',marker);
 						if (marker.poststate!==undefined)
@@ -403,13 +410,14 @@ playerApp.factory('safeEvaluate', function() {
 	};
 });
 
-playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteCoder, safeEvaluate) {
+playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', function(noteCoder, safeEvaluate, CodeNode) {
 	return {
 		restrict: 'E',
 		scope: {
 			markers: '=',
 			lastGroup: '=',
-			experienceState: '='
+			experienceState: '=',
+			codeMatchers: '='
 		},
 		templateUrl: 'partials/mus-partcodes.html',
 		link: function(scope, element, attrs) {
@@ -418,48 +426,50 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteC
 			
 			// methods
 			function setupPartcode(partcode) {
-				// split into prefix codes, build regexes and state
+				// split into prefix codes
 				// has partcode.code, partcode.codeformat, partcode.marker
 				var prefixes = [];
-				var ppat = /((\\[0-7]{1,3})|(\\x[a-fA-F0-9]{2})|(\\u[a-fA-F0-9]{4})|(\\[^0-7xu])|(\[[^\]]*\]))|([+*?]|[{][0-9]+(,[0-9]*)?[}])|([()])|([^()[\\*+?{])/g
-				var match;
-				var patt = '';
-
 				console.log('find prefixes of '+partcode.code);
-				while( (match=ppat.exec(partcode.code)) != null ) {
-					var metachar = match[1];
-					var quantifier = match[7];
-					var bracket = match[9];
-					var string = match[10];
-					//console.log('  metachar='+metachar+', quant='+quantifier+', bracket='+bracket+', string='+string);
-					if (quantifier!==undefined) {
-						// no-op
-					} else if (patt.length>0 && patt!='^') {
-						console.log('Found prefix '+patt+' for '+partcode.code);
-						var text = patt;
-						if (prefixes.length>0)
-							text = text.substring(prefixes[prefixes.length-1].length);
-						var prefix = { patt: patt, text: text, matched: false, regex: new RegExp(patt+'$'), length: patt.length };
-						prefixes.push(prefix);
-						// bracket?
-						if (bracket=='(') {
-							var depth = 1;
-							patt = patt+match[0];
-							while( (match=ppat.exec(partcode.code)) != null) {
-								var bracket = match[9];
-								if (bracket=='(')
-									depth++;
-								else if (bracket==')') {
-									depth--;
-									if (depth==0)
-										break;
-								}
-								patt = patt+match[0];
-							}
-
+				function recurse(node, parent, text, pos) {
+					console.log('prefix recurse '+text.substring(0,pos)+'<>'+text.substring(pos)+': '+JSON.stringify(node));
+					if (node===undefined || node===null)
+						return pos;
+					var ntext = CodeNode.toString(node);
+					var ix = text.indexOf(ntext, pos);
+					if (ix<0) {
+						console.log('Error, partcode: did not find '+ntext+' in '+text);
+						return text.length;
+					} else {
+						var rpos = pos;
+						if (ix>pos) {
+							rpos = ix;
+							var prefix = { id: parent.id, text: text.substring(pos,ix), matched: false, length: rpos };
+							console.log('add parent prefix '+JSON.stringify(prefix));
+							prefixes.push(prefix);
 						}
+						if (node.children!==undefined && node.children!==null) {
+							for (var ci in node.children) {
+								var child = node.children[ci];
+								rpos = recurse(child, node, text, rpos);
+							}
+						}
+						if (ix+ntext.length > rpos) {
+							var prefix = { id: node.id, text: text.substring(rpos,ix+ntext.length), matched: false, length: ix+ntext.length };
+							console.log('add prefix '+JSON.stringify(prefix));
+							rpos = ix+ntext.length;
+							prefixes.push(prefix);
+						}
+						return rpos;
 					}
-					patt = patt+match[0];
+				}
+				if (partcode.code!==undefined && scope.codeMatchers[partcode.code]!==undefined) {
+					var node = scope.codeMatchers[partcode.code].node;
+					var text = CodeNode.toString(node);
+					recurse(node, undefined, text, 0);
+					if (partcode.atEnd) {
+						var prefix = { atEnd:true, text: '<END>', matched: false, length: text.length+1 };
+						prefixes.push(prefix);
+					}
 				}
 				partcode.prefixes = prefixes;
 			};
@@ -470,15 +480,8 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteC
 				for (var mi in markers) {
 					var marker = markers[mi];
 					if (marker.code && marker.code.length>0) {
-						var code = marker.code;
-						if (code[code.length-1]=='$') 
-							// escape to match exact
-							code = code.substring(0, code.length-1)+'\\$$';
-						else
-							// to end
-							code = code+'$';
-						if (marker.codeformat!==undefined) {
-							var partcode = { code: code, codeformat: marker.codeformat, marker: marker, precondition: marker.precondition, preconditionok: true };
+						if (marker.projection!==undefined) {
+							var partcode = { code: marker.code, atStart: marker.atStart, atEnd: marker.atEnd, projection: marker.projection, marker: marker, precondition: marker.precondition, preconditionok: true };
 							partcode.id = scope.partcodes.length;
 							scope.partcodes.push(partcode);
 							setupPartcode(partcode);
@@ -488,6 +491,7 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteC
 			};
 			
 			function update(lastGroup, experienceState) {
+				console.log('update partcode preconditions...');
 				for (var pi in scope.partcodes) {
 					var partcode = scope.partcodes[pi];
 					if (partcode.precondition===undefined)
@@ -500,26 +504,26 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', function(noteC
 				if (!lastGroup)
 					return;
 				console.log('update partcodes...');
-				var codes = {};
 				for (var pi in scope.partcodes) {
 					var partcode = scope.partcodes[pi];
-					if (partcode.codeformat!==undefined && partcode.codeformat!==null && partcode.codeformat.length>0) {
-						var code = codes[partcode.codeformat];
-						if (code===undefined) {
-							codes[partcode.codeformat] = code = noteCoder.code(partcode.codeformat, lastGroup.notes, lastGroup.closed);
-						}
+					if (partcode.code!==undefined && scope.codeMatchers[partcode.code]!==undefined) {
+						var matched = scope.codeMatchers[partcode.code].getMatchedIds();
 
 						var longest = 0;
-						for (var i=partcode.prefixes.length-1; partcode.preconditionok && i>=0; i--) {
+						for (var i in partcode.prefixes) {
 							var prefix = partcode.prefixes[i];
-							if (prefix.regex.test(code)) {
-								longest = prefix.length;
-								break;
+							if ((prefix.atEnd && lastGroup.closed && matched[scope.codeMatchers[partcode.code].node.id]!==undefined) || matched[prefix.id]!==undefined) {
+								prefix.matched = true;
+								if (prefix.length>length) {
+									longest = prefix.length;
+								}
+							} else {
+								prefix.matched = false;
 							}
 						}
 						partcode.longestPrefix = longest;
 						for (var i in partcode.prefixes) {
-							partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
+							//partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
 							partcode.prefixes[i].preconditionok = partcode.preconditionok;
 						}
 					}
