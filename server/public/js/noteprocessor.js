@@ -29,11 +29,13 @@ mod.factory('NoteProcessor', ['CodeNode', function(CodeNode) {
 	}
 	NoteProcessor.prototype.projectNotes = function(projection, notes) {
 		var res = [];
+		var lostBeats = 0.0;
 		for (var ni in notes) {
 			var note = notes[ni];
 			var notep = null;
 			if (note.beats!==undefined && projection.countsPerBeat) {
-				var beats = Math.floor( note.beats*projection.countsPerBeat + 0.5 ) / projection.countsPerBeat;
+				var beats = Math.floor( (note.beats+lostBeats)*projection.countsPerBeat + 0.5 ) / projection.countsPerBeat;
+				lostBeats += note.beats-beats;
 				if (beats>0) {
 					if (res.length>0 && res[res.length-1].beats!==undefined) {
 						// merge

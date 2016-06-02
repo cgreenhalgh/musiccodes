@@ -100,6 +100,14 @@ describe('muzicodes.codeui module', function() {
 				.toEqualApproximately([{beats:2.5}]);
 			});
 		});
+		it('should map 0.4,0.4 beats at quant. 1 to 1 beat', function() {
+			inject(function(NoteProcessor) {
+				var projection = { countsPerBeat: 1 };
+				var notes = [{beats:0.4},{beats:0.4}];
+				expect((new NoteProcessor()).projectNotes(projection, notes))
+				.toEqualApproximately([{beats:1}]);
+			});
+		});
 		it('should map note 60.2 at quant. 2 to 60', function() {
 			inject(function(NoteProcessor) {
 				var projection = { pitchesPerSemitone: 2 };
