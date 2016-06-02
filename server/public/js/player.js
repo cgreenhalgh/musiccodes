@@ -1,6 +1,7 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging',
-                                             'muzicodes.softkeyboard','muzicodes.codeui','muzicodes.noteprocessor']);
+                                             'muzicodes.softkeyboard','muzicodes.codeui','muzicodes.noteprocessor',
+                                             'muzicodes.context']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',

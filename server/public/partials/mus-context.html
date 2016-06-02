@@ -1,4 +1,6 @@
 <table><tbody>
   <tr><td><label>Tempo (BPM)</label></td>
-      <td><input type="number" step="0.1" ng-model="context.tempo"></td></tr>
+      <td><input type="number" step="0.1" ng-model="context.tempo"><!-- 
+       --><button class="tempo-show" ng-class="{'tempo-show-active':tempoShowActive,'tempo-show-highlight':tempoShowHighlight}" ng-click="tempoShow()">M</button><!-- 
+       --><button class="tempo-input" ng-click="tempoInput()">Tap</button></td></tr>
 </tbody></table>

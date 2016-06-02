@@ -1,6 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui']);
+                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui','muzicodes.context']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -611,17 +611,6 @@ editorApp.directive('urlchecker', ['$http', '$timeout', function($http, $timeout
 				checkurl(newValue);
 			});
 			checkurl(scope.ngModel);
-		}
-	};
-}]);
-editorApp.directive('musContext', [function() {
-	return {
-		restrict: 'E',
-		scope: {
-			context: '='
-		},
-		templateUrl: '/partials/mus-context.html',
-		link: function(scope, element, attrs) {
 		}
 	};
 }]);
