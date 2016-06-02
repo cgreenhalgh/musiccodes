@@ -161,3 +161,18 @@ Surface syntax is '^' at start, '$' at end.
 A permutation term might be useful but is not yet defined. It would be a variant of repeated choice but with constraints about the number of repetitions of each term. To avoid immediate need for it, it is important that patterns and note sequences are normalised before comparison, in particular that simultaneous note are ordered unambiguously, perhaps by note value.
 
 A universal wildcard and wildcard/kleene star might be useful to concisely specify "anything at all".
+
+## Inexact Matching
+
+Approach as inexact string matching between the code pattern and the input note stream (after projection).
+
+Perhaps a dynamic programming solution to aligning the input notes with the pattern sequence; see [Levenshtein_distance](https://en.wikipedia.org/wiki/Levenshtein_distance). (x,y) is cost of aligning input note x with pattern symbol y. See [Navarro_Gonzalo_Guided_tour](http://repositorio.uchile.cl/bitstream/handle/2250/126168/Navarro_Gonzalo_Guided_tour.pdf)	E.g. Ukkonen 1985 (p24)
+
+This probably can't cope with complex patterns, but would work with notes, sequences, choices and ranges of individual notes. 
+- Should generalise to optional ('?') individual notes/ranges, which translates to a cost-free deletion. 
+- Might generalise to arbitrary repeat of individual notes/ranges but needs more thought (e.g. counting number of insertions for ranges with upper bound). 
+- Repeat with lower bound can be handled by expansion. 
+- Can generalise to interleaving of '.*' though subdivision of the pattern into sub-patterns which are individually matched (since sequence is strict we just need to know when the next sub-pattern is matched).
+
+Cost at each point is 0 for match, or function of difference, i.e. different note/delay, inserted note/delay, deleted note/delay. These costs could be configurable. Specific costs could also be annotated within the pattern, e.g. 'A4|B4@0.1' to indicate a cost of 0.1 for choice of B4 at this point.
+
