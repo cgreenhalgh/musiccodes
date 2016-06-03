@@ -11,13 +11,12 @@
   <p>Server {{serverProtocol}}//{{serverHost}}:{{serverPort}}</p>
   <hr>
   <h2>Edit</h2>
-  <p><label>Show State:</label> <input type="checkbox" ng-model="showState"></p>
 <form name="experienceForm" ng-submit=""> 
   <!-- dirty isn't working for adding/removing form sections -->
   <input type="submit" value="save" ng-disabled="!experienceForm.$dirty && !formChanged" ng-click="save()" ng-class="{'disabled': !experienceForm.$dirty && !formChanged}">
  {{ experienceForm.$dirty || formChanged ? 'Has unsaved changes' : 'No changes' }}
 
-  <h3>General</h3>
+  <h3>Experience Metadata</h3>
   <table><tbody>
   <tr><td><label>Name</label></td>
       <td><input type="text" ng-model="name"></td></tr>
@@ -25,59 +24,106 @@
       <td><input type="text" ng-model="description"></td></tr>
   <tr><td><label>Author</label></td>
       <td><input type="text" ng-model="author"></td></tr>
-  <tr><td><label>Midi Input</label></td>
-      <td><!-- <input type="text" ng-model="parameters.midiInput" placeholder="(none)"> -->
-          <midi-input-selector ng-model="parameters.midiInput"></midi-input-selector></td></tr>
-  <tr><td><label>Midi Output</label></td>
-      <td><midi-output-selector ng-model="parameters.midiOutput"></midi-output-selector></td></tr>
-  <tr><td><label>Record Audio</label></td>
-      <td><input type="checkbox" ng-model="recordAudio"></td></tr>
-  </tbody></table>
-  <h3>Parameters</h3>
-  <table><tbody>
-  <tr><td><label>Minimum Frequency</label></td>
-      <td><input type="number" step="1" ng-model="parameters.minFrequency">
-          <span>{{ parameters.minFrequency | freq2note }}</span></td></tr>
-  <tr><td><label>Maxmimum Frequency</label></td>
-      <td><input type="number" step="1" ng-model="parameters.maxFrequency">
-          <span>{{ parameters.maxFrequency | freq2note }}</span></td></tr>
-  <tr><td><label>Minimum Velocity (amplitude)</label></td>
-      <td><input type="number" step="1" ng-model="parameters.minVelocity"> (0-127)</td></tr>
-  <tr><td><label>Maxmimum Velocity (amplitude)</label></td>
-      <td><input type="number" step="1" ng-model="parameters.maxVelocity"> (0-127)</td></tr>
-  <tr><td><label>Maximum gap between note onsets (seconds)</label></td>
-      <td><input type="number" step="0.01" ng-model="parameters.streamGap"></td></tr>
-  <tr><td><label>Maximum note duration (seconds)</label></td>
-      <td><input type="number" step="0.01" ng-model="parameters.maxDuration"></td></tr>
-  <tr><td><label>Frequency ratio</label></td>
-      <td><input type="number" step="0.01" ng-model="parameters.frequencyRatio">
-          <span>{{ parameters.frequencyRatio | ratio2interval }}</span></td></tr>
-  <tr><td><label>Monophonic</label></td>
-      <td><input type="checkbox" ng-model="parameters.monophonic"></td></tr>
-  <tr><td><label>If monophonic, minimum gap between note onsets (seconds)</label></td>
-      <td><input type="number" step="0.01" ng-model="parameters.monophonicGap"></td></tr>
-  <tr><td><label>Instrument (Silvet plugin)</label></td>
-    <td>
-      <select ng-model="parameters.vampParameters.instrument" ng-options="option.value as option.name for option in instrumentOptions">
-      </select>
-  </td></tr>
-  <tr uib-collapse="!showState"><td><label>Initial State</label></td>
-    <td>
-      <div class="var" ng-repeat="(var,value) in parameters.initstate"><span>{{var}}</span>=<input type="text" size="6" ng-model="parameters.initstate[var]"><!-- 
-       --><button ng-click="deleteInitstate(var)">-</button>
-      </div>
-      <div class="var">
-      	<button ng-click="addInitstate()">+</button><!-- 
-      	 --><input type="text"  size="6" ng-model="newInitstateName">=<input type="text"  size="6" ng-model="newInitstateValue">
-      </div>
-  </td></tr>
   </tbody></table>
 
-	<h3>Default Context</h3>
+	<hr>
+	<h3>Overview</h3>
+	<p>1. Input Source -> 2. Context Mapping -> 3. Note Filter/Grouping -> 4. Note Transformations -> Examples -> 5. Conditional Matching -> 6. Codes and Actions -> 7. Outputs</p>
+	<hr>
+	<h3>Input</h3>
+	<h4>1. Input Source</h4>
+	<p>Specify the audio/Midi input: (leave Midi input blank to use the default audio input)</p>
+	<table>
+		<tbody>
+			<tr>
+				<td><label>Audio (default)</label></td>
+			</tr>
+			<tr>
+				<td><label>Instrument (Silvet plugin)</label></td>
+				<td><select ng-model="parameters.vampParameters.instrument"
+					ng-options="option.value as option.name for option in instrumentOptions">
+				</select></td>
+			</tr>
+			<tr>
+				<td><label>Record Audio (log)</label></td>
+				<td><input type="checkbox" ng-model="recordAudio"></td>
+			</tr>
+			<tr>
+				<td><label>Use Midi Input</label></td>
+				<td>
+					<!-- <input type="text" ng-model="parameters.midiInput" placeholder="(none)"> -->
+					<midi-input-selector ng-model="parameters.midiInput"></midi-input-selector>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h4>2. Context Mapping</h4>
+	
+	<p>Specify the musical context of the incoming notes:</p>
 	
 	<mus-context context="defaultContext"></mus-context> 
 	
-	<h3>Projections</h3>
+	<h4>3. Note Filter/Grouping</h4>
+	
+	<p>Specify how notes are selected and grouped into phrases for matching:</p>
+	
+	<table>
+		<tbody>
+			<tr>
+				<td><label>Minimum Frequency</label></td>
+				<td><input type="number" step="1"
+					ng-model="parameters.minFrequency"> <span>{{
+						parameters.minFrequency | freq2note }}</span></td>
+			</tr>
+			<tr>
+				<td><label>Maxmimum Frequency</label></td>
+				<td><input type="number" step="1"
+					ng-model="parameters.maxFrequency"> <span>{{
+						parameters.maxFrequency | freq2note }}</span></td>
+			</tr>
+			<tr>
+				<td><label>Minimum Velocity (amplitude)</label></td>
+				<td><input type="number" step="1"
+					ng-model="parameters.minVelocity"> (0-127)</td>
+			</tr>
+			<tr>
+				<td><label>Maxmimum Velocity (amplitude)</label></td>
+				<td><input type="number" step="1"
+					ng-model="parameters.maxVelocity"> (0-127)</td>
+			</tr>
+			<tr>
+				<td><label>Maximum gap between note onsets (seconds)</label></td>
+				<td><input type="number" step="0.01"
+					ng-model="parameters.streamGap"></td>
+			</tr>
+			<tr>
+				<td><label>Maximum note duration (seconds)</label></td>
+				<td><input type="number" step="0.01"
+					ng-model="parameters.maxDuration"></td>
+			</tr>
+			<tr>
+				<td><label>Frequency ratio</label></td>
+				<td><input type="number" step="0.01"
+					ng-model="parameters.frequencyRatio"> <span>{{
+						parameters.frequencyRatio | ratio2interval }}</span></td>
+			</tr>
+			<tr>
+				<td><label>Monophonic</label></td>
+				<td><input type="checkbox" ng-model="parameters.monophonic"></td>
+			</tr>
+			<tr>
+				<td><label>If monophonic, minimum gap between note
+						onsets (seconds)</label></td>
+				<td><input type="number" step="0.01"
+					ng-model="parameters.monophonicGap"></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<h4>4. Note Transformations</h4>
+	
+	<p>Specify options for transforming notes before they are matched to reduce "irrelevant" differences:</p>
 	
 	<div ng-repeat="projection in projections" class="projection">
 		<mus-projection projection="projection"></mus-projection> 
@@ -88,7 +134,10 @@
 		<mus-projection projection="newProjection"></mus-projection> 
 	</div>
 	
+	<hr>
 	<h3>Examples</h3>
+	
+	<p>Enter and test example phrases, and generate possible codes:</p>
 
 	<ul class="examples">
 		<li ng-repeat="example in examples" ng-controller="ExampleCtrl" class="example">
@@ -119,7 +168,42 @@
 		<div note-roll notes="addingExampleNotes" time="addingTime" groups="addingGroups" parameters="parameters" context="defaultContext"></div>
 	</li>
 
-  <h3>Codes</h3>
+	<hr>
+	<h3>Codes</h3>
+	<h4>5. Conditional Matching</h4>
+	
+	<p>Specify additional rules for when codes can be matched:</p>
+
+	<p>
+		<label>Show State:</label> <input type="checkbox" ng-model="showState">
+	</p>
+	<table>
+		<tbody>
+			<tr uib-collapse="!showState">
+				<td><label>Initial State</label></td>
+				<td>
+					<div class="var" ng-repeat="(var,value) in parameters.initstate">
+						<span>{{var}}</span>=<input type="text" size="6"
+							ng-model="parameters.initstate[var]">
+						<!-- 
+       -->
+						<button ng-click="deleteInitstate(var)">-</button>
+					</div>
+					<div class="var">
+						<button ng-click="addInitstate()">+</button>
+						<!-- 
+      	 -->
+						<input type="text" size="6" ng-model="newInitstateName">=<input
+							type="text" size="6" ng-model="newInitstateValue">
+					</div>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	
+  <h4>6. Codes and Actions</h4>
+
+	<p>Specify codes and actions to be performed:</p>
 
   <ul class="markers">
     <li ng-repeat="marker in markers" ng-controller="MarkerCtrl" class="marker">
@@ -168,4 +252,20 @@
       <mus-code-input type="text" ng-model="newMarkerCode"></mus-code-input>
    </li>
 </ul>
+
+	<hr>
+	<h3>7. Outputs</h3>
+	
+	<p>Specify outputs:</p>
+	
+	<table>
+		<tbody>
+			<tr>
+				<td><label>Midi Output</label></td>
+				<td><midi-output-selector ng-model="parameters.midiOutput"></midi-output-selector></td>
+			</tr>
+		</tbody>
+	</table>
+
+
 </form>
