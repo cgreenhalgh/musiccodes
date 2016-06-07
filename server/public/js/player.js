@@ -355,6 +355,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	});
 
+	$scope.selectNotes = function(notes) {
+		console.log("Player select notes: "+JSON.stringify(notes));
+		socket.emit('selectNotes', notes);
+	}
 }]);
 
 playerApp.directive('urlView', ['$http', '$sce', function($http, $sce) {

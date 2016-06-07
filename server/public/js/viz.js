@@ -43,11 +43,68 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        parameters: '=',
 	        height: '@',
 	        period: '=',
-	        context: '='
+	        context: '=',
+	        onselect: '&'
 		},
 		link: function(scope, element, attrs) {
+			scope.times = [[0,0],[0,0]];
+			scope.selection = null;
 			console.log('link note-roll, period='+scope.period+'...');
+			function mapTime(ev) {
+				var time = 0;
+				var offsetX = ev.clientX-element[0].getBoundingClientRect().left;
+				//console.log('mouse position '+ev.clientX+', offset '+element[0].getBoundingClientRect().left);
+				if (offsetX<scope.times[0][0])
+					time = scope.times[1][0];
+				else if (offsetX>scope.times[0][1])
+					time = scope.times[1][1];
+				else {
+					var a = (offsetX-scope.times[0][0])/(scope.times[0][1]-scope.times[0][0]);
+					time = scope.times[1][0]+a*(scope.times[1][1]-scope.times[1][0]);
+				}
+				return time;
+			}
 			d3Service.d3().then(function(d3) {
+				element.on('mousedown', function(ev) {
+					//console.log('note-roll mousedown '+ev.button+' at '+ev.offsetX+','+ev.offsetY);
+					if (ev.button==0) {
+						var time = mapTime(ev);
+						scope.selection = [time,time];
+					}
+					ev.preventDefault();
+				});
+				element.on('mouseup', function(ev) {
+					//console.log('note-roll mouseup '+ev.button+' at '+ev.clientX+','+ev.clientY);
+					if (ev.button==0 && scope.selection!=null) {
+						var time = mapTime(ev);
+						scope.selection = [Math.min(scope.selection[0], time), Math.max(scope.selection[0], time)];
+						//console.log('select time '+scope.selection[0]+'-'+scope.selection[1]);
+						var notes = [];
+						if (scope.notes) {
+							for (var ni in scope.notes) {
+								var note = scope.notes[ni];
+								if (note.time >= scope.selection[0] && note.time <= scope.selection[1])
+									notes.push(note);
+							}
+						}
+						//console.log('selected notes '+JSON.stringify(notes));
+						//scope.selection = null;
+						if (scope.onselect) {
+							scope.onselect({notes: notes});
+						}
+					}					
+					ev.preventDefault();
+				});
+				element.on('mousemove', function(ev) {
+					//console.log('note-roll mousemove '+ev.buttons+' at '+ev.offsetX+','+ev.offsetY);
+					if ((ev.buttons & 1)!=0 && scope.selection!=null) {
+						var time = mapTime(ev);
+						scope.selection = [scope.selection[0], time];
+						//console.log('selecting time '+scope.selection[0]+'-'+scope.selection[1]);
+					}
+					ev.preventDefault();
+				});
+				
 				var margin = parseInt(attrs.margin) || 10;
 				var period = parseInt(scope.period) || 0;
 				var height = parseInt(attrs.height) || 100+2*margin;
@@ -91,6 +148,10 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				scope.$watch('groups', function(newVal, oldVal) {
 					return scope.render(scope.notes, scope.time, newVal);
 				}, true);
+				scope.$watch('selection', function(newVal, oldVal) {
+					console.log('selection changed: '+JSON.stringify(newVal));
+					return scope.render(scope.notes, scope.time, scope.groups, newVal);
+				});
 				// parameters affect grouping, which changes notes, which trigger render
 				scope.$watch('parameters', function(newVals, oldVals) {
 					return scope.regroup(scope.notes, newVals);
@@ -115,7 +176,9 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				}
 				var beats = [];
 				
-				scope.render = function(notes, time, extgroups) {
+				scope.render = function(notes, time, extgroups, selection) {
+					if (selection===undefined)
+						selection = scope.selection;
 					// our custom d3 code
 					// remove all previous items before render
 					var groups = extgroups;
@@ -135,15 +198,17 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 					var xscale;
 					// our xScale#
 					var maxTime = time;
-					if (period>0) 
+					if (period>0) {
 						xscale = d3.scale.linear().domain([time-period, time])
 						  .range([margin, width]);
-					else {
+						scope.times = [[margin,width],[time-period, time]];
+					} else {
 						maxTime = Math.max(DEFAULT_TIME, time,
 								d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }));
 						xscale = d3.scale.linear()
 							.domain([0, maxTime])
 					  .range([margin, width]);
+						scope.times = [[margin,width],[0,maxTime]];
 					}
 					var yscale = d3.scale.log().domain([25,2500]).range([margin+ysize,margin]);
 					var vscale = d3.scale.linear().domain([0,127]).range([1,5]);
@@ -166,6 +231,21 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						.attr('x1', function(d) { return xscale(d); })
 						.attr('x2', function(d) { return xscale(d); });
 
+					if (selection===null)
+						selection = [];
+					else
+						selection = [selection];
+					var selected = svg.selectAll('rect.selection').data(selection);
+					selected
+						.attr('x', function(d) { return xscale(Math.min(d[0],d[1])); })
+						.attr('width', function(d) { return xscale(Math.max(d[0],d[1]))-xscale(Math.min(d[0],d[1])); });
+					selected.enter().append('rect')
+						.classed('selection', true)
+						.attr('y',margin).attr('height',ysize)
+						.attr('x', function(d) { return xscale(Math.min(d[0],d[1])); })
+						.attr('width', function(d) { return xscale(Math.max(d[0],d[1]))-xscale(Math.min(d[0],d[1])); });
+					selected.exit().remove()
+					
 					var tempo = scope.context!==undefined ? scope.context.tempo : 60;
 					if (!tempo)
 						tempo = 60;

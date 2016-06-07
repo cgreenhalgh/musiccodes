@@ -16,6 +16,13 @@ svg.note-roll {
 	stroke-width: 1;
 }
 
+.selection {
+	stroke: #333;
+	stroke-width: 1;
+	fill: #000;
+	fill-opacity: 0.2;
+}
+
 .beat {
 	stroke: #bbb;
 	stroke-width: 1;

@@ -69,6 +69,16 @@ editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scop
 	};
 }]);
 
+editorApp.controller('EditorCtrl', ['$scope', 'socket', function($scope,socket) {
+	// register for select etc.
+	socket.emit('editor');
+	$scope.selectedNotes = null;
+	socket.on('selectNotes', function(notes) {
+		console.log('selectNotes '+JSON.stringify(notes));
+		$scope.selectedNotes = notes;
+	});
+}]);
+
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
                                         'noteGrouperFactory', 'midinotes', 'socket',
                                         function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,

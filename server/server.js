@@ -634,11 +634,13 @@ function log(room, component, event, info, level) {
 		}
 	}
 }
+var EDITORS = '_editors_';
 
 function Client(socket) {
   this.socket = socket;
   console.log('New client');
   var self = this;
+  this.editor = false;
   // test write file spawn('dd', ['of=tmp.wav']
   // Note: this requires my modified version of the vamp plugin host,
   // https://github.com/cgreenhalgh/vamp-live
@@ -689,6 +691,16 @@ function Client(socket) {
 		  event = 'undefined';
 	  log(self.room, 'client', event, msg.info, msg.level);
   });
+  socket.on('editor', function() {
+	 self.editor = true;
+	 socket.join(EDITORS);
+	 console.log('new editor');
+  });
+  socket.on('selectNotes', function(notes) {
+	  log(self.room, 'server', 'selectNotes', notes, LEVEL_INFO);
+	  console.log('selectNotes: '+JSON.stringify(notes));
+	  io.to(EDITORS).emit('selectNotes', notes);
+  })
 }
 Client.prototype.parameters = function(parameters) {
   var self = this;
