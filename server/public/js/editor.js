@@ -642,7 +642,8 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 		scope: {
 			 ngModel: '='
 		},
-		template: '<input type="text" ng-model="ngModel"><span ng-class="{\'code-error\': error}">{{ feedback }}</span>',
+		// leave feedback to Matches
+		template: '<input type="text" ng-model="ngModel">',
 		link: function(scope, element, attrs) {
 			function update() {
 				scope.feedback = '';
@@ -663,6 +664,142 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 			}
 			scope.$watch('ngModel', update);
 			update();
+		}
+	};
+}]);
+/*				
+<label>Matches:</label>
+<div class="match-example" ng-repeat="example in examples">
+	<span>{{ example.title }}</span>
+</div>
+</div>
+*/
+
+editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', function(CodeParser,CodeMatcher,NoteProcessor) {
+	var parser = new CodeParser();
+	return {
+		restrict: 'E',
+		scope: {
+			 examples: '=',
+			 code: '=',
+			 projection: '=',
+			 projections: '=',
+			 atStart: '=',
+			 atEnd: '='
+		},
+		template: '<label>Matches:</label> <span  ng-class="{\'code-error\': error}">{{ feedback }}</span>'+
+		'<div class="match-example" ng-repeat="match in matches">'+
+		'<span>{{ match.title }}</span>'+
+		'</div>',
+		link: function(scope, element, attrs) {
+			scope.matches = [];
+			function update(values) {
+				scope.feedback = '';
+				scope.error = false;
+				if (values.code===undefined) values.code = scope.code;
+				if (values.projection===undefined) values.projection = scope.projection;
+				if (values.projections===undefined) values.projections = scope.projections;
+				if (values.examples===undefined) values.examples = scope.examples;
+				if (values.atStart===undefined) values.atStart = scope.atStart;
+				if (values.atEnd===undefined) values.atEnd = scope.atEnd;
+				console.log('update mus-code-matches code='+values.code+', projection='+values.projection+', examples=[0..'+(values.examples.length-1)+'], atStart='+values.atStart+', atEnd='+values.atEnd);
+				var matcher = null;
+				if (values.code) {
+					var res = parser.parse(values.code);
+					if (res.state==CodeParser.OK) {
+						// no op
+					} else if (res.state==CodeParser.ERROR) {
+						scope.error = true;
+						scope.feedback = 'Error'+(res.location ? ' at char '+(res.location+1) : '')+': '+res.message;
+						scope.matches = [];
+						return;
+					} else {
+						scope.error = true;
+						scope.feedback = JSON.stringify(res);
+						scope.matches = [];
+						return;
+					}
+				} else {
+					// empty
+					scope.matches = [];
+					return;					
+				}
+				// now again with start/end (don't mess up error messages!)
+				var code = values.code;
+				if (!values.atStart)
+					code = '.*,('+code+')';
+				var res = parser.parse(code);
+				if (res.state==CodeParser.OK) {
+					var node = parser.normalise(res.node);
+					matcher = new CodeMatcher(node);
+				}
+				else {
+					scope.error = true;
+					scope.feedback = 'Sorry, could not build matcher for '+code;
+					scope.matches = [];
+					return;						
+				}
+				if (!values.projections || !values.projection) {
+					scope.error = true;
+					scope.feedback = 'No projection specified';
+					scope.matches = [];
+					return;
+				}
+				var projection=null;
+				for (var pi in values.projections) {
+					if (values.projections[pi].id==values.projection) {
+						projection = values.projections[pi];
+						break;
+					}
+				}
+				if (projection===null) {
+					scope.error = true;
+					scope.feedback = 'Projection "'+values.projection+'" not known';
+					scope.matches = [];
+					return;
+				}
+				var matches = [];
+				var noteprocessor = new NoteProcessor();
+				for (var ei in scope.examples) {
+					var example = scope.examples[ei];
+					var notes = noteprocessor.mapRawNotes(example.context, example.rawnotes);
+					if (!notes) {
+						scope.error = true;
+						scope.feedback = 'Sorry, could not map raw notes';
+						scope.matches = [];
+						return;						
+					}
+					notes = noteprocessor.projectNotes(projection, notes);
+					if (!notes) {
+						scope.error = true;
+						scope.feedback = 'Sorry, could not project notes';
+						scope.matches = [];
+						return;						
+					}
+					matcher.reset();
+					var everMatch = false, lastMatch = false;
+					for (var ni in notes) {
+						var note = notes[ni];
+						lastMatch = matcher.matchNext(note);
+						if (lastMatch)
+							everMatch = true;
+					}
+					if (lastMatch || (everMatch && !values.atEnd)) {
+						console.log('code '+values.code+' matches example '+example.title);
+						matches.push({title: example.title});
+					} else {
+						console.log('code '+values.code+' does not match example '+example.title);
+					}
+				}
+				scope.matches = matches;
+			}
+			scope.$watch('code', function(code) { update({code:code}); });
+			scope.$watch('projection', function(projection) { update({projection:projection}); });
+			scope.$watch('projections', function(projections) { update({projections:projections}); }, true);
+			scope.$watch('examples', function(examples) { update({examples:examples}); }, true);
+			scope.$watch('atEnd', function(atEnd) { update({atEnd:atEnd}); });
+			scope.$watch('atStart', function(atStart) { update({atStart:atStart}); });
+			update({});
 		}
 	};
 }]);

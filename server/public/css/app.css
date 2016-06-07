@@ -26,6 +26,13 @@ button.disabled, input.disabled{
 	opacity: 0.3;
 }
 
+mus-code-matches {
+	display: block;
+}
+div.match-example {
+	display: inline-block;
+}
+
 mus-projection {
 	display: inline-block;
 }

@@ -214,7 +214,8 @@
       <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <button ng-click="deleteMarker($index)">-</button>
       <div uib-collapse="isCollapsed">
-      <div uib-collapse="!showState">
+		<mus-code-matches examples="examples" code="marker.code" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd"></mus-code-matches>
+		<div uib-collapse="!showState">
 		<label>Precondition:</label><input type="text" ng-model="marker.precondition">
 		<label>Post state:</label>
 	      <div class="var" ng-repeat="var in variables">
