@@ -156,6 +156,7 @@
 	</ul>
 	<li class="example" uib-collapse="addingExample">
 		<button ng-click="startAddExample()" >Record</button> {{ !!parameters.midiInput ? 'Midi ('+parameters.midiInput+')' : 'Audio' }} 
+		<button ng-click="pasteExample(selectedNotes)" ng-disabled="selectedNotes===null || selectedNotes.length==0 || addingExample" ng-class="{'disabled': selectedNotes===null  || selectedNotes.length==0 || addingExample}">Paste</button>
 		<label>Title:</label> <input type="text" ng-model="newExampleTitle">
 	</li>
 	<li class="example" uib-collapse="!addingExample" >

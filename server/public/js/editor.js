@@ -438,6 +438,16 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		// TODO midi, etc. aswell
 		$scope.recordingExample = false;
 	};
+	$scope.pasteExample = function(notes) {
+		$scope.addingExample = true;
+		$scope.recordingExample = false;
+		$scope.addingGrouper = noteGrouperFactory.create($scope.parameters);
+		console.log('Adding pasted notes to example');
+		for (var ni in notes) {
+			var note = notes[ni];
+			onNote(note);
+		}
+	}
 	$scope.doneAddExample = function() {
 		$scope.stopRecordingExample();
 		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes };
