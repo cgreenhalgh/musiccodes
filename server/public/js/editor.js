@@ -1,6 +1,6 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui','muzicodes.context']);
+                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui','muzicodes.context','muzicodes.audioout']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -80,9 +80,9 @@ editorApp.controller('EditorCtrl', ['$scope', 'socket', function($scope,socket) 
 }]);
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
-                                        'noteGrouperFactory', 'midinotes', 'socket',
+                                        'noteGrouperFactory', 'midinotes', 'socket', 'audioout', '$timeout',
                                         function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,
-                                        		noteGrouperFactory,midinotes,socket) {
+                                        		noteGrouperFactory,midinotes,socket,audioout, $timeout) {
 	$scope.defaults = {};
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
@@ -472,6 +472,66 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		$scope.examples.splice(index,1);  
 		$scope.formChanged = true;	
 	};
+	var playTimer = null;
+	var playingNotes = [];
+	var playNotes = [];
+	var playTime = 0;
+	function playNextNote() {
+		var nextTime = null;
+		for (var ni=0; ni<playingNotes.length; ni++) {
+			var note = playingNotes[ni];
+			if (note.time+note.duration<=playTime) {
+				audioout.noteOff(note);
+				playingNotes.splice(ni,1);
+				ni--;
+			} else if (nextTime===null || nextTime>note.time+note.duration) {
+				nextTime = note.time+note.duration;
+			}
+		}
+		while (playNotes.length>0) {
+			var note = playNotes[0];
+			if (note.time<=playTime) {
+				playNotes.splice(0,1);
+				for (var ni=0; ni<playingNotes.length; ni++) {
+					var n = playingNotes[ni];
+					if (Math.abs(note.freq-n.freq)<0.001) {
+						audioout.noteOff(n);
+						playingNotes.splice(ni,1);
+						ni--;
+					}
+				}
+				if (note.duration!==undefined && note.duration!==null) {
+					audioout.noteOn(note);
+					playingNotes.push();
+					if (nextTime===null || note.time+note.duration<nextTime)
+						nextTime = note.time+note.duration;
+				}
+			}
+			else {
+				if (nextTime===null || note.time<nextTime)
+					nextTime = note.time;
+				break;
+			}
+		}
+		if (nextTime!==null) {
+			playTimer = $timeout(function() {
+				playTime = nextTime;
+				playTimer = null;
+				playNextNote();
+			}, 1000*(nextTime-playTime));
+		}
+	}
+	$scope.playExample = function(example) {
+		audioout.stop();
+		if (playTimer!==null) {
+			$timeout.cancel(playTimer);
+			playTimer = null;
+		}
+		playNotes = example.rawnotes.slice(0);
+		playingNotes = [];
+		playTime = 0;
+		playNextNote();
+	}
 	$scope.$watch('parameters', function(newVals, oldVals) {
 		console.log('updated parameters -> update groups');
 		if ($scope.addingExampleNotes.length>0) {
