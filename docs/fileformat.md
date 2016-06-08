@@ -44,7 +44,7 @@ not yet implemented:
 - `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 
-##�`marker`
+## `marker`
 
 This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 
@@ -115,8 +115,40 @@ A data URI with the non-standard MIME type `text/x-midi-hex` will be output to t
 
 ## `code`
 
-As of 25/11/2015 there were two code formats.
-As of 27/01/2016 custom formats (below) are only partially implemented. (not all will work.)
+(version 2)
+
+For version 2, a code is based on a regular expression, but with notes and delays as the 'alphabet' rather than individual characters.
+
+Atomic terms are:
+- note: as note name and (optional) octave number. E.g. "C4" is midi note 60, middle C. The default octave is 4.
+- delay: as "/" and number of beats (floating point, approximate). E.g. "/1" is a 1-beat pause between notes.
+
+Basic range terms are:
+- note range: minimum note and maximum note, default any note. Syntax is '[' note '-' note ']', e.g. "[C4-]" is any note middle-C or above.
+- delay range: minimum delay and maximum delay, default any delay. Syntax is '/[' delay '-' delay ']' or '[/' delay '-' '/'? delay ']', e.g. "/[0.5-2]" is any delay between 0.5 and 2 beats.
+
+Wildcard, ".", is any note or delay (but only one).
+
+Basic compound terms are:
+- group: wraps any term as a single unit, e.g. "(C4,D4)" - only needed to deal with precedence of other operators.
+- sequence: of terms in order, separated by ",". E.g. "C4,/1,D4" is middle-C, 1 beat delay, D above middle-C.
+- choice: of terms, unordered, separated by "|". E.g. "C4|D4" is middle-C or D above middle-C.
+
+Precedence of "|" is lowest, i.e. 'a,b|c,d' is equivalent to '(a,b)|(c,d)'
+
+Quantifier (repeats) terms are all suffix operators:
+- "?", for optional. E.g. "C4?" is either middle-C or nothing (i.e. 0 or 1 repetitions)
+- "*", for kleene star, i.e. any number of repetitions including 0. E.g. "C4*" or ".*"
+- "+", for at least once. 
+- "{" m "-" n "}" for between m and n repetitions, inclusive. E.g. "C4{0-1}" is equilent to "C4?"
+
+Precedence of quantifiers is more than sequence or choice. E.g. "C4,D4+" is middle-C followed by at least one D4
+
+The regular expression beginning/end markers ("^" and "$") are not used; the marker properties "atStart" and "atEnd" specify whether the pattern match must be at the start/end of the note group, respectively.
+
+## Version 1 code formats
+
+For historical reference the following code formats were used in version 1, and patterns based on these may be found in old experience files. The were based on purely textual regular expressions, i.e. each character was a token, rather than each note or delay.
 
 ### Code format 1
 
@@ -137,71 +169,6 @@ Format 2 builds codes from relative interval and timing the immediately preceedi
 E.g. `"4/4,2/4,0"` is a sequence of (at least) 3 notes, where the last 3 notes have the same time interval between them (i.e. the first and second notes have the same duration) and there the pitch of each note is one tone below the previous one.
 
 Note that format 2 checks for codes after every note and does not wait for the 'end' of a note stream, so the note pattern can be embedded within a longer stream of notes.
-  
-### Other code formats
-
-Other formats MUST be specified using the `marker`s `codeformat` property. E.g.
-- `no/crle4,` - mixture of format 1 and 2, with note name and octave, plus relative timing.
-
-### Generalised code format
-
-planning notes... only partially implemented.
-
-Note information includes: pitch (note, frequency), time, velocity and duration.
-
-Pitch can be expressed in absolute terms as:
-- Note name compared to reference pitch within some nominal octave, e.g. `C`
-- Note name compared to reference pitch within two nominal octaves (as in folk tab notation), e.g. `C` or `c`
-- Note name and octave compared to reference pitch and octave, e.g. `C4`
-- Midi note number, e.g. `60` which is middle-C (C4)
-- Frequency in Hz, e.g. `261.6` which is also middle-C (but to what precision?!)
-
-Pitch can be expressed in relative terms as:
-- Note name and octave based on some reference note, e.g. `D4` would be a tone above compared to middle-C
-- Midi note number offset or semitone offset, e.g. `+2` or `-2` for a tone above or below
-- Frequency ratio, e.g. `2.0` which is one octave above
-
-A reference note could be:
-- The last note played
-- The first note in the group
-
-From time we can derive time interval between notes, which is comparable to duration (an elapsed time).
-
-Time interval can be expressed in absolute terms as:
-- Seconds, e.g. `1.2`
-- Beats relative to a specified tempo, e.g. `2` beats of 72 bpm
-- Note type relative to a specified tempo and time signature, e.g. `dotted quaver`
-
-Time interval can be expressed in relative terms as:
-- Ratio of a reference note or time, e.g. `0.5`
-- Beats relative to current tempo
-- Note type relative to current tempo / time signature
-
-A reference interval could be:
-- The interval before the last note played
-- The first interval in the group
-
-A code prefix:
-- `m` for midi note
-- `n` for note name
-- `o` for octave
-- `r` for relative to
-- `l` for last note, or `f` for first note in group
-- `e` for equal-to (mapped-to) value
-
-- `t` for time
-- `c` for count
-- `r` for relative to
-- `l` for last note, or `f` for first note in group
-- `e` for equal-to (mapped-to) value
-
-- `*`, `,`, `;`, ` ` separator characters
-
-E.g. format 1 = `no`; format 2 = `mrle0/crle4,`. 
-
-Code variables, e.g. `x`. Constraints, e.g. `x<10`. Variable corresponds to `([A-G]#?[0-9]*)|([0-9]+(\.[0-9]+)?)`, i.e. note name with optional octave number or number (integer or float).
-
-Compound code, prefix `:` code (opt.) `:` constraint expression
 
 ## `example`
 
@@ -224,7 +191,4 @@ A `note` is a JSON object with properties:
 ## Future Work
 
 Future work:
-- rework codeformat specification, perhaps as separate file-wide set of options
-- rework stream group parameters to include more options: minfreq, maxfreq, minvelocity, maxvelocity, mergepolicy (generalises monophonic)
-- support multiple stream group parameter sets per file
- 
+- inexact matching of codes

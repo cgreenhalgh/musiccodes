@@ -137,7 +137,7 @@ Basic compound terms are:
 - sequence: of terms in order
 - choice: of terms, unordered
 
-Surface syntax is '(' ... ')' for grouping/precedence, ',' or ' ' or '/' (which also indicates a delay) for sequence terms, and '|' for choice terms. The alternation operator ('|') has lowest precedence, i.e. 'a,b|c,d' is equivalent to '(a,b)|(c,d)'
+Surface syntax is '(' ... ')' for grouping/precedence, ',' for sequence terms, and '|' for choice terms. The alternation operator ('|') has lowest precedence, i.e. 'a,b|c,d' is equivalent to '(a,b)|(c,d)'
 
 Quantifier term has:
 - single child term
