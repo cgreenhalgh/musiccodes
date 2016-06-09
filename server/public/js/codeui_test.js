@@ -552,4 +552,154 @@ describe('muzicodes.codeui module', function() {
 			});
 		});
 	});
+	describe('InexactMatcher class', function() {
+		// 19
+		it('should match 60 error:0 as C', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:0};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should give error 0 for 60 as C', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:0};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 }];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(0);
+			});
+		});
+		it('should give error 1 for 60 as C,C', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:1};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 }];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(1);
+			});
+		});
+		it('should give error 1 for 60,60 as C', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:1};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 },{midinote: 60}];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(1);
+			});
+		});
+		it('should give error 1 for 62 as C', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:1};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 62}];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(1);
+			});
+		});
+		it('should give error 0 for 60 as [C4-D4]', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("[C4-D4]");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:0};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 }];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(0);
+			});
+		});
+		it('should give error 1 for 60 as [D4-D5]', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("[D4-D5]");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				var inexactParameters = {error:1};
+				matcher.compile(code, inexactParameters.error, inexactParameters);
+				
+				var notes = [{ midinote: 60 }];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(1);
+			});
+		});
+		it('canMatch C,(C|D),E', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,(C|D),E");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				expect(InexactMatcher.canMatch(code)).toEqual(true);
+			});
+		});
+		it('!canMatch C?,D,E', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C?,D,E");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				expect(InexactMatcher.canMatch(code)).toEqual(false);
+			});
+		});
+	});
 });

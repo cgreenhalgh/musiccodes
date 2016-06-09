@@ -213,10 +213,12 @@
       <label>Title:</label>
       <input type="text" ng-model="marker.title">
       <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
+      <!-- <input type="checkbox" ng-model="marker.inexact" ng-class="{'disabled': !isSimple}" ng-disabled="!isSimple">  -->
       <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <button ng-click="deleteMarker($index)">-</button>
       <div uib-collapse="isCollapsed">
-		<mus-code-matches examples="examples" code="marker.code" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd"></mus-code-matches>
+      	<!-- <mus-inexact-parameters marker="marker" parameters="marker.inexactParameters" is-simple="isSimple"></mus-inexact-parameters> -->
+		<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-parameters="marker.inexactParameters" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd"></mus-code-matches>
 		<div uib-collapse="!showState">
 		<label>Precondition:</label><input type="text" ng-model="marker.precondition">
 		<label>Post state:</label>

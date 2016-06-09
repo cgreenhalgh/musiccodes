@@ -53,6 +53,8 @@ Object with properties:
 - `projection` - `id` of `projection` applied to notes for matching with marker (v2)
 - `atStart` (boolean, default false), require code to appear at start of group
 - `atEnd` (boolean, default false), require code to appear at end of group
+- `inexact` (boolean, default false), use inexact matching, i.e. code can be triggered with some errors
+- `inexactParameters`, object, see below
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
@@ -65,6 +67,10 @@ Object with properties:
 
 No longer supported (v2):
 - `codeformat` 
+
+`inexactParameters` object with properties:
+- `error` (float, default 0) maximum error for matching
+(Rest to be determined)
 
 ## State
 
@@ -134,7 +140,8 @@ Basic compound terms are:
 - sequence: of terms in order, separated by ",". E.g. "C4,/1,D4" is middle-C, 1 beat delay, D above middle-C.
 - choice: of terms, unordered, separated by "|". E.g. "C4|D4" is middle-C or D above middle-C.
 
-Precedence of "|" is lowest, i.e. 'a,b|c,d' is equivalent to '(a,b)|(c,d)'
+Precedence of "|" is lowest, i.e. 'a,b|c,d' is equivalent to '(a,b)|(c,d)'.
+Note: for inexact matching a choice can only include individual notes, delays or ranges. For example "(A4|B4),C4" is OK, but "(A4,B4)|(B4,C4)" is not.
 
 Quantifier (repeats) terms are all suffix operators:
 - "?", for optional. E.g. "C4?" is either middle-C or nothing (i.e. 0 or 1 repetitions)
@@ -143,6 +150,7 @@ Quantifier (repeats) terms are all suffix operators:
 - "{" m "-" n "}" for between m and n repetitions, inclusive. E.g. "C4{0-1}" is equilent to "C4?"
 
 Precedence of quantifiers is more than sequence or choice. E.g. "C4,D4+" is middle-C followed by at least one D4
+Note: for inexact matching only "?" (equivalently "{0-1}") is supported.
 
 The regular expression beginning/end markers ("^" and "$") are not used; the marker properties "atStart" and "atEnd" specify whether the pattern match must be at the start/end of the note group, respectively.
 

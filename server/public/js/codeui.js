@@ -279,6 +279,21 @@ codeui.factory('CodeNode', function() {
 		}		
 		return res;
 	};
+	CodeNode.label = function(node) {
+		var nextId = 1;
+		function label(node) {
+			if (node===undefined)
+				return;
+			node.id = nextId++;
+			if (node.children!==undefined && node.children!==null) {
+				for (var ci in node.children) {
+					var child = node.children[ci];
+					label(child);
+				}
+			}
+		}
+		label(node);
+	};
 	return CodeNode;
 });
 
@@ -523,20 +538,7 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 	};
 	CodeMatcher.prototype.compile = function(node) {
 		this.node = node;
-		this.nextId = 1;
-		var self = this;
-		function label(node) {
-			if (node===undefined)
-				return;
-			node.id = self.nextId++;
-			if (node.children!==undefined && node.children!==null) {
-				for (var ci in node.children) {
-					var child = node.children[ci];
-					label(child);
-				}
-			}
-		}
-		label(node);
+		CodeNode.label(node);
 	};
 	// return true/false and decorate notes with match status for vis'n
 	// normalised input notes, i.e. note.freq or delay.beats
@@ -548,7 +550,7 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 			matched = this.matchNext(note);
 		}
 		
-		//if(debug)
+		if(debug)
 			console.log('end match '+matched+' with states '+JSON.stringify(this.states)+' and matchedIds '+JSON.stringify(this.matchedIds));
 		
 		return matched;
@@ -828,4 +830,196 @@ codeui.directive('muzCode', [function() {
 			});
 		}
 	};
+}]);
+
+codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, CodeMatcher) {
+	var debug = true;
+	
+	function InexactMatcher(node, error, parameters) {
+		if (node!==undefined)
+			this.compile(node, error, parameters);
+	};
+	// API
+	InexactMatcher.prototype.compile = function(node, error, parameters) {
+		if (node.type!=CodeNode.SEQUENCE) {
+			node = { type: CodeNode.SEQUENCE, children: [node] };
+		}
+		this.node = node;
+		this.error = error;
+		this.parameters = parameters;
+		CodeNode.label(node);
+		this.codeLength = this.node.children.length;
+		this.costs = new Array(this.codeLength+1);
+		this.costs[0] = 0;
+		this.costs2 = new Array(this.codeLength+1);
+		this.matchers = new Array(this.codeLength);
+		for (var i=0; i<this.node.children.length; i++) {
+			var n = this.node.children[i];
+			this.matchers[i] = new CodeMatcher(n);
+		}
+	};
+	// API
+	InexactMatcher.prototype.reset = function() {
+		// ix 0 is before first child in pattern, etc.
+		this.costs[0] = 0;
+		this.costLength = 1;
+	};
+	// API
+	InexactMatcher.prototype.match = function(notes) {
+		this.reset();
+		var matched = true;
+		for (var ni in notes) {
+			var note = notes[ni];
+			matched = this.matchNext(note);
+		}
+		
+		//if(debug)
+		//	console.log('end match '+matched);
+		
+		return matched;
+	};
+	var INSERT_COST = 1;
+	var DELETE_COST = 1;
+	var REPLACE_COST = 1;
+	// API
+	InexactMatcher.prototype.matchNext = function(note) {
+		// all previous positions in pattern
+		if (debug) {
+			var costs = '';
+			for (var i=0; i<this.costs.length && i<this.costLength; i++) {
+				if (i>0)
+					costs += ',';
+				costs += this.costs[i];
+			}
+			console.log('matchNext('+JSON.stringify(note)+') with costs=['+costs+']');
+		}
+		var nextCostLength = 0;
+		var matched = false;
+		for (var i=0; i<this.codeLength+1; i++) {
+			if (debug) {
+				console.log('['+i+'] '+(i>0 ? CodeNode.toString(this.node.children[i-1]) : '^')+' was '+this.costs[i]);
+			}
+			var cost2 = undefined;
+			// insert?
+			if (i<this.costLength && this.costs[i]!==undefined) {
+				var c = this.costs[i]+INSERT_COST;
+				if (debug)
+					console.log('['+i+'] insert = '+c);
+				if (c<=this.error && (cost2===undefined || c<cost2)) {
+					cost2 = c;
+					matched = true;
+				}	
+			}
+			if (i>0) {
+				// deleted?				
+				if (this.costs2[i-1]!==undefined) {
+					var c = this.costs2[i-1]+DELETE_COST;
+					if (debug)
+						console.log('['+i+'] delete = '+c);
+					if (c<=this.error && (cost2===undefined || c<cost2)) {
+						cost2 = c;
+						matched = true;
+					}
+				}
+				if (i-1<this.costLength  && this.costs[i-1]!==undefined) {
+					// match?
+					this.matchers[i-1].reset();
+					var matches = this.matchers[i-1].matchNext(note);
+					if (matches) {
+						var c = this.costs[i-1];
+						if (debug)
+							console.log('['+i+'] match = '+c);
+						if (cost2===undefined || c<cost2) {
+							cost2 = c;
+							matched = true;
+						}
+					} else {
+						// replace
+						var c = this.costs[i-1]+REPLACE_COST;
+						if (debug)
+							console.log('['+i+'] replace = '+c);
+						if (c<=this.error && (cost2===undefined || c<cost2)) {
+							cost2 = c;
+							matched = true;
+						}
+					}
+				}
+			}
+			if (cost2===undefined) {
+				if ((i-1)+1>=this.costLength) {
+					console.log('['+i+'] <- '+cost2+'; give up');
+					break;
+				}
+				console.log('['+i+'] <- '+cost2);
+			} else {
+				console.log('['+i+'] <- '+cost2);
+				this.costs2[i] = cost2;
+				nextCostLength = i+1;
+			}
+		}
+		var tmp = this.costs;
+		this.costs = this.costs2;
+		this.costs2 = tmp;
+		this.costLength = nextCostLength;
+		return this.costLength>this.codeLength;
+	};
+	InexactMatcher.prototype.getError = function() {
+		return this.costLength<=this.codeLength ? undefined : this.costs[this.codeLength];
+	}
+	// API
+	// map with ids as keys (for speed)
+	InexactMatcher.prototype.getMatchedIds = function(states) {
+		return {};
+	};
+	InexactMatcher.canMatch = function(node) {
+		function isSingle(node) {
+			switch (node.type) {
+			case CodeNode.NOTE:
+			case CodeNode.DELAY:
+			case CodeNode.NOTE_RANGE:
+			case CodeNode.DELAY_RANGE:
+			case CodeNode.WILDCARD:
+				return true;
+			case CodeNode.REPEAT:
+				if (node.minRepeat==1 && node.maxRepeat==1) {
+					return isSingle(node.children[0]);
+				}
+				else {
+					return false;
+				}
+			case CodeNode.CHOICE:
+				var ok = false;
+				for (var i in node.children) {
+					var child = node.children[i];
+					if (!isSingle(child))
+						return false;
+					else
+						ok = true;
+				}
+				return ok;
+			case CodeNode.SEQUENCE:
+				if (node.children.length!=1)
+					return false;
+				return isSinlge(node.children[0]);
+			default:
+				return false;
+			}
+ 		}
+		if (node.type==CodeNode.SEQUENCE) {
+			var children = node.children.slice(0);
+			while (children.length>0) {
+				var child = children.splice(0,1)[0];
+				if (child.type==CodeNode.SEQUENCE) {
+					children = children.concat(child.children);
+				} else {
+					if (!isSingle(child))
+						return false;
+				}
+			}
+			return true;
+		} else {
+			return isSingle(node);
+		}
+	}
+	return InexactMatcher;
 }]);
