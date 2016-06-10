@@ -84,6 +84,14 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
                                         function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,
                                         		noteGrouperFactory,midinotes,socket,audioout, $timeout) {
 	$scope.defaults = {};
+	$scope.topTab = 1;
+	$scope.setTopTab = function(tab) {
+		$scope.topTab = tab;
+	}
+	$scope.bottomTab = 1;
+	$scope.setBottomTab = function(tab) {
+		$scope.bottomTab = tab;
+	}
 	$http.get('/defaults').success(function(data) {
 		$scope.defaults = data;
 		console.log('loaded defaults '+JSON.stringify(data));
@@ -710,7 +718,7 @@ editorApp.directive('musProjectionChoice', [function() {
 			 projections: '=',
 			 projection: '='
 		},
-		template: '<label>Projection:</label><select ng-model="projection">'+
+		template: '<label>Transformation:</label><select ng-model="projection">'+
 	        '<option ng-repeat="projection in projections" value="{{projection.id}}">{{projection.id}}</option>'+
 	      '</select>'
 	};
