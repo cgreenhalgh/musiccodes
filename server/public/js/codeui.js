@@ -833,7 +833,7 @@ codeui.directive('muzCode', [function() {
 }]);
 
 codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, CodeMatcher) {
-	var debug = true;
+	var debug = false;
 	
 	function InexactMatcher(node, error, parameters) {
 		if (node!==undefined)
@@ -947,12 +947,15 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			}
 			if (cost2===undefined) {
 				if ((i-1)+1>=this.costLength) {
-					console.log('['+i+'] <- '+cost2+'; give up');
+					if (debug)
+						console.log('['+i+'] <- '+cost2+'; give up');
 					break;
 				}
-				console.log('['+i+'] <- '+cost2);
+				if (debug)
+					console.log('['+i+'] <- '+cost2);
 			} else {
-				console.log('['+i+'] <- '+cost2);
+				if (debug)
+					console.log('['+i+'] <- '+cost2);
 				this.costs2[i] = cost2;
 				nextCostLength = i+1;
 			}

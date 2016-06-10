@@ -563,8 +563,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:0};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 0, {});
 				
 				var notes = [{ midinote: 60 }];
 				// jasmine.objectContaining()
@@ -580,8 +579,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:0};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 0, {});
 				
 				var notes = [{ midinote: 60 }];
 				matcher.match(notes);
@@ -598,8 +596,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:1};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 1, {});
 				
 				var notes = [{ midinote: 60 }];
 				matcher.match(notes);
@@ -616,8 +613,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:1};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 1, {});
 				
 				var notes = [{ midinote: 60 },{midinote: 60}];
 				matcher.match(notes);
@@ -634,8 +630,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:1};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code,1, {});
 				
 				var notes = [{ midinote: 62}];
 				matcher.match(notes);
@@ -652,8 +647,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:0};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 0, {});
 				
 				var notes = [{ midinote: 60 }];
 				matcher.match(notes);
@@ -670,8 +664,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				var inexactParameters = {error:1};
-				matcher.compile(code, inexactParameters.error, inexactParameters);
+				matcher.compile(code, 1, {});
 				
 				var notes = [{ midinote: 60 }];
 				matcher.match(notes);

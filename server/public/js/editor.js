@@ -565,6 +565,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 
 editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 	$scope.isCollapsed = false;
+	$scope.isSimple = false;
 	console.log('new MarkerCtrl');
 	// nested...
 	$scope.addAction = function() {
@@ -763,7 +764,8 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 </div>
 */
 
-editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', function(CodeParser,CodeMatcher,NoteProcessor) {
+editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', 'InexactMatcher', 
+                                       function(CodeParser, CodeMatcher, NoteProcessor, InexactMatcher) {
 	var parser = new CodeParser();
 	return {
 		restrict: 'E',
@@ -773,11 +775,14 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 			 projection: '=',
 			 projections: '=',
 			 atStart: '=',
-			 atEnd: '='
+			 atEnd: '=',
+			 inexact: '=',
+			 inexactError: '=',
+			 isSimple: '='
 		},
 		template: '<label>Matches:</label> <span  ng-class="{\'code-error\': error}">{{ feedback }}</span>'+
 		'<div class="match-example" ng-repeat="match in matches">'+
-		'<span>{{ match.title }}</span>'+
+		'<span>{{ match.title }}</span> '+
 		'</div>',
 		link: function(scope, element, attrs) {
 			scope.matches = [];
@@ -790,7 +795,10 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 				if (values.examples===undefined) values.examples = scope.examples;
 				if (values.atStart===undefined) values.atStart = scope.atStart;
 				if (values.atEnd===undefined) values.atEnd = scope.atEnd;
-				console.log('update mus-code-matches code='+values.code+', projection='+values.projection+', examples=[0..'+(values.examples.length-1)+'], atStart='+values.atStart+', atEnd='+values.atEnd);
+				if (values.inexact===undefined) values.inexact = scope.inexact;
+				if (values.inexactError===undefined) values.inexactError = scope.inexactError;
+				scope.isSimple = false;
+				console.log('update mus-code-matches code='+values.code+', projection='+values.projection+', examples=[0..'+(values.examples.length-1)+'], atStart='+values.atStart+', atEnd='+values.atEnd+', inexact='+values.inexact+', inexactError='+values.inexactError);
 				var matcher = null;
 				if (values.code) {
 					var res = parser.parse(values.code);
@@ -812,21 +820,6 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 					scope.matches = [];
 					return;					
 				}
-				// now again with start/end (don't mess up error messages!)
-				var code = values.code;
-				if (!values.atStart)
-					code = '.*,('+code+')';
-				var res = parser.parse(code);
-				if (res.state==CodeParser.OK) {
-					var node = parser.normalise(res.node);
-					matcher = new CodeMatcher(node);
-				}
-				else {
-					scope.error = true;
-					scope.feedback = 'Sorry, could not build matcher for '+code;
-					scope.matches = [];
-					return;						
-				}
 				if (!values.projections || !values.projection) {
 					scope.error = true;
 					scope.feedback = 'No projection specified';
@@ -845,6 +838,32 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 					scope.feedback = 'Projection "'+values.projection+'" not known';
 					scope.matches = [];
 					return;
+				}
+				// now again with start/end (don't mess up error messages!)
+				var code = values.code;
+				if (!values.atStart)
+					code = '.*,('+code+')';
+				var res = parser.parse(code);
+				if (res.state==CodeParser.OK) {
+					var node = parser.normalise(res.node);
+					scope.isSimple = InexactMatcher.canMatch(node);
+					
+					if (!values.inexact) {
+						matcher = new CodeMatcher(node);
+					} else if (!scope.isSimple) {
+						scope.error = true;
+						scope.feedback = 'Sorry, code is not simple enough for inexact match';
+						scope.matches = [];
+						return;
+					} else {
+						matcher = new InexactMatcher(node, values.inexactError, projection.inexactParameters)
+					}
+				}
+				else {
+					scope.error = true;
+					scope.feedback = 'Sorry, could not build matcher for '+code;
+					scope.matches = [];
+					return;						
 				}
 				var matches = [];
 				var noteprocessor = new NoteProcessor();
@@ -887,6 +906,8 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 			scope.$watch('examples', function(examples) { update({examples:examples}); }, true);
 			scope.$watch('atEnd', function(atEnd) { update({atEnd:atEnd}); });
 			scope.$watch('atStart', function(atStart) { update({atStart:atStart}); });
+			scope.$watch('inexact', function(inexact) { update({inexact:inexact}); });
+			scope.$watch('inexactError', function(inexactError) { update({inexactError:inexactError}); });
 			update({});
 		}
 	};

@@ -43,6 +43,23 @@ not yet implemented:
 - `id` (string), id/name by which projection is referred to in markers and examples
 - `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
+- `inexactParameters` - see below
+
+(todo) `inexactParameters` is object with properties:
+- `delayError` (number, default 1) weight given to delay errors vs note errors (default for all note errors is 1)
+- `noteInsertError` (number, default 1) weight given to note insertion errors, i.e. extra notes not in the code
+- `noteDeleteError` (number, default 1) weight given to note deletion errors, i.e. missing a note in the code
+- `noteReplaceError` (number, default 2) weight given to note replacement errors, i.e. a different note to the one in the code (which will never be more than an insert plus a delete)
+- `noteAllowRange` (number, semitones, default 0) allowed difference between actual and code midinote value (1=one semitone)
+- `noteErrorRange` (number, semitones, default 0) difference between actual and code midinote value beyond which a full error penalty is applied. E.g. `noteAllowRange` 1 and `noteErrorRange` 3 would assign an error of 0 to same note or +/-1 semitone, error of 0.5 to +/-2 semitones, and error of 1 to +/-3 semitones or above.
+- `delayAllowRange` (number, beats, default 0) allowed difference between actual and code delay value (1=one beat)
+- `delayErrorRange` (number, beats, default 0) difference between actual and code delay value beyond which a full error penalty is applied (1=one beat)
+- `tempoAllowRange` (number, ratio - fraction of tempo, default 0) allowed fraction by which delays may differ compared to context-defined tempo. E.g. 0.1 implies actual delays may be 1/1.1 (90.9%) - 1.1/1 (110%) of code delays.
+- `tempoErrorRange` (number, ratio - fraction of tempo, default 0) fraction by which delays may differ compared to context-defined tempo beyond which a full error penalty is applied. 
+- (more to be determined)
+
+Note that delay and tempo parameters both affect delays, and the lowest cost is taken. The delay parameters is expressed in an absolute +/- beat value and it can be used to represent the timing accuracy of beats. The tempo parameters are expressed as a fraction and can be used to represent the correspondence of tempo. The two measures differ mostly with respect to short delays: a delay parameter is likely to allow /no/ delay as an alternative while a tempo parameter will not. 
+
 
 ## `marker`
 
@@ -54,7 +71,7 @@ Object with properties:
 - `atStart` (boolean, default false), require code to appear at start of group
 - `atEnd` (boolean, default false), require code to appear at end of group
 - `inexact` (boolean, default false), use inexact matching, i.e. code can be triggered with some errors
-- `inexactParameters`, object, see below
+- `inexactError` (float, default 0), allowable error when matching in inexact mode
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
@@ -67,10 +84,6 @@ Object with properties:
 
 No longer supported (v2):
 - `codeformat` 
-
-`inexactParameters` object with properties:
-- `error` (float, default 0) maximum error for matching
-(Rest to be determined)
 
 ## State
 

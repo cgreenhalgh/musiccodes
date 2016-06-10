@@ -266,11 +266,13 @@
       <input type="text" ng-model="marker.title">
       <button ng-click="deleteMarker($index)"  aria-label="Remove marker"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
       <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
-      <!-- <input type="checkbox" ng-model="marker.inexact" ng-class="{'disabled': !isSimple}" ng-disabled="!isSimple">  -->
+      <label>Inexact:</label><input type="checkbox" ng-model="marker.inexact" ng-class="{'disabled': !isSimple}" ng-disabled="!isSimple">
       <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <div uib-collapse="isCollapsed">
-      	<!-- <mus-inexact-parameters marker="marker" parameters="marker.inexactParameters" is-simple="isSimple"></mus-inexact-parameters> -->
-		<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-parameters="marker.inexactParameters" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd"></mus-code-matches>
+      	<div ng-show="isSimple && marker.inexact">
+      		<label>Allowed error:</label><input type="number" step="0.1" min="0" ng-model="marker.inexactError">
+      	</div>
+      	<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-error="marker.inexactError" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd" is-simple="isSimple"></mus-code-matches>
 		<div uib-collapse="!showState">
 		<label>Precondition:</label><input type="text" ng-model="marker.precondition">
 		<label>Post state:</label>
