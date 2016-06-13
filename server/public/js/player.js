@@ -6,11 +6,11 @@ var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
-                                    'CodeNode','CodeMatcher','CodeParser',
+                                    'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
                                     		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
-                                    		CodeNode, CodeMatcher, CodeParser) {
+                                    		CodeNode, CodeMatcher, CodeParser, InexactMatcher) {
 	console.log('url: '+$location.absUrl());
 	var proc = new NoteProcessor();
 	var params = $location.search();
@@ -77,7 +77,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
 			if (codeMatchers[marker.code]!==undefined) {
-				// for partMaching's benefit
+				// for partMatching's benefit
 				codeMatchers[marker.code].reset();
 			}
 			if (marker.precondition===undefined)
@@ -264,6 +264,15 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		var parser = new CodeParser();
 		for (var mi in experience.markers) {
 			var marker = experience.markers[mi];
+			if (marker.projection) {
+				var id = marker.projection;
+				delete marker.projection;
+				for (var pi in experience.projections) {
+					var projection = experience.projections[pi];
+					if (projection.id==id)
+						marker.projection = projection;
+				}
+			}
 			if (marker.code && marker.code.length>0) {
 				var code = marker.code;
 				if (!marker.atStart) {
@@ -272,18 +281,19 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				}
 				var res = parser.parse(code);
 				if (res.state==CodeParser.OK) {
-					codeMatchers[marker.code] = new CodeMatcher(parser.normalise(res.node));
+					res = parser.normalise(res.node);
+					if (!!marker.inexact) {
+						if (InexactMatcher.canMatch(res)) {
+							var parameters = !!marker.projection ? marker.projection.inexactParameters : {};
+							codeMatchers[marker.code] = new InexactMatcher(res, marker.inexactError, parameters);							
+						} else {
+							console.log('cannot match inexact code '+code);
+						}
+					} else {
+						codeMatchers[marker.code] = new CodeMatcher(res);
+					}
 				} else {
 					console.log('error parsing code '+code+': '+res.message);
-				}
-			}
-			if (marker.projection) {
-				var id = marker.projection;
-				delete marker.projection;
-				for (var pi in experience.projections) {
-					var projection = experience.projections[pi];
-					if (projection.id==id)
-						marker.projection = projection;
 				}
 			}
 		}

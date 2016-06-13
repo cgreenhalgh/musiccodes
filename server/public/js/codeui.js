@@ -285,6 +285,7 @@ codeui.factory('CodeNode', function() {
 			if (node===undefined)
 				return;
 			node.id = nextId++;
+			//console.log('label '+node.id+'('+nextId+'): '+JSON.stringify(node));
 			if (node.children!==undefined && node.children!==null) {
 				for (var ci in node.children) {
 					var child = node.children[ci];
@@ -294,6 +295,86 @@ codeui.factory('CodeNode', function() {
 		}
 		label(node);
 	};
+	var SMALL_PITCH = 0.1;
+	var SMALL_DELAY = 0.1;
+	var debug = false;
+	CodeNode.matchesAtomic = function(node, note) {
+		if (note.midinote!==undefined && note.midinote!==null) {
+			if (node.type==CodeNode.NOTE) {
+				if (Math.abs(node.midinote-note.midinote)<SMALL_PITCH) {
+					return true;
+				}
+				else {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': NOTE '+note.midinote+' expected '+node.midinote);
+					return false;
+				}
+			} else if (node.type==CodeNode.NOTE_RANGE) {
+				if (node.minMidinote!==undefined && node.minMidinote!==null && node.minMidinote-SMALL_PITCH>note.midinote) {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': NOTE min '+note.midinote+' expected '+node.minMidinote);
+					return false;
+				} else if (node.maxMidinote!==undefined && node.maxMidinote!==null && node.maxMidinote+SMALL_PITCH<note.midinote) {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': NOTE max '+note.midinote+' expected '+node.maxMidinote);
+					return false;
+				} else {
+					// OK
+					return true;
+				}
+			} else if (node.type==CodeNode.WILDCARD) {
+				// OK
+				return true;
+			} else {
+				// failed - can't match against...
+				if (debug) 
+					console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': NOTE '+note.midinote);
+				return false;
+			}
+		} else if (note.beats!==undefined && note.beats!==null) {
+			if (node.type==CodeNode.DELAY) {
+				if (Math.abs(node.beats-note.beats)<SMALL_DELAY) {
+					return true;
+				}
+				else {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': DELAY '+note.beats+' expected '+node.beats);
+					return false;
+				}
+			} else if (node.type==CodeNode.DELAY_RANGE) {
+				if (node.minBeats!==undefined && node.minBeats!==null && node.minBeats-SMALL_DELAY>note.beats) {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': DELAY min '+note.beats+' expected '+node.minBeats);
+					return false;
+				} else if (node.maxBeats!==undefined && node.maxBeats!==null && node.maxBeats+SMALL_DELAY<note.beats) {
+					// failed
+					if (debug) 
+						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': DELAY max '+note.beats+' expected '+node.maxBeats);
+					return false;
+				} else {
+					// OK
+					return true;
+				}
+			} else if (node.type==CodeNode.WILDCARD) {
+				// OK
+				return true;
+			} else {
+				if (debug) 
+					console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(node)+': DELAY '+note.beats);
+				return false;
+			}
+		}
+		if (debug) 
+			console.log('fail match '+JSON.stringify(note)+' against non-atomic '+JSON.stringify(node));
+		return false;
+		
+	}
+
 	return CodeNode;
 });
 
@@ -560,8 +641,6 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		this.states = [ { nodes: [this.node], counts: [0], matched: [] } ];	
 		this.matchedIds = null;
 	}
-	var SMALL_PITCH = 0.1;
-	var SMALL_DELAY = 0.1;
 	CodeMatcher.prototype.matchNext = function(note) {
 		this.matchedIds = null;
 		// each state possibility...
@@ -634,80 +713,11 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 			var state = this.states[si];
 			// check leaf state
 			var node = state.nodes[state.nodes.length-1];
-			if (note.midinote!==undefined && note.midinote!==null) {
-				if (node.type==CodeNode.NOTE) {
-					if (Math.abs(node.midinote-note.midinote)<SMALL_PITCH) {
-						state.matched.push(node);
-						state.counts[state.nodes.length-1]++;
-						newStates.push(state);
-					}
-					else {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE '+note.midinote+' expected '+node.midinote);
-					}
-				} else if (node.type==CodeNode.NOTE_RANGE) {
-					if (node.minMidinote!==undefined && node.minMidinote!==null && node.minMidinote-SMALL_PITCH>note.midinote) {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE min '+note.midinote+' expected '+node.minMidinote);
-					} else if (node.maxMidinote!==undefined && node.maxMidinote!==null && node.maxMidinote+SMALL_PITCH<note.midinote) {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE max '+note.midinote+' expected '+node.maxMidinote);
-					} else {
-						// OK
-						state.matched.push(node);
-						state.counts[state.nodes.length-1]++;
-						newStates.push(state);
-					}
-				} else if (node.type==CodeNode.WILDCARD) {
-					// OK
-					state.matched.push(node);
-					state.counts[state.nodes.length-1]++;
-					newStates.push(state);					
-				} else {
-					// failed - can't match against...
-					if (debug) 
-						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': NOTE '+note.midinote);
-				}
-			} else if (note.beats!==undefined && note.beats!==null) {
-				if (node.type==CodeNode.DELAY) {
-					if (Math.abs(node.beats-note.beats)<SMALL_DELAY) {
-						state.matched.push(node);
-						state.counts[state.nodes.length-1]++;
-						newStates.push(state);
-					}
-					else {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY '+note.beats+' expected '+node.beats);
-					}
-				} else if (node.type==CodeNode.DELAY_RANGE) {
-					if (node.minBeats!==undefined && node.minBeats!==null && node.minBeats-SMALL_DELAY>note.beats) {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY min '+note.beats+' expected '+node.minBeats);
-					} else if (node.maxBeats!==undefined && node.maxBeats!==null && node.maxBeats+SMALL_DELAY<note.beats) {
-						// failed
-						if (debug) 
-							console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY max '+note.beats+' expected '+node.maxBeats);
-					} else {
-						// OK
-						state.matched.push(node);
-						state.counts[state.nodes.length-1]++;
-						newStates.push(state);
-					}
-				} else if (node.type==CodeNode.WILDCARD) {
-					// OK
-					state.matched.push(node);
-					state.counts[state.nodes.length-1]++;
-					newStates.push(state);					
-				} else {
-					// failed - can't match against...
-					if (debug) 
-						console.log('fail match '+JSON.stringify(note)+' against '+JSON.stringify(state)+': DELAY '+note.beats);
-				}
+			if(CodeNode.matchesAtomic(node, note)) {
+				// OK
+				state.matched.push(node);
+				state.counts[state.nodes.length-1]++;
+				newStates.push(state);
 			}
 		}
 		this.states = newStates;
@@ -852,11 +862,6 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 		this.costs = new Array(this.codeLength+1);
 		this.costs[0] = 0;
 		this.costs2 = new Array(this.codeLength+1);
-		this.matchers = new Array(this.codeLength);
-		for (var i=0; i<this.node.children.length; i++) {
-			var n = this.node.children[i];
-			this.matchers[i] = new CodeMatcher(n);
-		}
 	};
 	// API
 	InexactMatcher.prototype.reset = function() {
@@ -878,6 +883,17 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 		
 		return matched;
 	};
+	function matchesChoice(node, note) {
+		if (node.type==CodeNode.CHOICE) {
+			for (var ci in node.children) {
+				var child = node.children[ci];
+				if (CodeNode.matchesAtomic(child, note))
+					return true;
+			}
+			return false;
+		}
+		return CodeNode.matchesAtomic(node, note);
+	}
 	var INSERT_COST = 1;
 	var DELETE_COST = 1;
 	var REPLACE_COST = 1;
@@ -923,8 +939,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				}
 				if (i-1<this.costLength  && this.costs[i-1]!==undefined) {
 					// match?
-					this.matchers[i-1].reset();
-					var matches = this.matchers[i-1].matchNext(note);
+					var matches = matchesChoice(this.node.children[i-1], note);
 					if (matches) {
 						var c = this.costs[i-1];
 						if (debug)
@@ -971,8 +986,31 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 	}
 	// API
 	// map with ids as keys (for speed)
-	InexactMatcher.prototype.getMatchedIds = function(states) {
-		return {};
+	InexactMatcher.prototype.getMatchedIds = function() {
+		if (!this.costLength) {
+			return {};
+		}
+		console.log('getMatchedIds costLength='+this.costLength+'/'+this.codeLength);
+		var matchedIds = {};
+		for (var i=1; i<this.costLength && i-1<this.codeLength; i++) {
+			var node = this.node.children[i-1];
+			if (node) {
+				if (debug)
+					console.log('match child '+(i-1)+' with id '+node.id+': '+JSON.stringify(node));
+				function addMatched(n) {
+					matchedIds[n.id] = n;
+					for (var ci in n.children) {
+						var child = n.children[ci];
+						if (!!child)
+							addMatched(child);
+					}
+				}
+				addMatched(node);
+			}
+		}
+		if (this.costLength>this.codeLength)
+			matchedIds[this.node.id] = this.node;
+		return matchedIds;
 	};
 	InexactMatcher.canMatch = function(node) {
 		function isSingle(node) {

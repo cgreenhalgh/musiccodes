@@ -694,5 +694,39 @@ describe('muzicodes.codeui module', function() {
 				expect(InexactMatcher.canMatch(code)).toEqual(false);
 			});
 		});
+		it('should part-match C,D with 60 as *C*,D', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60}];
+				expect(matcher.match(notes)).toEqual(false);
+				
+				expect(matcher.getMatchedIds()).toEqual({2:{type:CodeNode.NOTE,midinote:60,id:2}});
+			});
+		});
+		it('should part-match (C|E),D with 60 as *(C|E)*,D', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("(C|E),D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60}];
+				expect(matcher.match(notes)).toEqual(false);
+				// Note: debateable if 4 should be included as "matched"
+				expect(matcher.getMatchedIds()).toEqual({2:{ type: 5, children: [{ type: 1, midinote: 60, id: 3},{ type: 1, midinote: 64, id: 4 }], id: 2 }, 3: { type: 1, midinote: 60, id: 3 }, 4: { type: 1, midinote: 64, id: 4 } });
+			});
+		});
 	});
 });
