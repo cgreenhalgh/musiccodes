@@ -630,7 +630,7 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				matcher.compile(code,1, {});
+				matcher.compile(code,2, {});
 				
 				var notes = [{ midinote: 62}];
 				matcher.match(notes);
@@ -664,10 +664,10 @@ describe('muzicodes.codeui module', function() {
 				expect(code).toBeDefined();
 				
 				var matcher = new InexactMatcher();
-				matcher.compile(code, 1, {});
+				matcher.compile(code, 2, {});
 				
 				var notes = [{ midinote: 60 }];
-				matcher.match(notes);
+				expect(matcher.match(notes)).toEqual(true);
 				// jasmine.objectContaining()
 				expect(matcher.getError()).toEqual(2);
 			});
@@ -711,6 +711,21 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.getMatchedIds()).toEqual({2:{type:CodeNode.NOTE,midinote:60,id:2}});
 			});
 		});
+		it('should not match C with 62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
 		it('should give match error 0.5 for 62 vs 60 with noteAllowRange=1 and noteErrorRange=3 and noteReplaceError=1', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
 				var node = {type: CodeNode.NOTE, midinote: 62};
@@ -725,6 +740,23 @@ describe('muzicodes.codeui module', function() {
 				var note = {beats: 1.2};
 				var parameters = {delayAllowRange: 0.1, delayErrorRange:0.3};
 				expect(InexactMatcher.errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+			});
+		});
+		it('should give error 0.5 for 62 as C4 with noteAllowRange 1 and noteErrorRange 5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C4");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 2, {noteAllowRange: 1, noteErrorRange:5});
+				
+				var notes = [{ midinote: 62 }];
+				expect(matcher.match(notes)).toEqual(true);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toBeCloseTo(0.5);
 			});
 		});
 	});

@@ -893,8 +893,18 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			for (var ci in node.children) {
 				var child = node.children[ci];
 				var err = InexactMatcher.matchesAtomic(child, note, parameters);
-				if (error===undefined || (err!==undefined && err<error))
+				if (error===undefined || (error!==undefined && err!==undefined && err<error))
 					error = err;
+			}
+			if (error===undefined) {
+				if (note.midinote!==undefined) {
+					var maxError = parameters!==undefined && parameters.noteReplaceError!==undefined ? parameters.noteReplaceError : 2;
+					return maxError;
+				}
+				else {
+					var maxError = parameters!==undefined && parameters.delayError!==undefined ? parameters.delayError : 1;
+					return maxError;
+				}
 			}
 			return error;
 		}
@@ -989,12 +999,12 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				}
 				if (i-1<this.costLength  && this.costs[i-1]!==undefined) {
 					// match?
-					var err = errorChoice(this.node.children[i-1], note);
+					var err = errorChoice(this.node.children[i-1], note, this.parameters);
 					if (err!==undefined) {
 						var c = this.costs[i-1]+err;
 						if (debug)
 							console.log('['+i+'] match = '+c);
-						if (cost2===undefined || c<cost2) {
+						if (c<=this.error && (cost2===undefined || c<cost2)) {
 							cost2 = c;
 							matched = true;
 						}

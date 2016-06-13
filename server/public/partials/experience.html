@@ -266,10 +266,10 @@
       <input type="text" ng-model="marker.title">
       <button ng-click="deleteMarker($index)"  aria-label="Remove marker"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
       <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
-      <label>Inexact:</label><input type="checkbox" ng-model="marker.inexact" ng-class="{'disabled': !isSimple}" ng-disabled="!isSimple">
+      <label>Inexact:</label><input type="checkbox" ng-model="marker.inexact" >
       <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <div uib-collapse="isCollapsed">
-      	<div ng-show="isSimple && marker.inexact">
+      	<div ng-show="marker.inexact">
       		<label>Allowed error:</label><input type="number" step="0.1" min="0" ng-model="marker.inexactError">
       	</div>
       	<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-error="marker.inexactError" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd" is-simple="isSimple"></mus-code-matches>
