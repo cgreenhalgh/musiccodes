@@ -621,7 +621,7 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.getError()).toEqual(1);
 			});
 		});
-		it('should give error 1 for 62 as C', function() {
+		it('should give error 2 for 62 as C', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				var code = parser.parse("C");
@@ -635,7 +635,7 @@ describe('muzicodes.codeui module', function() {
 				var notes = [{ midinote: 62}];
 				matcher.match(notes);
 				// jasmine.objectContaining()
-				expect(matcher.getError()).toEqual(1);
+				expect(matcher.getError()).toEqual(2);
 			});
 		});
 		it('should give error 0 for 60 as [C4-D4]', function() {
@@ -655,7 +655,7 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.getError()).toEqual(0);
 			});
 		});
-		it('should give error 1 for 60 as [D4-D5]', function() {
+		it('should give error 2 for 60 as [D4-D5]', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				var code = parser.parse("[D4-D5]");
@@ -669,7 +669,7 @@ describe('muzicodes.codeui module', function() {
 				var notes = [{ midinote: 60 }];
 				matcher.match(notes);
 				// jasmine.objectContaining()
-				expect(matcher.getError()).toEqual(1);
+				expect(matcher.getError()).toEqual(2);
 			});
 		});
 		it('canMatch C,(C|D),E', function() {
@@ -711,21 +711,20 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.getMatchedIds()).toEqual({2:{type:CodeNode.NOTE,midinote:60,id:2}});
 			});
 		});
-		it('should part-match (C|E),D with 60 as *(C|E)*,D', function() {
+		it('should give match error 0.5 for 62 vs 60 with noteAllowRange=1 and noteErrorRange=3 and noteReplaceError=1', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
-				var parser = new CodeParser();
-				var code = parser.parse("(C|E),D");
-				expect(code.state).toEqual(CodeParser.OK);
-				code = parser.normalise(code.node);
-				expect(code).toBeDefined();
-				
-				var matcher = new InexactMatcher();
-				matcher.compile(code, 0, {});
-				
-				var notes = [{midinote: 60}];
-				expect(matcher.match(notes)).toEqual(false);
-				// Note: debateable if 4 should be included as "matched"
-				expect(matcher.getMatchedIds()).toEqual({2:{ type: 5, children: [{ type: 1, midinote: 60, id: 3},{ type: 1, midinote: 64, id: 4 }], id: 2 }, 3: { type: 1, midinote: 60, id: 3 }, 4: { type: 1, midinote: 64, id: 4 } });
+				var node = {type: CodeNode.NOTE, midinote: 62};
+				var note = {midinote: 60};
+				var parameters = {noteAllowRange: 1, noteErrorRange:3, noteReplaceError:1};
+				expect(InexactMatcher.errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+			});
+		});
+		it('should give match error 0.5 for beats 1.2 vs 1 with delayAllowRange=0.1 and delayErrorRange=0.3', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var node = {type: CodeNode.DELAY, beats: 1};
+				var note = {beats: 1.2};
+				var parameters = {delayAllowRange: 0.1, delayErrorRange:0.3};
+				expect(InexactMatcher.errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
 			});
 		});
 	});

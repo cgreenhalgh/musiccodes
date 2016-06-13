@@ -41,6 +41,9 @@ div.match-example {
 
 mus-projection {
 	display: inline-block;
+  padding-bottom: 6px;
+  border-bottom: 1px solid grey;
+  margin-bottom: 6px;
 }
 
 div.projection button {

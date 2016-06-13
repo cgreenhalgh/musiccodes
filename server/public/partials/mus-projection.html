@@ -2,7 +2,33 @@
   <tr><td><label>Transformation name</label></td>
       <td><input type="text" ng-model="projection.id"></td></tr>
   <tr><td><label>Beat Quantisation (per beat)</label></td>
-      <td><input type="number" step="1" ng-model="projection.countsPerBeat"></td></tr>
+      <td><input type="number" step="1" min="0" ng-model="projection.countsPerBeat"></td></tr>
   <tr><td><label>Pitch Quantisation (per semitone)</label></td>
-      <td><input type="number" step="1" ng-model="projection.pitchesPerSemitone"></td></tr>
+      <td><input type="number" step="1" min="0" ng-model="projection.pitchesPerSemitone"></td></tr>
+  <tr><td><label>Inexact matching, timing:</label></td>
+      <td></td></tr>
+  <tr><td><label>Delay cost (default 1)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.delayError"></td></tr>
+  <tr><td><label>Delay allow variation (beats)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.delayAllowRange"></td></tr>
+  <tr><td><label>Delay max variation (beats)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.delayErrorRange"></td></tr>
+  <tr><td><label>Tempo allow variation (fraction)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.tempoAllowRange"></td></tr>
+  <tr><td><label>Tempo max variation (fraction)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.tempoErrorRange"></td></tr>
+      
+  <tr><td><label>Inexact matching, notes:</label></td>
+      <td></td></tr>
+  <tr><td><label>Note insert cost (default 1)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.noteInsertError"></td></tr>
+  <tr><td><label>Note delete cost (default 1)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.noteDeleteError"></td></tr>
+  <tr><td><label>Note replace cost (default 2)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.noteReplaceError"></td></tr>
+  <tr><td><label>Note allow variation (semitones)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.noteAllowRange"></td></tr>
+  <tr><td><label>Note max variation (semitones)</label></td>
+      <td><input type="number" step="0.1" min="0" ng-model="projection.inexactParameters.noteErrorRange"></td></tr>
+
 </tbody></table>
