@@ -78,7 +78,7 @@ If using MIDI as input select the input source (`Use Midi input`); the drop-down
 
 Leave the MIDI input blank to use audio input. When using audio, use the `Instrument` drop-down to specify the instrument you are using to get better note recognition. 
 
-#### Examples (lower panel)
+#### Examples tab (lower panel)
 
 Press `Record` to record an example muzicode or phrase. Press `Stop` at the end of the phrase. Give the example a title and press `Done`. 
 
@@ -90,41 +90,45 @@ Once an example has been recorded you can modify its context; currently this is 
 
 You can also specify a "Matching profile" in which case the corresponding code will be displayed, which can be copied via the clipboard.
 
-#### 2. Note filter/Grouping
+#### 2. Note filter/Grouping tab (upper panel)
 
 Specify which notes will be used and which will be ignored based on their frequency (minimum and maximum) and velocity (i.e. volume). Note that the examples will update dynamically as these values are changed.
 
 Specify when one group will end and another will begin with the "maximum gap between notes". 
 
-#### 3. Context
+#### 3. Context tab (upper panel)
 
 Specify the musical context for interpreting notes, currently only tempo. The `M` button is a visual metronome; tap the `Tap` buttom in time with the music as another way to set the tempo.
 
 Alternatively leave it at 60 BPM so that 1 beat = 1 second.
 
-#### 4. Matching Profile
+#### 4. Matching Profile tab (upper panel)
 
 You must add at least one matching profile. For example, set title "1", beat quantisation "1" and pitch quantisation "1" and press `+`. This matching profile will round all delays to the nearest beat and all notes to the nearest semitone. 
 
 If you use inexact matching in a code then the other parameters specify exactly how the inexact matching will work:
-- `delayError` (number, default 1) weight given to delay errors vs note errors (default for all note errors is 1)
-- `noteInsertError` (number, default 1) weight given to note insertion errors, i.e. extra notes not in the code
-- `noteDeleteError` (number, default 1) weight given to note deletion errors, i.e. missing a note in the code
-- `noteReplaceError` (number, default 2) weight given to note replacement errors, i.e. a different note to the one in the code (which will never be more than an insert plus a delete)
-- `noteAllowRange` (number, semitones, default 0) allowed difference between actual and code midinote value (1=one semitone)
-- `noteErrorRange` (number, semitones, default 0) difference between actual and code midinote value beyond which a full error penalty is applied. E.g. `noteAllowRange` 1 and `noteErrorRange` 3 would assign an error of 0 to same note or +/-1 semitone, error of 0.5 to +/-2 semitones, and error of 1 to +/-3 semitones or above.
-- `delayAllowRange` (number, beats, default 0) allowed difference between actual and code delay value (1=one beat)
-- `delayErrorRange` (number, beats, default 0) difference between actual and code delay value beyond which a full error penalty is applied (1=one beat)
-- `tempoAllowRange` (number, ratio - fraction of tempo, default 0) allowed fraction by which delays may differ compared to context-defined tempo. E.g. 0.1 implies actual delays may be 1/1.1 (90.9%) - 1.1/1 (110%) of code delays.
-- `tempoErrorRange` (number, ratio - fraction of tempo, default 0) fraction by which delays may differ compared to context-defined tempo beyond which a full error penalty is applied. 
-- (more to be determined)
+- `note insert cost` (number, default 1) weight given to note insertion errors, i.e. extra notes not in the code
+- `note delete cost` (number, default 1) weight given to note deletion errors, i.e. missing a note in the code
+- `note replace cost` (number, default 2) weight given to note replacement errors, i.e. a different note to the one in the code (which will never be more than an insert plus a delete)
+- `note allow variation` (number, semitones, default 0) allowed difference between actual and code midinote value (1=one semitone)
+- `note max variation` (number, semitones, default 0) difference between actual and code midinote value beyond which a full error penalty is applied. E.g. `note allow variation` 1 and `note max variation` 3 would assign an error of 0 to same note or +/-1 semitone, error of 0.5 to +/-2 semitones, and error of 1 to +/-3 semitones or above.
+
+- `delay cost` (number, default 1) weight given to delay errors vs note errors (default for all note errors is 1)
+- `delay allow variation` (number, beats, default 0) allowed difference between actual and code delay value (1=one beat)
+- `delay max variation` (number, beats, default 0) difference between actual and code delay value beyond which a full error penalty is applied (1=one beat)
+- `tempo allow variation` (number, ratio - fraction of tempo, default 0) allowed fraction by which delays may differ compared to context-defined tempo. E.g. 0.1 implies actual delays may be 1/1.1 (90.9%) - 1.1/1 (110%) of code delays.
+- `tempo max variation` (number, ratio - fraction of tempo, default 0) fraction by which delays may differ compared to context-defined tempo beyond which a full error penalty is applied. 
 
 
-#### 5. Conditional Matching
+#### 5. Conditional Matching tab (upper panel)
 
 You can specify additional rules about when codes will be matched using "variables" or "state" within the experience. Select the checkbox `Show states in codes` to make this visible in the Codes tab.
 
-#### 6. Codes and Actions
+This require basic knowledge of Javascript expressions. 
+
+For example, add an initial state variable `count` = `0`. Check the checkbox `Show states in codes`. Go to a code. Specify a precondition for that code such as `count<4` so that the code will only be matched if `count` is less than 4. specify a post state for count = `count+1` so that 1 is added to count each time the code is matched. The code would now only be matched 4 times in one experience.
+
+#### 6. Codes and Actions tab (lower panel)
 
 To add a new code, enter a title for it, select a Matching Profile, enter a code pattern and press `+`. 
 
@@ -136,9 +140,11 @@ Once a code has been added you can also specify:
 - it can be matched inexactly
 - and if so with how much "error"
 
+The `Matches:` line will show the title(s) of all of the examples that are currently matched by the code, together with the associated error value.
+
 To add an action enter a URL and press `+`. Leave the "channel" blank to use the default channel (destination) for the action. See description of actions, below.
 
-#### 7. Outputs
+#### 7. Outputs tab (lower panel)
 
 To specify the MIDI output device to use for MIDI actions use the MIDI Output dropdown.
 
@@ -188,12 +194,12 @@ Note: for inexact matching a choice can only include individual notes, delays or
 
 Quantifier (repeats) terms are all suffix operators:
 - "?", for optional. E.g. "C4?" is either middle-C or nothing (i.e. 0 or 1 repetitions)
-- "*", for kleene star, i.e. any number of repetitions including 0. E.g. "C4*" or ".*"
+- "\*", for kleene star, i.e. any number of repetitions including 0. E.g. "C4\*" or ".\*"
 - "+", for at least once. 
 - "{" m "-" n "}" for between m and n repetitions, inclusive. E.g. "C4{0-1}" is equilent to "C4?"
 
 Precedence of quantifiers is more than sequence or choice. E.g. "C4,D4+" is middle-C followed by at least one D4
-Note: for inexact matching  "?" (equivalently "{0-1}"), "*"  (equivalently "{0-}"), and  "+" (equivalently "{1-}") are supported, but other ranges are not (i.e. m > 1, or n >1 but not unlimited).
+Note: for inexact matching  "?" (equivalently "{0-1}"), "\*"  (equivalently "{0-}"), and  "+" (equivalently "{1-}") are supported, but other ranges are not (i.e. m > 1, or n >1 but not unlimited).
 
 The regular expression beginning/end markers ("^" and "$") are not used; the marker properties "atStart" and "atEnd" specify whether the pattern match must be at the start/end of the note group, respectively.
 
