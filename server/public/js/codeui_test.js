@@ -230,6 +230,22 @@ describe('muzicodes.codeui module', function() {
 				});
 			});
 		});
+		it('should parse and normalise C#,(C#,C#) as a sequence of three notes', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(parser.normalise(parser.parse('C#,(C#,C#)').node)).toEqual({
+					// Left or right associative?!
+					type: CodeNode.SEQUENCE,
+					children: 
+						[
+						 { type: CodeNode.NOTE, midinote: 61 },
+						 { type: CodeNode.NOTE, midinote: 61 },
+						 { type: CodeNode.NOTE, midinote: 61 }
+						 ]
+				});
+			});
+		});
 		// 16
 		it('should parse and normalise [C-D] as a note range', function() {
 			inject(function(CodeParser, CodeNode) {
@@ -683,10 +699,10 @@ describe('muzicodes.codeui module', function() {
 				expect(InexactMatcher.canMatch(code)).toEqual(true);
 			});
 		});
-		it('!canMatch C?,D,E', function() {
+		it('!canMatch (C,D)?,E', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
-				var code = parser.parse("C?,D,E");
+				var code = parser.parse("(C,D)?,E");
 				expect(code.state).toEqual(CodeParser.OK);
 				code = parser.normalise(code.node);
 				expect(code).toBeDefined();
@@ -757,6 +773,141 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(true);
 				// jasmine.objectContaining()
 				expect(matcher.getError()).toBeCloseTo(0.5);
+			});
+		});
+		it('should match C,D? with 60,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D?");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should not match C,D+ with 60', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D+");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60}];
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
+		it('should match C,D* with 60,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D*");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match C,D* with 60,62,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D*");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62},{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match C,D+ with 60,62,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D+");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62},{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match C,D? with 60,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D?");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match C,D? with 60', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D?");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should not match C,D* with 60,62,62,60', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,D*");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60},{midinote: 62},{midinote: 62},{midinote:60}];
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
+		it('should match .*,C,.*,D with 58,60,60,62', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".*,C,.*,D");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 58},{midinote: 60},{midinote: 60},{midinote:62}];
+				expect(matcher.match(notes)).toEqual(true);
 			});
 		});
 	});

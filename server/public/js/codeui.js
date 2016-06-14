@@ -524,12 +524,24 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 			// merge child nodes of same type
 			var children = node.children;
 			node.children = [];
+			//console.log('normalise children '+JSON.stringify(children));
 			while (children.length>0) {
 				var child = children.splice(0,1)[0];
+				//console.log('normalise check child '+JSON.stringify(child));
+				while(child!==undefined && child.type==CodeNode.GROUP) {
+					if (child.children.length>0) {
+						// into group
+						child = child.children[0];
+					}
+					else {
+						child = undefined;
+						break;
+					}
+				}
 				if (child===null) {
 					// ignore
-					
 				} else if (child.type==node.type) {
+					//console.log('normalise recurse into sequence/choice '+JSON.stringify(child));
 					// replace with children in place/order
 					if (child.children!==undefined && child.children!==null) {
 						var j = 0;
@@ -540,6 +552,7 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 					}
 				} else {
 					// OK to include anything else
+					//console.log('normalise simple child '+JSON.stringify(child));
 					child = this.normalise(child);
 					if (child!==null) {
 						// except we want to merge consecutive delays in a sequence...
@@ -547,6 +560,7 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 							var prev = node.children[node.children.length-1];
 							prev.beats += child.beats;
 						} else {
+							//console.log('normalise add child '+JSON.stringify(child));
 							node.children.push(child);
 						}
 					}
@@ -587,7 +601,10 @@ codeui.factory('CodeParser',['CodeNode', function(CodeNode) {
 				node.minRepeat = 0;
 				node.maxRepeat = 1;
 				node.type = CodeNode.REPEAT;
-			} 
+			} else if (node.maxRepeat!==undefined && node.maxRepeat<=0) {
+				// nothing!
+				return null;
+			}
 			break;
 		case CodeNode.NOTE_RANGE:
 			if (node.minNote!==undefined && node.minNote!==null) {
@@ -979,19 +996,24 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				var INSERT_COST = note.beats!==undefined ? errorDelay(note.beats, 0, this.parameters) : this.noteInsertError;
 				var c = this.costs[i]+INSERT_COST;
 				if (debug)
-					console.log('['+i+'] insert = '+c);
+					console.log('['+i+'] insert cost '+INSERT_COST+' = '+c);
 				if (c<=this.error && (cost2===undefined || c<cost2)) {
 					cost2 = c;
 					matched = true;
 				}	
 			}
 			if (i>0) {
+				var node = this.node.children[i-1];
 				// deleted?				
 				if (this.costs2[i-1]!==undefined) {
 					var DELETE_COST = note.beats!==undefined ? errorDelay(note.beats, 0, this.parameters) : this.noteDeleteError;
+					// optional?
+					if (node.type==CodeNode.REPEAT && (node.minRepeat===undefined || node.minRepeat==0)) {
+						DELETE_COST = 0;
+					}
 					var c = this.costs2[i-1]+DELETE_COST;
 					if (debug)
-						console.log('['+i+'] delete = '+c);
+						console.log('['+i+'] delete cost '+DELETE_COST+' = '+c);
 					if (c<=this.error && (cost2===undefined || c<cost2)) {
 						cost2 = c;
 						matched = true;
@@ -999,14 +1021,26 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				}
 				if (i-1<this.costLength  && this.costs[i-1]!==undefined) {
 					// match?
-					var err = errorChoice(this.node.children[i-1], note, this.parameters);
+					var err = undefined;
+					// repeat, 1 first
+					if (node.type==CodeNode.REPEAT) {
+						err = errorChoice(node.children[0], note, this.parameters);
+					} else {
+						err = errorChoice(node, note, this.parameters);
+					}
 					if (err!==undefined) {
 						var c = this.costs[i-1]+err;
 						if (debug)
-							console.log('['+i+'] match = '+c);
+							console.log('['+i+'] match cost '+err+' = '+c);
 						if (c<=this.error && (cost2===undefined || c<cost2)) {
 							cost2 = c;
 							matched = true;
+							// could match again?
+							if (node.type==CodeNode.REPEAT && node.maxRepeat===undefined) {
+								if (this.costs2[i-1]===undefined || cost2<this.costs2[i-1]) {
+									this.costs2[i-1] = cost2;
+								}
+							}
 						}
 					} 
 				}
@@ -1019,6 +1053,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				}
 				if (debug)
 					console.log('['+i+'] <- '+cost2);
+				this.costs2[i] = cost2;
 			} else {
 				if (debug)
 					console.log('['+i+'] <- '+cost2);
@@ -1073,12 +1108,16 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			case CodeNode.WILDCARD:
 				return true;
 			case CodeNode.REPEAT:
-				if (node.minRepeat==1 && node.maxRepeat==1) {
+				if ((node.minRepeat===undefined || node.minRepeat<=1) && (node.maxRepeat===undefined || node.maxRepeat==1)) {
 					return isSingle(node.children[0]);
 				}
 				else {
 					return false;
 				}
+			case CodeNode.REPEAT_0_OR_1:
+			case CodeNode.REPEAT_0_OR_MORE:
+			case CodeNode.REPEAT_1_OR_MORE:
+				return isSingle(node.children[0]);
 			case CodeNode.CHOICE:
 				var ok = false;
 				for (var i in node.children) {
