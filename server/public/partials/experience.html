@@ -7,13 +7,13 @@
 				Input Source</a>
 			</li>
 			<li ng-class="{active:topTab==3}"><a href ng-click="setTopTab(3)">2.
-				Context Mapping</a>
-			</li>
-			<li ng-class="{active:topTab==4}"><a href ng-click="setTopTab(4)">3.
 				Note Filter/Grouping</a>
 			</li>
+			<li ng-class="{active:topTab==4}"><a href ng-click="setTopTab(4)">3.
+				Context</a>
+			</li>
 			<li ng-class="{active:topTab==5}"><a href ng-click="setTopTab(5)">4.
-				Note Transformation</a>
+				Matching Profile</a>
 			</li>
 			<li ng-class="{active:topTab==6}"><a href ng-click="setTopTab(6)">5.
 				Conditional Matching</a>
@@ -52,7 +52,7 @@
 	<p><a href="#/">Back to experience list</a></p>
 
 	<!-- <h3>Overview</h3>
-	<p>1. Input Source -> 2. Context Mapping -> 3. Note Filter/Grouping -> 4. Note Transformations -> Examples -> 5. Conditional Matching -> 6. Codes and Actions -> 7. Outputs</p>-->
+	<p>1. Input Source -> 2. Note Filter/Grouping -> 3. Context Mapping -> 4. Note Transformations -> Examples -> 5. Conditional Matching -> 6. Codes and Actions -> 7. Outputs</p>-->
 </div>
 <div ng-show="topTab==2">
 	<!-- <h3>Input</h3>
@@ -84,16 +84,16 @@
 	</table>
 
 </div>
-<div ng-show="topTab==3">
-	<!-- <h4>2. Context Mapping</h4> -->
+<div ng-show="topTab==4">
+	<!-- <h4>3. Context Mapping</h4> -->
 	
 	<p class="tab-intro">Specify the musical context of the incoming notes:</p>
 	
 	<mus-context context="defaultContext"></mus-context> 
 	
 </div>
-<div ng-show="topTab==4">
-	<!-- <h4>3. Note Filter/Grouping</h4> -->
+<div ng-show="topTab==3">
+	<!-- <h4>2. Note Filter/Grouping</h4> -->
 	
 	<p class="tab-intro">Specify how notes are selected and grouped into phrases for matching:</p>
 	
@@ -154,14 +154,14 @@
 <div ng-show="topTab==5">
 	<!-- <h4>4. Note Transformations</h4> -->
 	
-	<p class="tab-intro">Specify options for transforming notes before they are matched to reduce "irrelevant" differences:</p>
+	<p class="tab-intro">Specify "profiles" for how notes are matched to codes (e.g. to remove or ignore "irrelevant" differences):</p>
 	
 	<div ng-repeat="projection in projections" class="projection">
 		<mus-projection projection="projection"></mus-projection> 
-		<button ng-click="deleteProjection($index)" aria-label="Delete transformation"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+		<button ng-click="deleteProjection($index)" aria-label="Delete matching profile"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
 	</div>
 	<div class="projection">
-    	<button ng-click="addProjection()" aria-label="Add new transformation"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+    	<button ng-click="addProjection()" aria-label="Add new matching profile"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
 		<mus-projection projection="newProjection"></mus-projection> 
 	</div>
 	
@@ -176,11 +176,11 @@
 	<p class="tab-intro">Specify additional rules for when codes can be matched:</p>
 
 	<p>
-		<label>Show State:</label> <input type="checkbox" ng-model="showState">
+		<label>Show State in codes:</label> <input type="checkbox" ng-model="showState">
 	</p>
 	<table>
 		<tbody>
-			<tr uib-collapse="!showState">
+			<tr >
 				<td><label>Initial State</label></td>
 				<td>
 					<div class="var" ng-repeat="(var,value) in parameters.initstate">
@@ -267,12 +267,12 @@
       <button ng-click="deleteMarker($index)"  aria-label="Remove marker"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
       <mus-projection-choice projection="marker.projection" projections="projections"></mus-projection-choice>
       <label>Inexact:</label><input type="checkbox" ng-model="marker.inexact" >
-      <mus-code-input type="text" ng-model="marker.code"></mus-code-input>
+      <label>Code:</label><mus-code-input type="text" ng-model="marker.code"></mus-code-input>
       <div uib-collapse="isCollapsed">
       	<div ng-show="marker.inexact">
       		<label>Allowed error:</label><input type="number" step="0.1" min="0" ng-model="marker.inexactError">
       	</div>
-      	<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-error="marker.inexactError" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd" is-simple="isSimple"></mus-code-matches>
+      	<mus-code-matches examples="examples" code="marker.code" inexact="marker.inexact" inexact-error="marker.inexactError" projection="marker.projection" projections="projections" at-start="marker.atStart" at-end="marker.atEnd" is-simple="isSimple" parameters="parameters"></mus-code-matches>
 		<div uib-collapse="!showState">
 		<label>Precondition:</label><input type="text" ng-model="marker.precondition">
 		<label>Post state:</label>

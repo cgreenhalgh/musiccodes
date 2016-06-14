@@ -944,5 +944,35 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(true);
 			});
 		});
+		it('should match .*,C3,D3 with 50,49,45,48,50', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".*,C3,D3");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 50},{midinote: 49},{midinote: 45},{midinote:48},{midinote:50}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match .*,C3,D3 with 48,50', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse(".*,C3,D3");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 48},{midinote: 50}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
 	});
 });

@@ -719,7 +719,7 @@ editorApp.directive('musProjectionChoice', [function() {
 			 projections: '=',
 			 projection: '='
 		},
-		template: '<label>Transformation:</label><select ng-model="projection">'+
+		template: '<label>Matching Profile:</label><select ng-model="projection">'+
 	        '<option ng-repeat="projection in projections" value="{{projection.id}}">{{projection.id}}</option>'+
 	      '</select>'
 	};
@@ -764,8 +764,8 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 </div>
 */
 
-editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', 'InexactMatcher', 
-                                       function(CodeParser, CodeMatcher, NoteProcessor, InexactMatcher) {
+editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', 'InexactMatcher', 'noteGrouperFactory', 
+                                       function(CodeParser, CodeMatcher, NoteProcessor, InexactMatcher, noteGrouperFactory) {
 	var parser = new CodeParser();
 	return {
 		restrict: 'E',
@@ -778,11 +778,12 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 			 atEnd: '=',
 			 inexact: '=',
 			 inexactError: '=',
-			 isSimple: '='
+			 isSimple: '=',
+			 parameters: '='
 		},
 		template: '<label>Matches:</label> <span  ng-class="{\'code-error\': error}">{{ feedback }}</span>'+
 		'<div class="match-example" ng-repeat="match in matches">'+
-		'<span>{{ match.title }}</span> '+
+		'<span>{{ match.title }} ({{ match.error==0 ? "exact" : "error "+match.error }})</span> '+
 		'</div>',
 		link: function(scope, element, attrs) {
 			scope.matches = [];
@@ -797,6 +798,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 				if (values.atEnd===undefined) values.atEnd = scope.atEnd;
 				if (values.inexact===undefined) values.inexact = scope.inexact;
 				if (values.inexactError===undefined) values.inexactError = scope.inexactError;
+				if (values.parameters===undefined) values.parameters = scope.parameters;
 				scope.isSimple = false;
 				console.log('update mus-code-matches code='+values.code+', projection='+values.projection+', examples=[0..'+(values.examples.length-1)+'], atStart='+values.atStart+', atEnd='+values.atEnd+', inexact='+values.inexact+', inexactError='+values.inexactError);
 				var matcher = null;
@@ -822,7 +824,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 				}
 				if (!values.projections || !values.projection) {
 					scope.error = true;
-					scope.feedback = 'No projection specified';
+					scope.feedback = 'No matching profile specified';
 					scope.matches = [];
 					return;
 				}
@@ -835,7 +837,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 				}
 				if (projection===null) {
 					scope.error = true;
-					scope.feedback = 'Projection "'+values.projection+'" not known';
+					scope.feedback = 'Matching profile "'+values.projection+'" not known';
 					scope.matches = [];
 					return;
 				}
@@ -869,33 +871,65 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 				var noteprocessor = new NoteProcessor();
 				for (var ei in scope.examples) {
 					var example = scope.examples[ei];
-					var notes = noteprocessor.mapRawNotes(example.context, example.rawnotes);
-					if (!notes) {
-						scope.error = true;
-						scope.feedback = 'Sorry, could not map raw notes';
-						scope.matches = [];
-						return;						
+					var grouper = noteGrouperFactory.create(values.parameters);
+					var allnotes = [];
+					for (var ni in example.rawnotes) {
+						var note = example.rawnotes[ni];
+						// clone due to mutation (group id)
+						note = { velocity:note.velocity, freq:note.freq, time:note.time };
+						allnotes.push(note);
+						grouper.addNote(note);
 					}
-					notes = noteprocessor.projectNotes(projection, notes);
-					if (!notes) {
-						scope.error = true;
-						scope.feedback = 'Sorry, could not project notes';
-						scope.matches = [];
-						return;						
-					}
-					matcher.reset();
-					var everMatch = false, lastMatch = false;
-					for (var ni in notes) {
-						var note = notes[ni];
-						lastMatch = matcher.matchNext(note);
-						if (lastMatch)
-							everMatch = true;
-					}
-					if (lastMatch || (everMatch && !values.atEnd)) {
-						console.log('code '+values.code+' matches example '+example.title);
-						matches.push({title: example.title});
-					} else {
-						console.log('code '+values.code+' does not match example '+example.title);
+					var groups = grouper.getGroups();
+					for (var gi in groups) {
+						var groupid = groups[gi].id;
+						var rawnotes = [];
+						for (var ni in allnotes) {
+							var note = allnotes[ni];
+							if (note.group==groupid)
+								rawnotes.push(note);
+						}
+						if (rawnotes.length>0) {
+							//console.log('check example group '+groupid+': '+JSON.stringify(rawnotes));
+							var notes = noteprocessor.mapRawNotes(example.context, rawnotes);
+							if (!notes) {
+								scope.error = true;
+								scope.feedback = 'Sorry, could not map raw notes';
+								scope.matches = [];
+								return;						
+							}
+							notes = noteprocessor.projectNotes(projection, notes);
+							if (!notes) {
+								scope.error = true;
+								scope.feedback = 'Sorry, could not project notes';
+								scope.matches = [];
+								return;						
+							}
+							//console.log('check projected notes '+JSON.stringify(notes));
+							matcher.reset();
+							var everMatch = false, lastMatch = false, everError, lastError;
+							for (var ni in notes) {
+								var note = notes[ni];
+								lastMatch = matcher.matchNext(note);
+								lastError = matcher.getError();
+								if (lastMatch) {
+									everMatch = true;
+									everError = lastError;
+								}
+							}
+							if (lastMatch || (everMatch && !values.atEnd)) {
+								console.log('code '+values.code+' matches example '+example.title);
+								if (lastMatch)
+									matches.push({title: example.title, error: lastError});
+								else
+									matches.push({title: example.title, error: everError});
+							} else {
+								console.log('code '+values.code+' does not match example '+example.title+': '+JSON.stringify(notes)+' vs '+JSON.stringify(node));
+							}
+						}
+						else {
+							console.log('no notes found in example group '+groupid+' from '+JSON.stringify(allnotes));
+						}
 					}
 				}
 				scope.matches = matches;
@@ -908,6 +942,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 			scope.$watch('atStart', function(atStart) { update({atStart:atStart}); });
 			scope.$watch('inexact', function(inexact) { update({inexact:inexact}); });
 			scope.$watch('inexactError', function(inexactError) { update({inexactError:inexactError}); });
+			scope.$watch('parameters', function(parameters) { update({parameters:parameters}); }, true);
 			update({});
 		}
 	};

@@ -817,6 +817,9 @@ codeui.factory('CodeMatcher', ['CodeNode', function(CodeNode) {
 		}
 		return matched;
 	}
+	CodeMatcher.prototype.getError = function() {
+		return 0;
+	}
 	return CodeMatcher;
 }]);
 
@@ -872,7 +875,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			node = { type: CodeNode.SEQUENCE, children: [node] };
 		}
 		this.node = node;
-		this.error = error;
+		this.error = error!==undefined ? error : 0;
 		this.parameters = parameters;
 		CodeNode.label(node);
 		this.codeLength = this.node.children.length;
@@ -889,6 +892,12 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 		// ix 0 is before first child in pattern, etc.
 		this.costs[0] = 0;
 		this.costLength = 1;
+		// any deletes on the first column...
+		this.matchNext();
+		// could still start at the beginning
+		this.costs[0] = 0;
+		if (this.costLength==0)
+			this.costLength = 1;
 	};
 	// API
 	InexactMatcher.prototype.match = function(notes) {
@@ -992,15 +1001,19 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			}
 			var cost2 = undefined;
 			// insert?
-			if (i<this.costLength && this.costs[i]!==undefined) {
-				var INSERT_COST = note.beats!==undefined ? errorDelay(note.beats, 0, this.parameters) : this.noteInsertError;
-				var c = this.costs[i]+INSERT_COST;
-				if (debug)
-					console.log('['+i+'] insert cost '+INSERT_COST+' = '+c);
-				if (c<=this.error && (cost2===undefined || c<cost2)) {
-					cost2 = c;
-					matched = true;
-				}	
+			if (note!==undefined) {
+				if (i<this.costLength && this.costs[i]!==undefined) {
+					var INSERT_COST = note.beats!==undefined ? errorDelay(note.beats, 0, this.parameters) : this.noteInsertError;
+					var c = this.costs[i]+INSERT_COST;
+					if (debug)
+						console.log('['+i+'] insert cost '+INSERT_COST+' = '+c);
+					if (c<=this.error && (cost2===undefined || c<cost2)) {
+						cost2 = c;
+						matched = true;
+					}	
+				}
+			} else if (i==0){
+				cost2 = this.costs[0];
 			}
 			if (i>0) {
 				var node = this.node.children[i-1];
@@ -1023,7 +1036,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 						matched = true;
 					}
 				}
-				if (i-1<this.costLength  && this.costs[i-1]!==undefined) {
+				if (note!==undefined && i-1<this.costLength  && this.costs[i-1]!==undefined) {
 					// match?
 					var err = undefined;
 					// repeat, 1 first

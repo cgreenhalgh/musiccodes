@@ -3,18 +3,22 @@
 var stream = angular.module('muzicodes.stream', []);
 
 stream.factory('noteGrouperFactory', function() {
-	console.log('noteGrouperFactory...');
+	var debug = false;
+	if (debug)
+		console.log('noteGrouperFactory...');
 	var MAX_FREQUENCY = 20000, MIN_FREQUENCY = 1;
 	var nextGroupId = 1;
 	// parameters: streamGap, frequencyRatio, monophonic, monophonicGap, minFrequency, maxFrequency, minVelocity, maxVelocity
 	var Grouper = function(parameters) {
-		console.log('New Grouper');
+		if (debug)
+			console.log('New Grouper');
 		this.parameters = parameters;
 		this.groups = {};
 	};
 	// return group (else undefined)
 	Grouper.prototype.addNote = function(note) {
-		console.log('group add note '+JSON.stringify(note));
+		if (debug)
+			console.log('group add note '+JSON.stringify(note));
 		this.setTime(note.time);
 		delete note.group;
 		if (this.parameters.minVelocity && note.velocity<this.parameters.minVelocity)
@@ -36,7 +40,8 @@ stream.factory('noteGrouperFactory', function() {
 					// candidate for group - check monophonic
 					if (this.parameters.monophonic && note.time - group.lastTime < this.parameters.monophonicGap) {
 						// discard polyphonic note
-						console.log("discard polyphonic note with gap "+(note.time-group.lastTime));
+						if (debug)
+							console.log("discard polyphonic note with gap "+(note.time-group.lastTime));
 						handled = true;
 					} else {
 						group.lastTime = note.time;
@@ -52,7 +57,8 @@ stream.factory('noteGrouperFactory', function() {
 								gccount++;
 							}
 						}*/
-						console.log("add note to group "+group.id); //+' (GC '+gccount+' notes)');
+						if (debug)
+							console.log("add note to group "+group.id); //+' (GC '+gccount+' notes)');
 					}
 				}
 			}
@@ -65,7 +71,8 @@ stream.factory('noteGrouperFactory', function() {
 			group.highFreq = Math.min(this.parameters.frequencyRatio!==undefined ? note.freq*this.parameters.frequencyRatio : MAX_FREQUENCY,
 				this.parameters.maxFrequency!==undefined ? this.parameters.maxFrequency : MAX_FREQUENCY);
 			this.groups[group.id] = group;
-			console.log("add group "+group.id);
+			if (debug)
+				console.log("add group "+group.id);
 			rval = group.id;
 		}
 		if (rval!==null)
@@ -91,7 +98,8 @@ stream.factory('noteGrouperFactory', function() {
 			// close
 			if (!group.closed && group.lastTime<time-this.parameters.streamGap) {
 				group.closed = true;
-				console.log("close group "+group.id);
+				if (debug)
+					console.log("close group "+group.id);
 			} 
 		}
 	};
