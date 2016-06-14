@@ -904,7 +904,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 		
 		return matched;
 	};
-	function errorChoice(node, note, parameters) {
+	InexactMatcher.prototype.errorChoice = function(node, note, parameters) {
 		if (node.type==CodeNode.CHOICE) {
 			var error = undefined;
 			for (var ci in node.children) {
@@ -914,7 +914,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 					error = err;
 			}
 			if (error===undefined) {
-				if (note.midinote!==undefined) {
+				if (node!==undefined && note.midinote!==undefined) {
 					var maxError = parameters!==undefined && parameters.noteReplaceError!==undefined ? parameters.noteReplaceError : 2;
 					return maxError;
 				}
@@ -925,7 +925,7 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			}
 			return error;
 		}
-		return InexactMatcher.errorAtomic(node, note, parameters);
+		return this.errorAtomic(node, note, parameters);
 	}
 	var SMALL_PITCH = 0.005;
 	var SMALL_DELAY = 0.005;
@@ -1006,11 +1006,15 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 				var node = this.node.children[i-1];
 				// deleted?				
 				if (this.costs2[i-1]!==undefined) {
-					var DELETE_COST = note.beats!==undefined ? errorDelay(note.beats, 0, this.parameters) : this.noteDeleteError;
-					// optional?
+					var DELETE_COST;
 					if (node.type==CodeNode.REPEAT && (node.minRepeat===undefined || node.minRepeat==0)) {
 						DELETE_COST = 0;
 					}
+					else {
+						// delete cost should be based on code, not note!
+						DELETE_COST = this.errorChoice(node, null, this.parameters);
+					}
+					// optional?
 					var c = this.costs2[i-1]+DELETE_COST;
 					if (debug)
 						console.log('['+i+'] delete cost '+DELETE_COST+' = '+c);
@@ -1024,9 +1028,9 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 					var err = undefined;
 					// repeat, 1 first
 					if (node.type==CodeNode.REPEAT) {
-						err = errorChoice(node.children[0], note, this.parameters);
+						err = this.errorChoice(node.children[0], note, this.parameters);
 					} else {
-						err = errorChoice(node, note, this.parameters);
+						err = this.errorChoice(node, note, this.parameters);
 					}
 					if (err!==undefined) {
 						var c = this.costs[i-1]+err;
@@ -1152,8 +1156,33 @@ codeui.factory('InexactMatcher', ['CodeNode', 'CodeMatcher', function(CodeNode, 
 			return isSingle(node);
 		}
 	}
-	InexactMatcher.errorAtomic = function(node, note, parameters) {
-		if (note.midinote!==undefined && note.midinote!==null) {
+	InexactMatcher.prototype.errorAtomic = function(node, note, parameters) {
+		if (note===undefined || note===null) {
+			if (node.type==CodeNode.NOTE || node.type==CodeNode.NOTE_RANGE) {
+				// delete
+				return this.noteDeleteError;
+			}
+			else if (node.type==CodeNode.DELAY) {
+				// like 0 delay?!
+				return errorDelay(0, node.beats, parameters);
+			} else if (node.type==CodeNode.DELAY_RANGE) {
+				if (node.minBeats!==undefined && node.minBeats!==null && node.minBeats) {
+					// like 0 delay?!
+					return errorDelay(0, node.minBeats, parameters);
+				} else {
+					// OK
+					return 0;
+				}
+			} else if (node.type==CodeNode.WILDCARD) {
+				// note? delay?? best case???
+				return this.noteDeleteError;				
+			}
+			else {
+				// or??
+				return this.noteDeleteError;
+			}
+		}
+		else if (note.midinote!==undefined && note.midinote!==null) {
 			if (node.type==CodeNode.NOTE) {
 				return errorNote(node.midinote, note.midinote, parameters);
 			} else if (node.type==CodeNode.NOTE_RANGE) {

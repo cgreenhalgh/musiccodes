@@ -620,6 +620,40 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.getError()).toEqual(1);
 			});
 		});
+		it('should give error 0.5 for 60 as C,/1 with delayError = 0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C,/1");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 1, {delayError: 0.5});
+				
+				var notes = [{ midinote: 60 }];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(0.5);
+			});
+		});
+		it('should give error 0.5 for 60,/1 as C with delayError = 0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 1, {delayError: 0.5});
+				
+				var notes = [{ midinote: 60 },{beats: 1}];
+				matcher.match(notes);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toEqual(0.5);
+			});
+		});
 		it('should give error 1 for 60,60 as C', function() {
 			inject(function(InexactMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();
@@ -747,7 +781,7 @@ describe('muzicodes.codeui module', function() {
 				var node = {type: CodeNode.NOTE, midinote: 62};
 				var note = {midinote: 60};
 				var parameters = {noteAllowRange: 1, noteErrorRange:3, noteReplaceError:1};
-				expect(InexactMatcher.errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+				expect((new InexactMatcher()).errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
 			});
 		});
 		it('should give match error 0.5 for beats 1.2 vs 1 with delayAllowRange=0.1 and delayErrorRange=0.3', function() {
@@ -755,7 +789,7 @@ describe('muzicodes.codeui module', function() {
 				var node = {type: CodeNode.DELAY, beats: 1};
 				var note = {beats: 1.2};
 				var parameters = {delayAllowRange: 0.1, delayErrorRange:0.3};
-				expect(InexactMatcher.errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+				expect((new InexactMatcher()).errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
 			});
 		});
 		it('should give error 0.5 for 62 as C4 with noteAllowRange 1 and noteErrorRange 5', function() {
