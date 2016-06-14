@@ -163,7 +163,7 @@ Quantifier (repeats) terms are all suffix operators:
 - "{" m "-" n "}" for between m and n repetitions, inclusive. E.g. "C4{0-1}" is equilent to "C4?"
 
 Precedence of quantifiers is more than sequence or choice. E.g. "C4,D4+" is middle-C followed by at least one D4
-Note: for inexact matching only "?" (equivalently "{0-1}") is supported.
+Note: for inexact matching  "?" (equivalently "{0-1}"), "*"  (equivalently "{0-}"), and  "+" (equivalently "{1-}") are supported, but other ranges are not (i.e. m > 1, or n >1 but not unlimited).
 
 The regular expression beginning/end markers ("^" and "$") are not used; the marker properties "atStart" and "atEnd" specify whether the pattern match must be at the start/end of the note group, respectively.
 
