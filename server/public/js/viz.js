@@ -203,8 +203,9 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 						  .range([margin, width]);
 						scope.times = [[margin,width],[time-period, time]];
 					} else {
-						maxTime = Math.max(DEFAULT_TIME, time,
-								d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }));
+						maxTime = Math.max(DEFAULT_TIME, time);
+						if (notes && notes.length>0)
+							maxTime = Math.max(maxTime, d3.max(notes,function(d) { return d.time+(d.duration!==undefined ? d.duration : 0); }));
 						xscale = d3.scale.linear()
 							.domain([0, maxTime])
 					  .range([margin, width]);

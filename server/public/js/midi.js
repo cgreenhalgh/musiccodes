@@ -169,8 +169,8 @@ audio.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAc
 				console.log('check input '+input.name+' ('+input+')');
 				if (input.name==inputName && midiInputPort==null) {
 					console.log('connecting to midi input '+inputName);
-					logger.log('midi.config.in',{id:id, name:midiInputPort.name});
 					midiInputPort = input;
+					logger.log('midi.config.in',{id:midiInputPort.id, name:midiInputPort.name});
 					// monitor input...
 					midiInputPort.onmidimessage = function(event) {
 						var str = "MIDI message received at timestamp " + event.timestamp + "[" + event.data.length + " bytes]: ";
