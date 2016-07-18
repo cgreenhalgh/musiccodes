@@ -206,7 +206,7 @@ audio.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
 //wrapper for midi note input. cf audio audionote
 audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAccess,MIDI_HEX_PREFIX,logger) {
 	var midiOutputPort = null;
-	function setOutput(outputName) {
+	function setOutput(outputName, callback) {
 		midiOutputPort = null;
 		midiAccess.then(function(midiAccess) {
 			midiAccess.outputs.forEach( function( output ) {
@@ -214,6 +214,8 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 					midiOutputPort = output;
 					console.log('found midi output '+outputName);
 					logger.log('midi.config.out',{id:id, name:midiOutputPort.name});
+					if (callback)
+						callack();
 				}
 			});
 			if (midiOutputPort==null) {
@@ -240,9 +242,9 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 	};
 	
 	return {
-		start: function(outputName) {
+		start: function(outputName, callback) {
 			console.log('midiout start');
-			setOutput(outputName);
+			setOutput(outputName, callback);
 		},
 		send: send
 	};

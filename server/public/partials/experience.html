@@ -290,7 +290,7 @@
           <label>Channel:</label>
           <input type="text" size="10" ng-model="action.channel">
           <label>URL:</label>
-          <input type="text" ng-model="action.url"> <urlchecker ng-model="action.url"></urlchecker>
+          <input type="text" ng-model="action.url"> <urlchecker ng-model="action.url" midi-ouput="parameters.midiOutput"></urlchecker>
           <button ng-click="deleteAction($index)" aria-label="Remove action"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
         </li>
         <li >

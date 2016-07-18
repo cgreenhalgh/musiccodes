@@ -685,6 +685,9 @@ function Client(socket) {
   socket.on('audioData', function(msg) {
   self.data(msg);
   });
+  socket.on('oscSend', function(msg) {
+	  self.oscSend(msg);
+  });
   socket.on('log', function(msg) {
 	  var event = msg.event;
 	  if (event===undefined)
@@ -883,6 +886,10 @@ Client.prototype.action = function(msg) {
   } else {
     console.log("discard action for non-master");
   }
+};
+Client.prototype.oscSend = function(url) {
+	log(this.room, 'server', 'osc.send', {url: url});
+	console.log('oscSend '+url);
 };
 
 io.on('connection', function(socket){

@@ -1,6 +1,7 @@
 var editorApp = angular.module('editorApp', ['ngAnimate','ui.bootstrap','ngRoute',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.filters','muzicodes.midi','muzicodes.socket',
-                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui','muzicodes.context','muzicodes.audioout']);
+                                             'muzicodes.softkeyboard','muzicodes.noteprocessor','muzicodes.codeui','muzicodes.context','muzicodes.audioout',
+                                             'muzicodes.osc']);
 
 editorApp.config(['$routeProvider',
   function($routeProvider) {
@@ -654,52 +655,63 @@ editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 	};
 }]);
 
-editorApp.directive('urlchecker', ['$http', '$timeout', function($http, $timeout) {
+editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PREFIX', 'OSC_TCP_PREFIX', 'OSC_UDP_PREFIX', 'oscout',
+                                   function($http, $timeout, midiout, MIDI_HEX_PREFIX, OSC_TCP_PREFIX, OSC_UDP_PREFIX, oscout) {
 	return {
 		restrict: 'E',
 		scope: {
-			ngModel: '='
+			ngModel: '=',
+			midiOutput: '='
 		},
-		template: '<span>{{ status }}</span>',
-		link: function(scope, element, attrs) {
-			var timeout = null;
+		template: '<button ng-click="click()">Test</button> <span>{{ status }}</span>',
+		controller: function($scope, $element) {
 			function reallyCheckurl(url) {
 				timeout = null;
 				//console.log('test url '+url);
-				if (url===undefined || url===null || (url.indexOf('http:')!=0 && url.indexOf('https:')!=0)) {
-					scope.status = '';
+				if (url===undefined || url===null) {
+					$scope.status = '';
+					return;				
+				}
+				else if (url.indexOf(MIDI_HEX_PREFIX)==0) {
+					$scope.status = 'Send MIDI';
+					$timeout(function() { $scope.status = ''; }, 1000);
+					midiout.start($scope.midiOutput);
+					midiout.send(url);
+					return;
+				} else if (url.indexOf(OSC_TCP_PREFIX)==0|| url.indexOf(OSC_UDP_PREFIX)==0) {
+					$scope.status = 'Send OSC';
+					$timeout(function() { $scope.status = ''; }, 1000);
+					oscout.send(url);
+					return;
+				} else if (url.indexOf('http:')!=0 && url.indexOf('https:')!=0) {
+					$scope.status = 'Unsupported URL';
 					return;
 				}
-				scope.status = 'checking...';
+				$scope.status = 'checking...';
 				$http.get('/testiframeurl/?u='+encodeURIComponent(url)).success(function(data) {
 					//console.log('test url (get) '+url);
-					if (url!=scope.ngModel)
+					if (url!=$scope.ngModel)
 						return;
 					if (data=='0')
-						scope.status = 'OK';
+						$scope.status = 'OK';
 					else if (data=='-1')
-						scope.status = 'HTTP error';
+						$scope.status = 'HTTP error';
 					else if (data=='-2')
-						scope.status = 'Cannot use in iframe';
+						$scope.status = 'Cannot use in iframe';
 					else if (data=='-3')
-						scope.status = 'Badly formed URL';
+						$scope.status = 'Badly formed URL';
 					else
-						scope.status = 'HTTP error ('+data+')';
-					//scope.status = scope.status+' ('+data+')';
+						$scope.status = 'HTTP error ('+data+')';
+					//$scope.status = $scope.status+' ('+data+')';
 				}).error(function(data) {
 					console.log('test url error '+data);
 				});
 			};
-			function checkurl(url) {
-				if (timeout!=null)
-					$timeout.cancel(timeout);
-				scope.status = '';
-				timeout = $timeout(function() { reallyCheckurl(url); }, 1000);
+			$scope.click = function() {
+				reallyCheckurl($scope.ngModel);
 			}
-			scope.$watch('ngModel', function(newValue) {
-				checkurl(newValue);
-			});
-			checkurl(scope.ngModel);
+		},
+		link: function(scope, element, attrs) {
 		}
 	};
 }]);
