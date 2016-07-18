@@ -299,11 +299,29 @@ describe('muzicodes.codeui module', function() {
 				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('(C,D)').node))).toEqual('(C4,D4)');
 			});
 		});
+		it('should parse and print /0.5 as /0.5', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('/0.5').node))).toEqual('/0.5');
+			});
+		});
 		it('should parse and print (C?,D*|E)+ as (C4?,D4*|E4)+', function() {
 			inject(function(CodeParser, CodeNode) {
 				var parser = new CodeParser();
 				// jasmine.objectContaining()
 				expect(CodeNode.toString(parser.normaliseNotes(parser.parse('(C?,D*|E)+').node))).toEqual('(C4?,D4*|E4)+');
+			});	
+		});
+		it('should normalise (C4,/0.5,D4) as (C4,/0.5,D4)', function() {
+			inject(function(CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				// jasmine.objectContaining()
+				var node = parser.parse('(C4,/0.5,D4)').node;
+				console.log('node: '+JSON.stringify( node ));
+				var norm = parser.normalise(node);
+				console.log('norm: '+JSON.stringify( norm ));
+				expect(CodeNode.toString(norm)).toEqual('C4,/0.5,D4');
 			});
 		});
 	});
@@ -781,7 +799,23 @@ describe('muzicodes.codeui module', function() {
 				var node = {type: CodeNode.NOTE, midinote: 62};
 				var note = {midinote: 60};
 				var parameters = {noteAllowRange: 1, noteErrorRange:3, noteReplaceError:1};
-				expect((new InexactMatcher()).errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+				expect((new InexactMatcher(undefined, 0, parameters)).errorAtomic(node, note)).toBeCloseTo(0.5);
+			});
+		});
+		it('should give match error 1.5 for 62 vs /1 with delayError=0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var node = {type: CodeNode.NOTE, midinote: 62};
+				var note = {beats: 1};
+				var parameters = {delayError: 0.5};
+				expect((new InexactMatcher(undefined, 0, parameters)).errorAtomic(node, note)).toBeCloseTo(1.5);
+			});
+		});
+		it('should give match error 1.5 for /1 vs 60 with delayError=0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var node = {type: CodeNode.DELAY, beats: 1};
+				var note = {midinote: 60};
+				var parameters = {delayError: 0.5};
+				expect((new InexactMatcher(undefined, 0, parameters)).errorAtomic(node, note)).toBeCloseTo(1.5);
 			});
 		});
 		it('should give match error 0.5 for beats 1.2 vs 1 with delayAllowRange=0.1 and delayErrorRange=0.3', function() {
@@ -789,7 +823,7 @@ describe('muzicodes.codeui module', function() {
 				var node = {type: CodeNode.DELAY, beats: 1};
 				var note = {beats: 1.2};
 				var parameters = {delayAllowRange: 0.1, delayErrorRange:0.3};
-				expect((new InexactMatcher()).errorAtomic(node, note, parameters)).toBeCloseTo(0.5);
+				expect((new InexactMatcher(undefined, 0, parameters)).errorAtomic(node, note)).toBeCloseTo(0.5);
 			});
 		});
 		it('should give error 0.5 for 62 as C4 with noteAllowRange 1 and noteErrorRange 5', function() {
@@ -971,6 +1005,72 @@ describe('muzicodes.codeui module', function() {
 				matcher.compile(code, 0, {});
 				
 				var notes = [{midinote: 48},{midinote: 50}];
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should give error 0.5 with C3,/0.5,D3 with 48,/0.4,50 with delayError 0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C3,/0.5,D3");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 2, {delayError: 0.5});
+				
+				var notes = [{midinote: 48},{beats: 0.4},{midinote: 50}];
+				expect(matcher.match(notes)).toEqual(true);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toBeCloseTo(0.5);
+			});
+		});
+		it('should give error 0.5 with C3,/0.5,D3 with 48,/0.3,50 with delayError 0.25, delayAllowRange=0.1 and delayErrorRange=0.3', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C3,/0.5,D3");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 2, {delayError: 0.5, delayAllowRange:0.1, delayErrorRange:0.3});
+				
+				var notes = [{midinote: 48},{beats: 0.3},{midinote: 50}];
+				expect(matcher.match(notes)).toEqual(true);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toBeCloseTo(0.25);
+			});
+		});
+		it('should give error 1.5 with C3,/0.5 with 48,50 with delayError 0.5', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("C3,/0.5");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 2, {delayError: 0.5});
+				
+				var notes = [{midinote: 48},{midinote: 50}];
+				expect(matcher.match(notes)).toEqual(true);
+				// jasmine.objectContaining()
+				expect(matcher.getError()).toBeCloseTo(1.5);
+			});
+		});
+		it('should match (C|D) with 60', function() {
+			inject(function(InexactMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("(C|D)");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new InexactMatcher();
+				matcher.compile(code, 0, {});
+				
+				var notes = [{midinote: 60}];
 				expect(matcher.match(notes)).toEqual(true);
 			});
 		});

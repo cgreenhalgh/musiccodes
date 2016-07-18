@@ -46,7 +46,7 @@ delay
   = "/" time:time { return { type: 2, beats: time }; }
   
 time
-  = value:[0-9]+("."[0-9]+)? { return Number(value.join("")); }
+  = value:$([0-9]+("."[0-9]+)?) { return Number(value); }
  
 noterange
    = "[" min:note "-" max:note "]" { return { type: 10, minNote: min, maxNote: max }; }

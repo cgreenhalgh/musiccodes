@@ -913,16 +913,17 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 								lastMatch = matcher.matchNext(note);
 								lastError = matcher.getError();
 								if (lastMatch) {
+									if (!everMatch || lastError<everError)
+										everError = lastError;
 									everMatch = true;
-									everError = lastError;
 								}
 							}
 							if (lastMatch || (everMatch && !values.atEnd)) {
 								console.log('code '+values.code+' matches example '+example.title);
-								if (lastMatch)
-									matches.push({title: example.title, error: lastError});
-								else
+								if (everMatch && !values.atEnd)
 									matches.push({title: example.title, error: everError});
+								else
+									matches.push({title: example.title, error: lastError});
 							} else {
 								console.log('code '+values.code+' does not match example '+example.title+': '+JSON.stringify(notes)+' vs '+JSON.stringify(node));
 							}
