@@ -104,7 +104,7 @@ Alternatively leave it at 60 BPM so that 1 beat = 1 second.
 
 #### 4. Matching Profile tab (upper panel)
 
-You must add at least one matching profile. For example, set title "1", beat quantisation "1" and pitch quantisation "1" and press `+`. This matching profile will round all delays to the nearest beat and all notes to the nearest semitone. 
+You must add at least one matching profile. For example, set `title` "1", `beat quantisation` "1" and `pitch quantisation` "1" and press `+`. This matching profile will round all delays to the nearest beat and all notes to the nearest semitone. If you want more accurate timing information then use a larger value of `beat quantisation`, e.g. a value of "4" will round delays to the nearest quarter-beat.
 
 If you use inexact matching in a code then the other parameters specify exactly how the inexact matching will work:
 - `note insert cost` (number, default 1) weight given to note insertion errors, i.e. extra notes not in the code

@@ -965,6 +965,9 @@ codeuiparser = (function() {
       }
       if (s1 !== peg$FAILED) {
         s2 = peg$parsetime();
+        if (s2 === peg$FAILED) {
+          s2 = null;
+        }
         if (s2 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 45) {
             s3 = peg$c18;
@@ -986,6 +989,9 @@ codeuiparser = (function() {
             }
             if (s4 !== peg$FAILED) {
               s5 = peg$parsetime();
+              if (s5 === peg$FAILED) {
+                s5 = null;
+              }
               if (s5 !== peg$FAILED) {
                 if (input.charCodeAt(peg$currPos) === 93) {
                   s6 = peg$c50;
@@ -1033,6 +1039,9 @@ codeuiparser = (function() {
         }
         if (s1 !== peg$FAILED) {
           s2 = peg$parsetime();
+          if (s2 === peg$FAILED) {
+            s2 = null;
+          }
           if (s2 !== peg$FAILED) {
             if (input.charCodeAt(peg$currPos) === 45) {
               s3 = peg$c18;
@@ -1054,6 +1063,9 @@ codeuiparser = (function() {
               }
               if (s4 !== peg$FAILED) {
                 s5 = peg$parsetime();
+                if (s5 === peg$FAILED) {
+                  s5 = null;
+                }
                 if (s5 !== peg$FAILED) {
                   if (input.charCodeAt(peg$currPos) === 93) {
                     s6 = peg$c50;

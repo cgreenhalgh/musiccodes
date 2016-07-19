@@ -376,6 +376,54 @@ describe('muzicodes.codeui module', function() {
 				expect(matcher.match(notes)).toEqual(true);
 			});
 		});
+		it('should match /[-] as /1', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("/[-]");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ beats: 1 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should match /[-1] as /1', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("/[-1]");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ beats: 1 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(true);
+			});
+		});
+		it('should not match /[-1] as /2', function() {
+			inject(function(CodeMatcher, CodeParser, CodeNode) {
+				var parser = new CodeParser();
+				var code = parser.parse("/[-1]");
+				expect(code.state).toEqual(CodeParser.OK);
+				code = parser.normalise(code.node);
+				expect(code).toBeDefined();
+				
+				var matcher = new CodeMatcher();
+				matcher.compile(code);
+				
+				var notes = [{ beats: 2 }];
+				// jasmine.objectContaining()
+				expect(matcher.match(notes)).toEqual(false);
+			});
+		});
 		it('should not match /2 as /1', function() {
 			inject(function(CodeMatcher, CodeParser, CodeNode) {
 				var parser = new CodeParser();

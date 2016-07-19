@@ -52,6 +52,6 @@ noterange
    = "[" min:note "-" max:note "]" { return { type: 10, minNote: min, maxNote: max }; }
  
 delayrange
-   = "/[" min:time "-" "/"? max:time "]" { return { type: 11, minBeats: min, maxBeats: max }; }
-   / "[/" min:time "-" "/"? max:time "]" { return { type: 11, minBeats: min, maxBeats: max }; }
+   = "/[" min:time? "-" "/"? max:time? "]" { return { type: 11, minBeats: min, maxBeats: max }; }
+   / "[/" min:time? "-" "/"? max:time? "]" { return { type: 11, minBeats: min, maxBeats: max }; }
  
