@@ -32,7 +32,7 @@ The timed phrase will match the following patterns:
 
 - `C4,/1,D4` - first two notes and the delay between them
 - `C4,.*,E4` - the first and third notes, with any notes/delays allowed between them
-- `C4,/[-],D4` - the first and third notes, with any notes/delays allowed between them
+- `C4,/[-],D4` - the first and third notes, with any length of delay (but no other notes) allowed between them
 
 ## inexact matching
 
@@ -57,13 +57,13 @@ With inexact matching you can also allow some general inexactness in the tuning 
 
 ## inexact matching of delays
 
-Matching with timing is generally a little more fiddly.
+Matching with timing is generally more fiddly.
 
 For example, the following patterns might have been what the person intended to trigger with the timed phrase:
 
 - `C4,/0.5,D4` - the notes are correct but the gap/delay between them is different; this is a `delay` error and by default it is "worth" 1.
 - `C4,D4` - the notes are correct but the gap/delay is missing; this is also a `delay` error and by default it is "worth" 1 (since no delay is the same as a delay of 0, `/0`!).
-- `C4,/1.5,E5` - the second note is missing (a delete error), but the resulting delay(s) are also different (1.5 vs 1, or 0.5). (At some point I may fix this so that the delays around missed notes are combined, but currently they are not).
+- `C4,/1.5,E5` - the second note is missing (a delete error), but the resulting delay(s) are also different (1.5 vs 1, or 0.5). (At some point I may try to fix this so that the delays around missed notes are combined, but currently they are not).
 
 You can adjust the relative weight given to delay/gap "errors" with the `matching profile` `delay cost` (default 1).
 
@@ -85,4 +85,7 @@ With a `tempo allow variation` of 0.1, i.e. +/- 10%, it would make the following
 - `/0.5` is same as `/0.55`
 - `/0.5` is different from `/0.6`
 
-If you also specify a (larger) `delay max variation` or `tempo max variation` then this is the difference at it counts as a "full" error, i.e. `delay cost`. For differences between `delay/tempo allow variation`  and `delay/tempo max variation` the error is a proportion `delay cost`. 
+If you also specify a (larger) `delay max variation` or `tempo max variation` then this is the difference at it counts as a "full" error, i.e. `delay cost`. For differences between delay/tempo `allow variation`  and delay/tempo `max variation` the error is a proportion `delay cost`. 
+
+For example, with a `delay allow variation` of (+/-) 0.2 beats and a `delay max variation` of (+/-) 0.4 beats, the "error" between a gap of 0.7 beats and a pattern of `/1.0` (i.e. 0.3 beats) would be half of the full `delay cost`.
+

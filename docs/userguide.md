@@ -119,6 +119,7 @@ If you use inexact matching in a code then the other parameters specify exactly 
 - `tempo allow variation` (number, ratio - fraction of tempo, default 0) allowed fraction by which delays may differ compared to context-defined tempo. E.g. 0.1 implies actual delays may be 1/1.1 (90.9%) - 1.1/1 (110%) of code delays.
 - `tempo max variation` (number, ratio - fraction of tempo, default 0) fraction by which delays may differ compared to context-defined tempo beyond which a full error penalty is applied. 
 
+See [inexact matching](inexactmatching.md) for more examples of inexact matching.
 
 #### 5. Conditional Matching tab (upper panel)
 
