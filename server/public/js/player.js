@@ -1,16 +1,18 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging',
                                              'muzicodes.softkeyboard','muzicodes.codeui','muzicodes.noteprocessor',
-                                             'muzicodes.context']);
+                                             'muzicodes.context','muzicodes.osc']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
-                                    'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher',
+                                    'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher', 'oscout',
+                                    'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
                                     		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
-                                    		CodeNode, CodeMatcher, CodeParser, InexactMatcher) {
+                                    		CodeNode, CodeMatcher, CodeParser, InexactMatcher, oscout,
+                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX) {
 	console.log('url: '+$location.absUrl());
 	var proc = new NoteProcessor();
 	var params = $location.search();
@@ -113,6 +115,9 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 								if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
 									// midi output
 									midiout.send( action.url );
+								} else 	if (action.url.indexOf(OSC_UDP_PREFIX)==0 || action.url.indexOf(OSC_TCP_PREFIX)==0) {
+									// osc output
+									oscout.send( action.url );
 								} else {
 									$scope.actionUrl = action.url;
 								}

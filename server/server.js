@@ -3,6 +3,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
 var dateFormat = require('dateformat');
+var osc = require("osc");
 
 app.get('/', function(req, res){
   console.log('get /');
@@ -685,7 +686,7 @@ function Client(socket) {
   socket.on('audioData', function(msg) {
   self.data(msg);
   });
-  socket.on('oscSend', function(msg) {
+  socket.on('osc.send', function(msg) {
 	  self.oscSend(msg);
   });
   socket.on('log', function(msg) {
@@ -887,9 +888,103 @@ Client.prototype.action = function(msg) {
     console.log("discard action for non-master");
   }
 };
-Client.prototype.oscSend = function(url) {
-	log(this.room, 'server', 'osc.send', {url: url});
-	console.log('oscSend '+url);
+
+// shared pool of osc UDPPorts
+var udpPorts = [];
+
+Client.prototype.oscSend = function(surl) {
+	log(this.room, 'server', 'osc.send', {url: surl});
+	console.log('osc.send '+surl);
+	var args =  surl.split(',');
+	var url = require('url').parse(args[0]);
+	// protocol, hostname, port, pathname
+	var port = null;
+	if (url.protocol=='osc.udp:') {
+		if (url.hostname===undefined || url.port===undefined) {
+			console.log('osc.udp must define hostname and port: '+surl);
+			this.socket.emit('osc.error', 'osc.udp must define hostname and port: '+surl);
+			return;
+		}
+		for (var pi in udpPorts) {
+			var p = udpPorts[pi];
+			if (p.options.remoteAddress==url.hostname && p.options.remotePort==url.port) {
+				port = p;
+				break;
+			}
+		}
+		if (port===null) {
+			console.log('create osc UDPPort for '+url.hostname+':'+url.port);
+			port = new osc.UDPPort({
+			    localAddress: "0.0.0.0",
+			    localPort: 0,
+			    
+			    remoteAddress: url.hostname,
+			    remotePort: url.port,
+			    
+			    metadata: true
+			});
+			
+			udpPorts.push(port);
+			
+			port.on("ready", function () {
+			    console.log("OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" ready.");
+			});
+
+			port.on("error", function (err) {
+			    console.log("OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" error: "+err);
+			    this.socket.emit('osc.error', "OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" error: "+err);
+			});
+			port.open();
+		}
+	}
+	else {
+		console.log('Unsupported OSC protocol: '+url.protocol);
+		this.socket.emit('osc.error','Unsupported OSC protocol: '+url.protocol);
+		return;
+	}
+	var type = (args.length>1 ? args[1] : '');
+	if (type.length+2 != args.length) {
+		console.log('types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
+		this.socket.emit('osc.error','types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
+		return;
+	}
+	var message = { address: url.pathname, args: [] };
+	for (var ai=2; ai<args.length; ai++) {
+		var arg = args[ai];
+		var ty = type.charAt(ai-2);
+		var value = null;
+		if (ty=='i') {
+			// int
+			value = parseInt(arg);
+		} else if (ty=='f') {
+			// float
+			value = parseFloat(arg);
+		} else if (ty=='s') {
+			// string
+			value = decodeURIComponent(arg);
+		}
+		else if (ty=='b') {
+			// blob
+			value = new Uint8Array(arg.length/2);
+			for (var c = 0; c < arg.length; c += 2) {
+				value[c/2] = parseInt(arg.substr(c, 2), 16);
+			}
+		}
+		else {
+			console.log('unsupported OSC type: '+ty);
+			this.socket.emit('osc.error','unsupported OSC type: '+ty);
+			return;
+		}
+		message.args.push({type: ty, value: value});
+	}
+	console.log('send osc message to '+surl+': '+JSON.stringify(message));
+	try {
+		port.send(message);
+	}
+	catch (err) {
+		console.log('osc send error: '+err.message);
+		this.socket.emit('osc.error','osc send error: '+err.message);
+	}
 };
 
 io.on('connection', function(socket){

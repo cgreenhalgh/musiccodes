@@ -22,30 +22,6 @@ editorApp.config(['$routeProvider',
     });
   }
 ]);
-// getIPAddress().then(...)
-editorApp.factory('getIPAddress', ['$window', '$q', function($window, $q) {
-	var deferred = $q.defer();
-	var promise = deferred.promise;
-	// get ip address
-	// see http://stackoverflow.com/questions/20194722/can-you-get-a-users-local-lan-ip-address-via-javascript
-	// Local only - no stun / public
-	$window.RTCPeerConnection = $window.RTCPeerConnection || $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;   //compatibility for firefox and chrome
-	var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};
-	pc.createDataChannel("");    //create a bogus data channel
-	pc.createOffer(pc.setLocalDescription.bind(pc), noop);    // create offer and set local description
-	pc.onicecandidate = function(ice){  //listen for candidate events
-		if(!ice || !ice.candidate || !ice.candidate.candidate)  return;
-		console.log('got candidate '+ice.candidate.candidate);
-		var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate);
-		if (myIP!==null) {
-			console.log('my IP: ', myIP[1]);
-			pc.onicecandidate = noop;
-			deferred.resolve(myIP[1]);
-		}
-	};
-	return function() { return promise; }
-
-}]);
 
 editorApp.controller('ListCtrl', ['$scope', '$http', '$location', function($scope,$http,$location) {
 	$http.get('/experiences/').success(function(data) {

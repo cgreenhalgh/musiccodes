@@ -2,6 +2,33 @@
 
 var socket = angular.module('muzicodes.socket', []);
 
+// from editor.js
+//getIPAddress().then(...)
+socket.factory('getIPAddress', ['$window', '$q', function($window, $q) {
+	var deferred = $q.defer();
+	var promise = deferred.promise;
+	// get ip address
+	// see http://stackoverflow.com/questions/20194722/can-you-get-a-users-local-lan-ip-address-via-javascript
+	// Local only - no stun / public
+	$window.RTCPeerConnection = $window.RTCPeerConnection || $window.mozRTCPeerConnection || $window.webkitRTCPeerConnection;   //compatibility for firefox and chrome
+	var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};
+	pc.createDataChannel("");    //create a bogus data channel
+	pc.createOffer(pc.setLocalDescription.bind(pc), noop);    // create offer and set local description
+	pc.onicecandidate = function(ice){  //listen for candidate events
+		if(!ice || !ice.candidate || !ice.candidate.candidate)  return;
+		console.log('got candidate '+ice.candidate.candidate);
+		// IPv4 only for now; IPv6: |[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7}
+		var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3})/.exec(ice.candidate.candidate);
+		if (myIP!==null) {
+			console.log('my IP: ', myIP[1]);
+			pc.onicecandidate = noop;
+			deferred.resolve(myIP[1]);
+		}
+	};
+	return function() { return promise; }
+
+}]);
+
 // socket.io wrapper, exposes on() and emit()
 socket.factory('socket', ['$rootScope', function ($rootScope) {
 	var socket = io.connect();

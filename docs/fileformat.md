@@ -132,6 +132,13 @@ Note that simple text can be encoded using data URIs, e.g. `data:text/plain,hell
 
 A data URI with the non-standard MIME type `text/x-midi-hex` will be output to the current MIDI output channel (if any). All bytes are output immediately. Each byte is encoded as two hex digits. E.g. `data:text/x-midi-hex,903a7f` is note on, middle C, max velocity.
 
+### OSC actions
+
+A URI with the protocol `osc.udp:` will send an [Open Sound Control](http://opensoundcontrol.org/introduction-osc) message over UDP. The hostname and port are the address of the OSC server to send to; the path is the OSC address. After a comma is the OSC type string, and the arguments themselves follow, comma-separated. Currently supported data types are 'i' (integer), 'f' (float), 's' (string, url-encoded) and 'b' (binary, hex-encoded). Note that only individually messages can currently be sent, i.e. not packets containing multiple messages.  
+
+For example, the URI `osc.udp://1.2.3.4:9001/test/address,if,40,1.0` will send a message to the OSC server on the machine with IP address/hostname `1.2.3.4`, running on port `9001`, with OSC address pattern `/test/address` and two arguments, `40` (an integer, type `i`) and `1.0` (a float, type `f`). Please refer to documentation of the server for the messages that it supports.
+
+
 ## `code`
 
 (version 2)
