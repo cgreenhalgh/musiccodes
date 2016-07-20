@@ -258,6 +258,7 @@
   <!-- <h4>6. Codes and Actions</h4> -->
 
 	<p class="tab-intro">Specify codes and actions to be performed:</p>
+	<datalist id="action-prefixes"><option value="http:"><option value="https:"><option value="data:text/plain,"><option value="osc.udp:"><option value="data:text/x-midi-hex,"></datalist>
 
   <ul class="markers">
     <li ng-repeat="marker in markers" ng-controller="MarkerCtrl" class="marker">
@@ -290,7 +291,7 @@
           <label>Channel:</label>
           <input type="text" size="10" ng-model="action.channel">
           <label>URL:</label>
-          <input type="text" ng-model="action.url"> <urlchecker ng-model="action.url" midi-ouput="parameters.midiOutput"></urlchecker>
+          <input type="text" ng-model="action.url" list="action-prefixes" size="40"> <urlchecker ng-model="action.url" parameters="parameters"></urlchecker>
           <button ng-click="deleteAction($index)" aria-label="Remove action"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
         </li>
         <li >
@@ -298,7 +299,7 @@
           <label>Channel:</label>
           <input type="text" size="10" ng-model="marker.newActionChannel">
           <label>URL:</label>
-          <input type="text" ng-model="marker.newActionUrl"> <urlchecker ng-model="marker.newActionUrl"></urlchecker>
+          <input type="text" ng-model="marker.newActionUrl" list="action-prefixes" size="40"> <urlchecker ng-model="marker.newActionUrl"></urlchecker>
         </li>
       </ul>
       </div>

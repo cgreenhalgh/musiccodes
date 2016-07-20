@@ -637,7 +637,7 @@ editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PRE
 		restrict: 'E',
 		scope: {
 			ngModel: '=',
-			midiOutput: '='
+			parameters: '='
 		},
 		template: '<button ng-click="click()">Test</button> <span>{{ status }}</span>',
 		controller: function($scope, $element) {
@@ -651,13 +651,19 @@ editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PRE
 				else if (url.indexOf(MIDI_HEX_PREFIX)==0) {
 					$scope.status = 'Send MIDI';
 					$timeout(function() { $scope.status = ''; }, 1000);
-					midiout.start($scope.midiOutput);
-					midiout.send(url);
+					if (!$scope.parameters.midiOutput) {
+						alert('No midi output specified');
+					} else {
+						midiout.start($scope.parameters.midiOutput, function() { midiout.send(url); });
+					}
 					return;
 				} else if (url.indexOf(OSC_TCP_PREFIX)==0|| url.indexOf(OSC_UDP_PREFIX)==0) {
 					$scope.status = 'Send OSC';
 					$timeout(function() { $scope.status = ''; }, 1000);
 					oscout.send(url);
+					return;
+				} else if (url.indexOf('data:text/plain,')==0) {
+					$scope.status = 'OK';
 					return;
 				} else if (url.indexOf('http:')!=0 && url.indexOf('https:')!=0) {
 					$scope.status = 'Unsupported URL';

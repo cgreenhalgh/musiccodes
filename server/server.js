@@ -893,6 +893,7 @@ Client.prototype.action = function(msg) {
 var udpPorts = [];
 
 Client.prototype.oscSend = function(surl) {
+	var self = this;
 	log(this.room, 'server', 'osc.send', {url: surl});
 	console.log('osc.send '+surl);
 	var args =  surl.split(',');
@@ -932,7 +933,7 @@ Client.prototype.oscSend = function(surl) {
 
 			port.on("error", function (err) {
 			    console.log("OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" error: "+err);
-			    this.socket.emit('osc.error', "OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" error: "+err);
+			    self.socket.emit('osc.error', "OSC over UDP "+port.options.remoteAddress+":"+port.options.remotePort+" error: "+err);
 			});
 			port.open();
 		}
@@ -942,40 +943,45 @@ Client.prototype.oscSend = function(surl) {
 		this.socket.emit('osc.error','Unsupported OSC protocol: '+url.protocol);
 		return;
 	}
-	var type = (args.length>1 ? args[1] : '');
-	if (type.length+2 != args.length) {
-		console.log('types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
-		this.socket.emit('osc.error','types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
-		return;
-	}
 	var message = { address: url.pathname, args: [] };
-	for (var ai=2; ai<args.length; ai++) {
-		var arg = args[ai];
-		var ty = type.charAt(ai-2);
-		var value = null;
-		if (ty=='i') {
-			// int
-			value = parseInt(arg);
-		} else if (ty=='f') {
-			// float
-			value = parseFloat(arg);
-		} else if (ty=='s') {
-			// string
-			value = decodeURIComponent(arg);
-		}
-		else if (ty=='b') {
-			// blob
-			value = new Uint8Array(arg.length/2);
-			for (var c = 0; c < arg.length; c += 2) {
-				value[c/2] = parseInt(arg.substr(c, 2), 16);
-			}
-		}
-		else {
-			console.log('unsupported OSC type: '+ty);
-			this.socket.emit('osc.error','unsupported OSC type: '+ty);
+	if (args.length>1) {
+		// any comma? specified arguments...
+		var type = (args.length>1 ? args[1] : '');
+		if (type.length+2 != args.length) {
+			console.log('types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
+			this.socket.emit('osc.error','types dont match arguments in osc message: '+type+' vs '+args.length+': '+surl);
 			return;
 		}
-		message.args.push({type: ty, value: value});
+		for (var ai=2; ai<args.length; ai++) {
+			var arg = args[ai];
+			var ty = type.charAt(ai-2);
+			var value = null;
+			if (ty=='i') {
+				// int
+				value = parseInt(arg);
+			} else if (ty=='f') {
+				// float
+				value = parseFloat(arg);
+			} else if (ty=='s') {
+				// string
+				value = decodeURIComponent(arg);
+			}
+			else if (ty=='b') {
+				// blob
+				value = new Uint8Array(arg.length/2);
+				for (var c = 0; c < arg.length; c += 2) {
+					value[c/2] = parseInt(arg.substr(c, 2), 16);
+				}
+			}
+			else {
+				console.log('unsupported OSC type: '+ty);
+				this.socket.emit('osc.error','unsupported OSC type: '+ty);
+				return;
+			}
+			message.args.push({type: ty, value: value});
+		}
+	} else {
+		// TODO: handle arguments with whitespace
 	}
 	console.log('send osc message to '+surl+': '+JSON.stringify(message));
 	try {

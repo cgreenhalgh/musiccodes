@@ -2,7 +2,7 @@
 var midi = angular.module('muzicodes.midi', ['muzicodes.logging']);
 
 midi.factory('midiAccess', function() {
-	var midiAccess = navigator.requestMIDIAccess();
+	var midiAccess = navigator.requestMIDIAccess({ sysex: true });
 	midiAccess.then(function() { 
 		console.log('Granted midi access');
 	}, function() {
@@ -213,9 +213,9 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 				if (output.name==outputName) {
 					midiOutputPort = output;
 					console.log('found midi output '+outputName);
-					logger.log('midi.config.out',{id:id, name:midiOutputPort.name});
+					logger.log('midi.config.out',{id:midiOutputPort.id, name:midiOutputPort.name});
 					if (callback)
-						callack();
+						callback();
 				}
 			});
 			if (midiOutputPort==null) {
@@ -238,7 +238,13 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 			message.push(parseInt(b, 16));
 		}
 		console.log('midiSend: '+hex);
-		midiOutputPort.send( message );
+		try {
+			midiOutputPort.send( message );
+		}
+		catch (err) {
+			console.log('Error sending midi message: '+err.message);
+			alert('Error sending midi message: '+err.message);
+		}
 	};
 	
 	return {
