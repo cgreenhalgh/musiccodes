@@ -727,9 +727,24 @@ Client.prototype.parameters = function(parameters) {
     self.process = null;
   });
   this.process.stdin.on('error', function() {});
+  this.process.inbuf = '';
   this.process.stdout.on('data', function(data) {
-    //console.log( 'Client stdout: '+data);
-    self.processSilvetOnoffset(data);    
+	  console.log( 'Client stdout: '+data);
+	  self.process.inbuf += data;
+	  var lines = self.process.inbuf.split('\n');
+	  // can be out of order - process together to sort before send
+	  /*for (var li=0; li<lines.length-1; li++) {
+		  var line = lines[li];
+		  console.log( 'Client line: '+line);
+		  self.processSilvetOnoffset(line);    
+	  }*/
+	  // what's left?
+	  if (lines.length>0) {
+		  self.processSilvetOnoffset(lines.slice(0, lines.length-1).join('\n'));
+		  self.process.inbuf = lines[lines.length-1];
+	  } else {
+		  self.process.inbuf = '';
+	  }
   });
   this.process.stdout.on('end', function() {});
   this.process.stdout.on('error', function() {});
@@ -825,11 +840,15 @@ Client.prototype.data = function(msg) {
 Client.prototype.processSilvetOnoffset = function(data) {
   // e.g.  0.720000000: 174.614 6 F3
   var values = [];
-  new String(data).replace(/\s*(\d+(\.\d+)?):\s*(\d+(\.\d+)?)\s+(\d+)\s(\S+)\s*(\S+)?/,
-       function(m, time, t2, freq, f2, velocity, note, off) {
-           values.push({time:Number(time),freq:Number(freq),velocity:Number(velocity),
-                        note:note,off:(off=='off')});
-       });
+  var lines = data.split('\n');
+  for (var li in lines) {
+	  lines[li].replace(/\s*(\d+(\.\d+)?):\s*(\d+(\.\d+)?)\s+(\d+)\s(\S+)\s*(\S+)?/,
+		       function(m, time, t2, freq, f2, velocity, note, off) {
+		           values.push({time:Number(time),freq:Number(freq),velocity:Number(velocity),
+		                        note:note,off:(off=='off')});
+		       });
+  }
+  values.sort(function(a,b){return a.time-b.time;});
   for (var ix in values) {
     console.log('Get note '+JSON.stringify(values[ix]));
     log(this.room, 'server', 'audio.note', values[ix]);
