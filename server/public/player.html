@@ -33,10 +33,15 @@
 
 	<div id='header' class="row">
 		<div class="col-md-4" uib-collapse="!recording && !listening">
-			<inputmeter width="100" ng-if="!recordingStopped"></inputmeter><span id="recordingstatus" class="recordingstatus">{{recordingStatus}}</span><button id="stoprecording" class="recording" ng-click="stopRecording()" ng-disabled="recordingStopped" ng-class="{disabled: recordingStopped}">Stop</button><button class="recording" id="reload" ng-click="reload()">Reload</button>
+			<inputmeter width="100" ng-if="!recordingStopped"></inputmeter>
+			<span id="recordingstatus" class="recordingstatus">{{recordingStatus}}</span>
+			<button id="stoprecording" class="recording" ng-click="stopRecording()" ng-disabled="recordingStopped" ng-class="{disabled: recordingStopped}">Stop</button>
+		</div>
+		<div class="col-md-4">
 			<mus-context context="context"></mus-context>
 		</div>
 		<div class="col-md-8">
+			<button class="recording" id="reload" ng-click="reload()">Reload</button>
 			<softkeyboard on-note="onNote(note)"></softkeyboard>
 			<span>{{ state=='audioinput' ? 'Running with Audio' : ( state=='midiinput' ? 'Running with Midi' : ( state=='loading' ? 'Loading...' : (state=='loaded' ? 'Initialising...' : (state=='error' ? 'Sorry, something went wrong' : 'Unknown state ('+state+')' )))) }}</span>
 			<span>; Experience {{ experienceFile }}; Room "{{ room }}"; Channel "{{ channel }}"</span>
