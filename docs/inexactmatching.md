@@ -1,6 +1,6 @@
 # Understanding Muzicodes Inexact Matching
 
-Consider this short phrase ignoring timing (e.g. with `beat quantisation` set to 0 in its `matching profile`):
+Consider someone playing this short phrase ignoring timing (e.g. with `beat quantisation` set to 0 in its `matching profile`):
 
 `C4,D4,E4,D4`
 
@@ -40,15 +40,15 @@ With inexact matching muzicodes works out how many changes it would have to make
 
 ### inexact matching of notes
 
-For example, the following patterns might have been what the person intended to trigger with the untimed phrase:
+For example, the following patterns might have been what the person intended to trigger with the untimed phrase (at start, but not at end):
 
 - `D4,D4` - the first note, `C4`, was meant to be a `D4`; this is a `replace` error and by default it is "worth" 2 (i.e. it is equivalent to not playing the expected `D4` and then playing the unexpected `C4`)
-- `C4,B4,D4` - there is an extra `B4` between the first two notes; this is an `insert` error and by default it is "worth" 1.
-- `C4,E4,D4` - the second note, `D4`, is missing; this is a `delete` error and by default it is also "worth" 1.
+- `C4,B4,D4` - there is a `B4` in the pattern between the first two notes which they have not played; this is an `delete` error and by default it is "worth" 1.
+- `C4,E4,D4` - they played an extra note, `D4`, that is not in the pattern; this is a `insert` error and by default it is also "worth" 1.
 
 In order to use `inexact` matching you must select it for each code that you want to use it with. You can then specify how many errors you will accept and still trigger that code. For example, if you specify an `allowed error` of 1, then the untimed phrase would trigger the second two codes, above, but not the first (since the "cost" of replacing a note is 2, which is more than the allowed error).
 
-It is also possible to adjust the relative weight given to the different kinds of errors in the `matching profile`. Specifically, you can change the `note replace cost`, `note insert cost` and `note delete cost`. These can be less than 1, e.g. setting `note insert cost` to 0.1 would mean a penalty of only 0.1 for each extra note played.
+It is also possible to adjust the relative weight given to the different kinds of errors in the `matching profile`. Specifically, you can change the `note replace cost`, `note insert cost` (played extra note) and `note delete cost` (missed note). These can be less than 1, e.g. setting `note insert cost` to 0.1 would mean a penalty of only 0.1 for each extra note played.
 
 With inexact matching you can also allow some general inexactness in the tuning of the notes within a pattern. For example, if you specify a `note allow variation` of 1 semitone, then the following patterns would also match `C4,D4` with "no" error, as the notes are no more than 1 semitone different from  those played:
 
@@ -59,11 +59,11 @@ With inexact matching you can also allow some general inexactness in the tuning 
 
 Matching with timing is generally more fiddly.
 
-For example, the following patterns might have been what the person intended to trigger with the timed phrase:
+For example, the following patterns might have been what the person intended to trigger with the timed phrase (at start, but not at end):
 
 - `C4,/0.5,D4` - the notes are correct but the gap/delay between them is different; this is a `delay` error and by default it is "worth" 1.
 - `C4,D4` - the notes are correct but the gap/delay is missing; this is also a `delay` error and by default it is "worth" 1 (since no delay is the same as a delay of 0, `/0`!).
-- `C4,/1.5,E5` - the second note is missing (a delete error), but the resulting delay(s) are also different (1.5 vs 1, or 0.5). (At some point I may try to fix this so that the delays around missed notes are combined, but currently they are not).
+- `C4,/1.5,E5` - they played an extra note ('D4') (an insert error), but the resulting delay(s) are also different (1.5 vs 1, or 0.5). (At some point I may try to fix this so that the delays around missed notes are combined, but currently they are not).
 
 You can adjust the relative weight given to delay/gap "errors" with the `matching profile` `delay cost` (default 1).
 
