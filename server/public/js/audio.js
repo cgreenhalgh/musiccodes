@@ -3,7 +3,7 @@
 var audio = angular.module('muzicodes.audio', ['muzicodes.socket']);
 
 // wrapper for audio capture/stream to note extraction
-audio.factory('audionotes', ['socket', function(socket) {
+audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope) {
 	var STATE_SEND_PARAMETERS = 0;
 	var STATE_SEND_HEADER = 1;
 	var STATE_SEND_DATA = 2;
@@ -15,6 +15,7 @@ audio.factory('audionotes', ['socket', function(socket) {
 	var captureNode = null;
 	var audioContext = null;
 	var onNote = null;
+	var onLevel = null;
 	var state = STATE_SEND_PARAMETERS;
 	
 	// create audio context
@@ -34,6 +35,17 @@ audio.factory('audionotes', ['socket', function(socket) {
 			var s = Math.max(-1, Math.min(1, input[i]));
 			output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
 		}
+	}
+	function floatMax(input) {
+		var v = 0;
+		for (var i = 0; i < input.length; i++){
+			var val = input[i];
+			if (val<0)
+				val = -val;
+			if (val>v)
+				v = val;
+		}
+		return val;
 	}
 	function writeString(view, offset, string){
 		for (var i = 0; i < string.length; i++){
@@ -184,8 +196,19 @@ audio.factory('audionotes', ['socket', function(socket) {
 		captureNode.onaudioprocess = function(e){
 			//console.log( 'onaudioprocess '+e.inputBuffer.numberOfChannels+' channels, '+
 			//            e.inputBuffer.length+' samples @'+e.inputBuffer.sampleRate+'Hz' );
-			buffers.push( e.inputBuffer.getChannelData(0) );
+			var buf = e.inputBuffer.getChannelData(0);
+			buffers.push( buf );
+			var maxval = floatMax(buf);
 			sendAudio();
+			if (onLevel) {
+				$rootScope.$apply(function() {
+					try {
+						onLevel(maxval);
+					} catch (err) {
+						console.log('Error calling onLevel('+maxval+'): '+err.message, err);
+					}
+				});
+			}
 		};
 		console.log( 'make and connect audio worker' );
 		// connect inputs and outputs here
@@ -251,7 +274,32 @@ audio.factory('audionotes', ['socket', function(socket) {
 			setParameters(parameters);
 			mute = false;
 			console.log('audio start');
+		},
+		onLevel: function (callback) {
+			onLevel = callback;
 		}
 	};
 }]);
 
+audio.directive('inputmeter', ['audionotes',
+                                   function(audionotes) {
+	return {
+		restrict: 'E',
+		scope: {
+		},
+		template: '<div class="inputmeter"><div class="inputmeter-needle" ng-style="{width: level+\'%\', \'background-color\': color}"></div></div>',
+		link: function($scope, $element, $attrs) {
+			$scope.level = 0;
+			audionotes.onLevel(function(level) {
+				$scope.level = Math.max(0, 100+100/3*Math.log(level)/Math.LN10);
+				if (level>0.5)
+					$scope.color = 'orange';
+				else if (level>0.25)
+					$scope.color = 'orange';
+				else
+					$scope.color = 'green';
+				//console.log('audio level '+level+' -> '+$scope.level);
+			});
+		}
+	};
+}]);

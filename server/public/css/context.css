@@ -1,3 +1,14 @@
+.inputmeter {
+	color: grey;
+	border: 1px solid;
+	display: inline-block;
+	width: 100px;
+}
+.inputmeter-needle {
+	/*background-color: steelblue;*/
+	height: 1em;
+}
+
 .tempo-show-active {
 	
 }
