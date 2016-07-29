@@ -1,1 +1,12 @@
-#N canvas 213 297 450 300 10;
+#N canvas 656 266 450 300 10;
+#X obj 173 134 noteout 1;
+#X floatatom 61 -1 5 0 0 0 - - -;
+#X msg 157 15 60 100;
+#X msg 215 96 60 0;
+#X obj 187 42 bang;
+#X obj 219 71 delay 200;
+#X connect 2 0 0 0;
+#X connect 2 0 4 0;
+#X connect 3 0 0 0;
+#X connect 4 0 5 0;
+#X connect 5 0 3 0;
