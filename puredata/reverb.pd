@@ -1,0 +1,24 @@
+#N canvas 161 326 450 300 10;
+#X obj 26 35 adc~;
+#X obj 84 175 dac~;
+#X obj 85 105 freeverb~;
+#X obj 241 -13 hsl 100 15 0 127 0 1 empty empty empty -2 -8 0 10 -262144
+-1 -1 0 1;
+#X obj 175 93 print;
+#X obj 79 -33 init;
+#X msg 174 59 roomsize \$1;
+#X obj 244 28 / 128;
+#X msg 81 5 dry 0.8;
+#X msg 103 27 wet 0.2;
+#X connect 0 0 2 0;
+#X connect 0 0 2 1;
+#X connect 2 0 1 0;
+#X connect 2 1 1 1;
+#X connect 3 0 7 0;
+#X connect 5 0 8 0;
+#X connect 5 0 9 0;
+#X connect 6 0 2 0;
+#X connect 6 0 4 0;
+#X connect 7 0 6 0;
+#X connect 8 0 2 0;
+#X connect 9 0 2 0;

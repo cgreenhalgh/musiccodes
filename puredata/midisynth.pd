@@ -1,0 +1,8 @@
+#N canvas 576 277 450 300 10;
+#X obj 53 36 notein 1;
+#X floatatom 53 75 5 0 0 0 - - -;
+#X floatatom 110 79 5 0 0 0 - - -;
+#X obj 88 156 vst~;
+#X text 146 135 vst~ from http://puredata.info/Members/thomas/vst;
+#X connect 0 0 1 0;
+#X connect 0 1 2 0;
