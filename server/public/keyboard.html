@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" ng-app="keyboardApp">
+<head>
+<meta charset="utf-8">
+<title>Muzicodes Player</title>
+<link rel="stylesheet" href="/vendor/bootstrap/dist/css/bootstrap.css">
+<link rel="stylesheet" href="/css/keyboard.css">
+<script src="/vendor/angular/angular.js"></script>
+<script src="/js/keyboard.js"></script>
+<script src="/js/midi.js"></script>
+<script src="/js/viz.js"></script>
+<!-- ...needs... -->
+<script src="/js/logging.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/js/stream.js"></script>
+<script src="/vendor/socket.io-1.2.0.js"></script>
+</head>
+<body ng-controller='keyboardCtrl'>
+
+	<div class="row">
+		<div class="col-md-12">
+			<keyboard-view midi-input="midiInput" midi-output="midiOutput"></keyboard-view>
+		</div>
+		<div class="col-md-12">
+			<label>MIDI input:</label><midi-input-selector ng-model="midiInput"></midi-input-selector>
+			<label>MIDI output:</label><midi-output-selector ng-model="midiOutput"></midi-output-selector>
+		</div>
+	</div>
+</body>
+</html>

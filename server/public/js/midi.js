@@ -120,7 +120,7 @@ midi.directive('helloMidi', [function() {
 }]);
 
 // wrapper for midi note input. cf audio audionote
-audio.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAccess,$rootScope, logger) {
+midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAccess,$rootScope, logger) {
 
 	// state
 	var onNote = null;
@@ -138,7 +138,7 @@ audio.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAc
 		var name = notes[note % 12]+String(Math.floor(note / 12)-1);
 		var freq = 261.6*Math.pow(2, (note-60)/12.0);
 		var time = (Date.now()-time0)*0.001;
-		var event = { time: time, note: name, freq: freq, velocity: vel, off: (vel==0) };
+		var event = { time: time, note: name, midinote: note, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
 		logger.log('midi.note', note);
 		if (onNote!==null)
@@ -201,10 +201,10 @@ audio.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAc
 	};
 }]);
 
-audio.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
+midi.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
 
 //wrapper for midi note input. cf audio audionote
-audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAccess,MIDI_HEX_PREFIX,logger) {
+midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAccess,MIDI_HEX_PREFIX,logger) {
 	var midiOutputPort = null;
 	function setOutput(outputName, callback) {
 		midiOutputPort = null;
@@ -224,6 +224,15 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 			}
 		});
 	};
+	function sendRaw(message) {
+		try {
+			midiOutputPort.send( message );
+		}
+		catch (err) {
+			console.log('Error sending midi message: '+err.message);
+			alert('Error sending midi message: '+err.message);
+		}
+	}
 	function send(url) {
 		var hex = url;
 		if (hex.indexOf(MIDI_HEX_PREFIX)==0)
@@ -238,13 +247,7 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 			message.push(parseInt(b, 16));
 		}
 		console.log('midiSend: '+hex);
-		try {
-			midiOutputPort.send( message );
-		}
-		catch (err) {
-			console.log('Error sending midi message: '+err.message);
-			alert('Error sending midi message: '+err.message);
-		}
+		sendRaw(message);
 	};
 	
 	return {
@@ -252,6 +255,7 @@ audio.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiA
 			console.log('midiout start');
 			setOutput(outputName, callback);
 		},
-		send: send
+		send: send,
+		sendRaw: sendRaw
 	};
 }]);

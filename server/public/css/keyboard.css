@@ -1,0 +1,19 @@
+.keyboard {
+	height: 100px;	
+}
+
+.key {
+	stroke: #888;
+	stroke-width: 1;	
+}
+
+.black-key:not(pressed) {
+	fill: #000;
+}
+.white-key:not(pressed) {
+	fill: #fff;
+}
+
+.key.pressed {
+	fill: #f00;
+}
