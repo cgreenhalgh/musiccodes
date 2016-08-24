@@ -236,6 +236,7 @@
 			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
 			<muzicode notes="example.rawnotes" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<button ng-click="playExample(example)">Play</button>
+			<button ng-click="exportExample(example)">Export</button>
 			<div uib-collapse="isCollapsed">
 				<div note-roll notes="example.rawnotes" parameters="parameters" context="example.context"></div>
 				<mus-context context="example.context"></mus-context>

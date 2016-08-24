@@ -119,6 +119,17 @@ midi.directive('helloMidi', [function() {
 	};
 }]);
 
+midi.factory('midiutils', [function() {
+	return {
+		mtof: function(midinote) {
+			return 261.6*Math.pow(2, (midinote-60)/12.0);
+		},
+		ftom: function(freq) {
+			return Math.round(Math.log2(freq/261.6)*12)+60;
+		}
+	};
+}]);
+
 // wrapper for midi note input. cf audio audionote
 midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAccess,$rootScope, logger) {
 

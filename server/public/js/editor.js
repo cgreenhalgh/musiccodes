@@ -57,9 +57,11 @@ editorApp.controller('EditorCtrl', ['$scope', 'socket', function($scope,socket) 
 }]);
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
-                                        'noteGrouperFactory', 'midinotes', 'socket', 'audioout', '$timeout',
+                                        'noteGrouperFactory', 'midinotes', 'socket', 'audioout', '$timeout', 'midiutils',
+                                        '$window',
                                         function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,
-                                        		noteGrouperFactory,midinotes,socket,audioout, $timeout) {
+                                        		noteGrouperFactory,midinotes,socket,audioout, $timeout, midiutils,
+                                        		$window) {
 	$scope.defaults = {};
 	$scope.topTab = 1;
 	$scope.setTopTab = function(tab) {
@@ -516,6 +518,25 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		playingNotes = [];
 		playTime = 0;
 		playNextNote();
+	}
+	$scope.exportExample = function(example) {
+		// Export to PureData midisequence.pd format, i.e.
+		// 'add' delay(ms) 'note' midinote velocity duration(ms) ';'
+		var notes = example.rawnotes;
+		// freq, time, velocity, duration
+		var time = 0;
+		var output = '';
+		for (var ni in notes) {
+			var note = notes[ni];
+			if (ni==0)
+				time = note.time;
+			var elapsed = note.time - time;
+			time = note.time;
+			output += 'add '+Math.round(elapsed*1000)+' note '+midiutils.ftom(note.freq)+' '+note.velocity+' '+Math.round(note.duration*1000)+', ';
+		}
+		var dataurl = 'data:text/plain;base64,'+btoa(output);
+		console.log('export: '+output);
+		$window.open(dataurl, '', '');
 	}
 	$scope.$watch('parameters', function(newVals, oldVals) {
 		console.log('updated parameters -> update groups');
