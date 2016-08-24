@@ -1,43 +1,51 @@
-#N canvas 455 114 487 558 10;
-#X obj 105 53 midisequence;
-#X obj 102 12 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
+#N canvas 455 114 749 558 10;
+#X obj 111 93 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
-#X obj 105 86 delay 2000;
-#X obj 79 132 spigot;
-#X obj 115 109 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
+#X obj 114 167 delay 2000;
+#X obj 89 225 spigot;
+#X obj 124 190 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
-#X text 138 112 repeat;
-#X obj 348 113 makenote;
-#X obj 331 203 print note;
-#X obj 331 31 receive note;
-#X obj 349 80 trigger \$1 \$2 \$3;
-#X obj 347 153 noteout;
-#X obj 53 194 notein;
-#X obj 53 231 list \$1 \$2;
-#X obj 69 255 print notein;
-#X text 24 174 control in;
-#X obj 53 281 route 60 62;
-#X obj 30 380 print 60off;
-#X obj 112 379 print 60on;
-#X text 64 330 note 60;
-#X obj 53 345 select 0 90;
-#X text 322 9 play notes from sequencer;
-#X connect 0 0 2 0;
-#X connect 1 0 0 0;
-#X connect 2 0 3 0;
-#X connect 3 0 0 0;
-#X connect 4 0 3 1;
-#X connect 6 0 10 0;
-#X connect 6 1 10 1;
-#X connect 8 0 7 0;
-#X connect 8 0 9 0;
-#X connect 9 0 6 0;
-#X connect 9 1 6 1;
-#X connect 9 2 6 2;
+#X text 147 193 repeat;
+#X obj 328 362 makenote;
+#X obj 311 452 print note;
+#X obj 311 280 receive note;
+#X obj 329 329 trigger \$1 \$2 \$3;
+#X obj 327 402 noteout;
+#X obj 63 287 notein;
+#X obj 63 324 list \$1 \$2;
+#X obj 79 348 print notein;
+#X text 34 267 control in;
+#X obj 63 374 route 60 62;
+#X obj 40 473 print 60off;
+#X obj 122 472 print 60on;
+#X text 74 423 note 60;
+#X obj 63 438 select 0 90;
+#X text 302 258 play notes from sequencer;
+#X obj 196 20 loadbang;
+#X msg 208 46 add 0 note 81 127 120 \, add 420 note 81 127 180 \, add
+460 note 81 127 140 \, add 1160 note 80 61 120 \, add 120 note 82 127
+360 \, add 220 note 83 127 200 \, add 340 note 83 127 180 \, add 380
+note 83 127 180 \, add 1740 note 83 127 160 \, add 460 note 81 127
+160 \,;
+#X obj 114 134 midisequence;
+#X connect 0 0 22 0;
+#X connect 1 0 2 0;
+#X connect 2 0 22 0;
+#X connect 3 0 2 1;
+#X connect 5 0 9 0;
+#X connect 5 1 9 1;
+#X connect 7 0 6 0;
+#X connect 7 0 8 0;
+#X connect 8 0 5 0;
+#X connect 8 1 5 1;
+#X connect 8 2 5 2;
+#X connect 10 0 11 0;
+#X connect 10 1 11 1;
 #X connect 11 0 12 0;
-#X connect 11 1 12 1;
-#X connect 12 0 13 0;
-#X connect 12 0 15 0;
-#X connect 15 0 19 0;
-#X connect 19 0 16 0;
-#X connect 19 1 17 0;
+#X connect 11 0 14 0;
+#X connect 14 0 18 0;
+#X connect 18 0 15 0;
+#X connect 18 1 16 0;
+#X connect 20 0 21 0;
+#X connect 21 0 22 0;
+#X connect 22 0 1 0;
