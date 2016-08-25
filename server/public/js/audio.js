@@ -2,22 +2,8 @@
 
 var audio = angular.module('muzicodes.audio', ['muzicodes.socket']);
 
-// wrapper for audio capture/stream to note extraction
-audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope) {
-	var STATE_SEND_PARAMETERS = 0;
-	var STATE_SEND_HEADER = 1;
-	var STATE_SEND_DATA = 2;
-
-	// internal state
-	var buffers = [];
-	var mute = true;
-	var audioWorking = false;
-	var captureNode = null;
-	var audioContext = null;
-	var onNote = null;
-	var onLevel = null;
-	var state = STATE_SEND_PARAMETERS;
-	
+audio.factory('audioContext', [function() {
+	var audioContext;
 	// create audio context
 	window.AudioContext = window.AudioContext ||
 		window.webkitAudioContext;
@@ -28,6 +14,24 @@ audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope
 	catch (err) {
 		console.log('Error creating AudioContext: '+err.message);
 	}
+	return audioContext;
+}]);
+
+// wrapper for audio capture/stream to note extraction
+audio.factory('audionotes', ['socket', '$rootScope', 'audioContext', function(socket, $rootScope, audioContext) {
+	var STATE_SEND_PARAMETERS = 0;
+	var STATE_SEND_HEADER = 1;
+	var STATE_SEND_DATA = 2;
+
+	// internal state
+	var buffers = [];
+	var mute = true;
+	var audioWorking = false;
+	var captureNode = null;
+	//var audioContext = null;
+	var onNote = null;
+	var onLevel = null;
+	var state = STATE_SEND_PARAMETERS;
 
 	// audio handling support function 
 	function floatTo16BitPCM(output, offset, input){
@@ -184,11 +188,45 @@ audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope
 		}
 	};
 
+	var oldInput = null;
+	var oldCaptureNode = null;
+	var oldSplitter = null;
+	var inputChannel = 0;
+	
 	// audio input handling callbacks
 	var onStream = function(stream) {
+		// tidy up
+		if (oldCaptureNode!==null) {
+			oldCaptureNode.disconnect(audioContext.destination);
+			if (oldSplitter!==null) {
+				oldSplitter.disconnect( oldCaptureNode );
+				if (oldInput!==null) {
+					oldInput.disconnect( oldSplitter );
+					oldInput = null;
+				}
+				oldSplitter = null;
+			}
+			oldCaptureNode = null;
+		}
+		
+		var tracks = stream.getAudioTracks();
+		for (var ti in tracks) {
+			var track = tracks[ti];
+			console.log('new input has track '+ti+': '+track.kind+' '+track.label+' '+track.id);
+			if (typeof track.getCapabilities == 'function') {
+				var cap = track.getCapabilities();
+				console.log('- with '+cap.channelCount+' channels');
+			}
+		}
 		var input = audioContext.createMediaStreamSource(stream);
+		console.log('audio input had '+input.channelCount+' channels, '+input.channelCountMode+', '+input.channelInterpretation+', '+input.computedNumberOfChannels);
+		input.channelCountMode = 'explicit';
+		input.channelCount = 16;
+		// TO DO channels...
+		
 		// createAudioWorker not yet available!
 		// doesn't work with 0 outputs, even if we don't need it
+		
 		captureNode = (audioContext.createScriptProcessor ||
 				audioContext.createJavaScriptNode).call(audioContext,
 						/*bufferLen*/4096, /*numChannelsIn*/1, 
@@ -212,13 +250,22 @@ audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope
 		};
 		console.log( 'make and connect audio worker' );
 		// connect inputs and outputs here
-		input.connect( captureNode );
+		var splitter = audioContext.createChannelSplitter(16);
+		splitter.channelCount = 16;
+		splitter.channelCountMode = 'explicit';
+		input.connect( splitter );
+		splitter.connect( captureNode, inputChannel ); // output number from splitter
+		console.log('using audio channel '+inputChannel);
+		// should be needed (but is)
 		captureNode.connect(audioContext.destination);
 		audioWorking = true;
+		oldInput = input;
+		oldCaptureNode = captureNode;
+		oldSplitter = splitter;
 	};
 
 	var onStreamError = function(e) {
-		console.error('Error getting microphone input', e);
+		console.error('Error getting audio input', e);
 		alert('Sorry, could not get audio input');
 	};
 
@@ -227,17 +274,63 @@ audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope
             navigator.mozGetUserMedia ||
             navigator.msGetUserMedia);
 	
-	// get audio input
-	if (typeof navigator.getUserMedia == 'function') {
-		navigator.getUserMedia({audio:true}, onStream, onStreamError);
-	} else if (navigator.mediaDevices!==undefined && typeof navigator.mediaDevices.getUserMedia == 'function') {
-		var p = navigator.mediaDevices.getUserMedia({audio:true});
-		p.then(onStream);
-		p.catch(onStreamError);
-	} else {
-		alert('Sorry, could not find audio input support on this browser');
+	function setInputInternal(constraints) {
+		console.log('set audio input '+JSON.stringify(constraints));
+		if (typeof navigator.getUserMedia == 'function') {
+			navigator.getUserMedia(constraints, onStream, onStreamError);
+		} else if (navigator.mediaDevices!==undefined && typeof navigator.mediaDevices.getUserMedia == 'function') {
+			var p = navigator.mediaDevices.getUserMedia(constraints);
+			p.then(onStream);
+			p.catch(onStreamError);
+		} else {
+			alert('Sorry, could not find audio input support on this browser');
+		}
 	}
-
+	
+	function setInput(label, channel) {
+		channel = channel || 0;
+		inputChannel = channel;
+		// get audio input
+		if (navigator.mediaDevices!==undefined) {
+			if (label!==undefined && label!='' && typeof navigator.mediaDevices.enumerateDevices == 'function') {
+				navigator.mediaDevices.enumerateDevices().then(function(devices) {
+					var constraints = {audio:true};
+					for (var di in devices) {
+						var device = devices[di];
+						if (device.label == label) {
+							
+							// standard??
+							constraints.audio = {deviceId: {exact: device.deviceId}};
+							// chrome??
+							constraints.audio = {mandatory: { sourceId: device.deviceId }};
+						}
+					}
+					if (constraints.audio===true) {
+						console.log('Warning: could not find audio input '+label+'; using default');
+						alert('Could not find audio input '+label+'; using default');
+					} else {
+						// chrome - see https://bugs.chromium.org/p/chromium/issues/detail?id=453876
+						constraints.audio.mandatory.echoCancellation = false;
+					}
+					setInputInternal(constraints);
+				});
+			} else {
+				setInputInternal({audio:true});
+				// default
+			}
+		} else {
+			setInputInternal({audio:true});
+		}
+	}
+	function setChannel(channel) {
+		channel = channel || 0;
+		inputChannel = channel;
+		console.log('using audio channel '+inputChannel);
+		if (oldSplitter!==null && oldCaptureNode!==null) {
+			oldSplitter.disconnect( oldCaptureNode );
+			oldSplitter.connect( oldCaptureNode, inputChannel ); // output number from splitter
+		}
+	}
 	var sendStop = function() {
 		console.log('audio stop');
 		mute = true;
@@ -277,7 +370,9 @@ audio.factory('audionotes', ['socket', '$rootScope', function(socket, $rootScope
 		},
 		onLevel: function (callback) {
 			onLevel = callback;
-		}
+		},
+		setInput: setInput,
+		setChannel: setChannel
 	};
 }]);
 
@@ -300,6 +395,58 @@ audio.directive('inputmeter', ['audionotes',
 					$scope.color = 'green';
 				//console.log('audio level '+level+' -> '+$scope.level);
 			});
+		}
+	};
+}]);
+
+audio.directive('audioInputSelector', [function() {
+	//console.log('midi-input-selector...');
+	return {
+		//restrict: 'E',
+		scope: {
+			ngModel: '=',
+			name: '@'
+		},
+		template: '<input ng-model="ngModel" list="audio-inputs"><datalist id="audio-inputs"><option ng-repeat="input in audioInputOptions" value="{{input}}"></datalist> <span>{{ status }}</span>',
+		link: function(scope, element, attrs) {
+			function updateStatus(name) {
+				scope.status = '';
+				if (!name) {
+					scope.status = 'Not used';
+					return;
+				}
+				if (scope.audioInputOptions.indexOf(name)>=0)
+					scope.status = 'OK';
+				else
+					scope.status = 'Not found';
+			}
+			scope.$watch('ngModel', function(newValue) {
+				console.log('watch ngModel = '+newValue);
+				updateStatus(newValue);
+			});
+			//console.log('midi-input-selector link...');
+			scope.audioInputOptions = [ "" ];
+			scope.status = '';
+			if (navigator.mediaDevices!==undefined && typeof navigator.mediaDevices.enumerateDevices=='function') {
+				navigator.mediaDevices.enumerateDevices().then(function(devices) {
+					for (var di in devices) {
+						var device = devices[di];
+						console.log('Found input '+device.deviceId+': '+device.kind+' '+device.label+' group '+device.group);
+						if (device.kind=='audioinput') {
+							scope.audioInputOptions.push(device.label);	
+							if (typeof device.getCapabilities=='function') {
+								var cap = device.getCapabilities();
+								console.log(' - has '+cap.channelCount+' channels');
+							}
+						}	
+					}
+					scope.$digest();
+				});
+			}
+			else {
+				console.log('No browser support to enumerate audio inputs');
+			}
+			updateStatus(scope.ngModel);
 		}
 	};
 }]);

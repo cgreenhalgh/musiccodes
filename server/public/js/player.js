@@ -329,6 +329,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				$scope.recordingStatus = "Listening";
 				$scope.recordingStopped = false;
 			}
+			audionotes.setInput(parameters.audioInput, parameters.audioChannel);
 			audionotes.start(parameters.vampParameters);
 		}
 		if ($scope.midiOutputName!==undefined && $scope.midiOutputName!='') {

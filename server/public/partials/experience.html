@@ -61,7 +61,16 @@
 	<table>
 		<tbody>
 			<tr>
-				<td><label>Audio (default)</label></td>
+				<td><label>Audio Input</label></td>
+				<td>
+					<audio-input-selector ng-model="parameters.audioInput"></audio-input-selector>
+				</td>
+			</tr>
+			<tr>
+				<td><label>Audio Channel</label></td>
+				<td>
+					<input type="number" min="0" max="15" ng-model="parameters.audioChannel">
+				</td>
 			</tr>
 			<tr>
 				<td><label>Audio Level</label></td>

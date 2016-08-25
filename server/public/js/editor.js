@@ -154,7 +154,9 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  monophonicGap: 0.1,
 		  vampParameters: { instrument: 0 },
 		  midiInput: '',
-		  midiOutput: ''
+		  midiOutput: '',
+		  audioInput: '',
+		  audioChannel: 0
   };
   $scope.defaultContext = {};
   $scope.projections = [];
@@ -166,6 +168,11 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
   $scope.showState = false;
   //$scope.experienceForm.$setDirty();
   $scope.formChanged = false;
+  
+  audionotes.setInput($scope.parameters.audioInput, $scope.parameters.audioChannel);
+  $scope.$watch('parameters.audioInput', function(input) {audionotes.setInput(input, $scope.parameters.audioChannel); });
+  $scope.$watch('parameters.audioChannel', function(channel) {audionotes.setChannel(channel);});
+  
   var loaded = function(data) {
 	  console.log('loaded '+JSON.stringify(data));
     /* fix default actions */
