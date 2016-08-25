@@ -58,10 +58,10 @@ editorApp.controller('EditorCtrl', ['$scope', 'socket', function($scope,socket) 
 
 editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getIPAddress', '$location', 'audionotes', '$interval',
                                         'noteGrouperFactory', 'midinotes', 'socket', 'audioout', '$timeout', 'midiutils',
-                                        '$window',
+                                        '$window', 'getIPAddresses',
                                         function ($scope,$http,$routeParams,getIPAddress,$location,audionotes,$interval,
                                         		noteGrouperFactory,midinotes,socket,audioout, $timeout, midiutils,
-                                        		$window) {
+                                        		$window, getIPAddresses) {
 	$scope.defaults = {};
 	$scope.topTab = 1;
 	$scope.setTopTab = function(tab) {
@@ -115,10 +115,16 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	$scope.serverProtocol = $location.protocol();
 	$scope.serverHost = $location.host();
 	$scope.serverPort = $location.port();
+	$scope.altServerUrls = [$scope.serverProtocol+'://'+$scope.serverHost+':'+$scope.serverPort];
 	if ($scope.serverHost=='localhost' || $scope.serverHost=='127.0.0.1') {
 		getIPAddress().then(function(myIP) {
 			console.log('resolved IP '+myIP);
 			$scope.serverHost = myIP;
+		});
+		getIPAddresses(function(myIP) {
+			var url = $scope.serverProtocol+'://'+myIP+':'+$scope.serverPort;
+			if($scope.altServerUrls.indexOf(url)<0)
+				$scope.altServerUrls.push( url );			
 		});
 	}
   $scope.filename = $routeParams.experience;

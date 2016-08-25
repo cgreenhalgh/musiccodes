@@ -31,7 +31,7 @@
   <span ng-repeat="channel in channels">
     <button ng-click="openSlave($index)">Open Slave, {{ channel=='' ? 'default channel' : 'channel '+channel}}</button><button ng-click="openSlaveQR($index)">QR</button>
   </span>
-  <p>Server {{serverProtocol}}//{{serverHost}}:{{serverPort}}</p>
+  <p>Server {{serverProtocol}}://{{serverHost}}:{{serverPort}} (<span ng-repeat="serverUrl in altServerUrls"><a href="{{serverUrl}}">{{serverUrl}}</a>; </span>)</p>
   <hr>
   <!-- <h2>Edit</h2> -->
   <!-- dirty isn't working for adding/removing form sections -->
