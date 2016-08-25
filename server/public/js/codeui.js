@@ -295,8 +295,8 @@ codeui.factory('CodeNode', function() {
 		}
 		label(node);
 	};
-	var SMALL_PITCH = 0.1;
-	var SMALL_DELAY = 0.1;
+	var SMALL_PITCH = 0.005;
+	var SMALL_DELAY = 0.005;
 	var debug = false;
 	CodeNode.matchesAtomic = function(node, note) {
 		if (note.midinote!==undefined && note.midinote!==null) {
