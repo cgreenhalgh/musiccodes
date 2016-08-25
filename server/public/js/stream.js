@@ -13,6 +13,9 @@ stream.factory('noteGrouperFactory', function() {
 		if (debug)
 			console.log('New Grouper');
 		this.parameters = parameters;
+		// default
+		if (!this.parameters.streamGap)
+			this.parameters.streamGap = 2;
 		this.groups = {};
 	};
 	// return group (else undefined)
@@ -66,9 +69,9 @@ stream.factory('noteGrouperFactory', function() {
 
 		if (!handled) {
 			var group = { id: nextGroupId++, closed: false, time: note.time, lastTime: note.time };
-			group.lowFreq = Math.max(this.parameters.frequencyRatio!==undefined ? note.freq/this.parameters.frequencyRatio : MIN_FREQUENCY,
+			group.lowFreq = Math.max(this.parameters.frequencyRatio ? note.freq/this.parameters.frequencyRatio : MIN_FREQUENCY,
 				this.parameters.minFrequency!==undefined ? this.parameters.minFrequency : MIN_FREQUENCY);
-			group.highFreq = Math.min(this.parameters.frequencyRatio!==undefined ? note.freq*this.parameters.frequencyRatio : MAX_FREQUENCY,
+			group.highFreq = Math.min(this.parameters.frequencyRatio ? note.freq*this.parameters.frequencyRatio : MAX_FREQUENCY,
 				this.parameters.maxFrequency!==undefined ? this.parameters.maxFrequency : MAX_FREQUENCY);
 			this.groups[group.id] = group;
 			if (debug)

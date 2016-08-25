@@ -310,7 +310,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 
 		var parameters = experience.parameters;
 		$scope.parameters = parameters;
-		if ($scope.parameters.streamGap===undefined)
+		if (!$scope.parameters.streamGap)
 			$scope.parameters.streamGap = 2; // default 2s
 		if ($scope.midiInputName===undefined)
 			$scope.midiInputName = parameters.midiInput;
