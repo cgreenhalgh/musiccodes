@@ -754,7 +754,7 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 			 ngModel: '='
 		},
 		// leave feedback to Matches
-		template: '<input type="text" ng-model="ngModel">',
+		template: '<input type="text" ng-model="ngModel" size="60">',
 		link: function(scope, element, attrs) {
 			function update() {
 				scope.feedback = '';
