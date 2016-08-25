@@ -42,6 +42,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.reftime = null;
 	$scope.reftimeLocal = null;
 	$scope.nextNoteId = 1;
+	$scope.actionRefresh = false;
 	$scope.actionUrl = 'data:text/plain,Testing';
 	var codeMatchers = {};
 	$scope.codeMatchers = codeMatchers;
@@ -103,7 +104,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				// always check code for partial feedback
 				if (code!==undefined && codeMatchers[marker.code]!==undefined &&
 					codeMatchers[marker.code].match( code ) ) {
-					if (!marker.atEnd || group.closed) {
+					if ((!marker.atEnd && !group.closed) || (marker.atEnd && group.closed)) {
 						console.log('Matched marker '+marker.title+' code '+proc.notesToString(code));
 						socket.emit('action',marker);
 						if (marker.poststate!==undefined)
@@ -119,7 +120,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 									// osc output
 									oscout.send( action.url );
 								} else {
-									$scope.actionUrl = action.url;
+									if (action.url == $scope.actionUrl) 
+										$scope.actionRefresh = true;
+									else
+										$scope.actionUrl = action.url;
 								}
 							}
 						}
@@ -377,11 +381,12 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	}
 }]);
 
-playerApp.directive('urlView', ['$http', '$sce', function($http, $sce) {
+playerApp.directive('urlView', ['$http', '$sce', '$timeout',function($http, $sce, $timeout) {
 	return {
 		restrict: 'E',
 		scope: {
-			actionUrl: '='
+			actionUrl: '=',
+			refresh: '='
 		},
 		template: '<iframe ng-src="{{internalUrl}}"></iframe>',
 		link: function(scope, element, attrs) {
@@ -389,7 +394,18 @@ playerApp.directive('urlView', ['$http', '$sce', function($http, $sce) {
 			console.log('link urlView');
 			scope.$watch('actionUrl', function(newValue) {
 				console.log('actionUrl = '+newValue);
+				scope.refresh = false;
 				scope.internalUrl = $sce.trustAsResourceUrl(newValue);
+			});
+			scope.$watch('refresh', function(refresh) {
+				if (refresh) {
+					console.log('refresh urlView');
+					scope.refresh = false;
+					scope.internalUrl = '';
+					$timeout(function() {
+						scope.internalUrl = $sce.trustAsResourceUrl(scope.actionUrl);
+					}, 0);
+				}
 			});
 		}
 	};
