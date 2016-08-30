@@ -1,4 +1,4 @@
-#N canvas 455 114 749 558 10;
+#N canvas 79 99 749 558 10;
 #X obj 111 93 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
 #X obj 114 167 delay 2000;
@@ -10,7 +10,7 @@
 #X obj 311 452 print note;
 #X obj 311 280 receive note;
 #X obj 329 329 trigger \$1 \$2 \$3;
-#X obj 327 402 noteout;
+#X obj 402 410 noteout;
 #X obj 63 287 notein;
 #X obj 63 324 list \$1 \$2;
 #X obj 79 348 print notein;
@@ -28,12 +28,16 @@
 note 83 127 180 \, add 1740 note 83 127 160 \, add 460 note 81 127
 160 \,;
 #X obj 114 134 midisequence;
+#X obj 329 411 noteout 17;
+#X text 459 406 output to device 1 channel 1 & device 2 channel 1;
 #X connect 0 0 22 0;
 #X connect 1 0 2 0;
 #X connect 2 0 22 0;
 #X connect 3 0 2 1;
 #X connect 5 0 9 0;
+#X connect 5 0 23 0;
 #X connect 5 1 9 1;
+#X connect 5 1 23 1;
 #X connect 7 0 6 0;
 #X connect 7 0 8 0;
 #X connect 8 0 5 0;

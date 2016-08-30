@@ -1,0 +1,27 @@
+#N canvas 21 556 454 406 10;
+#X obj 47 203 adc~;
+#X obj 105 343 dac~;
+#X obj 106 273 freeverb~;
+#X obj 263 152 hsl 100 15 0 127 0 1 empty empty empty -2 -8 0 10 -262144
+-1 -1 9900 1;
+#X obj 196 261 print;
+#X msg 195 227 roomsize \$1;
+#X obj 265 196 / 128;
+#X msg 102 173 dry 0.8;
+#X msg 124 195 wet 0.2;
+#X obj 100 135 loadbang;
+#X obj 259 108 ctlin 12;
+#X text 262 84 midi controller 12 -> room size;
+#X connect 0 0 2 0;
+#X connect 0 0 2 1;
+#X connect 2 0 1 0;
+#X connect 2 1 1 1;
+#X connect 3 0 6 0;
+#X connect 5 0 2 0;
+#X connect 5 0 4 0;
+#X connect 6 0 5 0;
+#X connect 7 0 2 0;
+#X connect 8 0 2 0;
+#X connect 9 0 7 0;
+#X connect 9 0 8 0;
+#X connect 10 0 3 0;

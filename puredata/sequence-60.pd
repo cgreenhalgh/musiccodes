@@ -1,0 +1,20 @@
+#N canvas 953 263 623 429 10;
+#X obj 196 20 loadbang;
+#X msg 208 46 add 0 note 81 127 120 \, add 420 note 81 127 180 \, add
+460 note 81 127 140 \, add 1160 note 80 61 120 \, add 120 note 82 127
+360 \, add 220 note 83 127 200 \, add 340 note 83 127 180 \, add 380
+note 83 127 180 \, add 1740 note 83 127 160 \, add 460 note 81 127
+160 \,;
+#X obj 114 134 midisequence;
+#X obj 50 21 notein;
+#X obj 50 43 == 60;
+#X obj 50 74 bang;
+#X obj 47 193 print sequence 60;
+#X obj 115 165 print done sequence;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 2 0 7 0;
+#X connect 3 0 4 0;
+#X connect 4 0 5 0;
+#X connect 5 0 2 0;
+#X connect 5 0 6 0;
