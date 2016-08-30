@@ -212,30 +212,75 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 	};
 }]);
 
+//wrapper for midi note input. cf audio audionote
+midi.factory('midicontrols', ['midiAccess','MIDI_HEX_PREFIX','$rootScope', 'logger', function(midiAccess,MIDI_HEX_PREFIX,$rootScope, logger) {
+
+	// state
+	var onMessage = null;
+	var midiInputPort = null;
+	function stop() {
+		if (midiInputPort!==null) {
+			midiInputPort.close();
+			midiInputPort = null;
+		}
+	}
+	function processMidiMessage( data ) {
+		var url = MIDI_HEX_PREFIX;
+		for (var i=0; i<event.data.length; i++) {
+			url += (event.data[i]<16 ? '0' : '') + event.data[i].toString(16);
+		}
+		console.log('midi control message: '+url);
+		if (onMessage!==null)
+			onMessage(url);
+	}
+
+	function setInput(inputName) {
+		stop();
+		midiAccess.then(function(midiAccess) {
+			var found = false;
+			midiAccess.inputs.forEach(function(input) { 
+				console.log('check input '+input.name+' ('+input+')');
+				if (input.name==inputName && midiInputPort==null) {
+					console.log('connecting to midi input '+inputName);
+					midiInputPort = input;
+					logger.log('midi.config.controlin',{id:midiInputPort.id, name:midiInputPort.name});
+					// monitor input...
+					midiInputPort.onmidimessage = function(event) {
+						processMidiMessage( event.data );
+					}
+				}				
+			});
+			if(midiInputPort==null) {
+				console.log('Cannot find midi control input '+inputName);
+				alert('Could not find Midi control input '+inputName);
+			}
+		});
+	}
+	return {
+		onMessage: function (callback) {
+			onMessage = callback;
+		},
+		setInput: setInput,
+		stop: stop,
+		start: function(inputName) {
+			console.log('midi control start');
+			setInput(inputName);
+		}
+	};
+}]);
+
 midi.value('MIDI_HEX_PREFIX', 'data:text/x-midi-hex,');
 
 //wrapper for midi note input. cf audio audionote
 midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAccess,MIDI_HEX_PREFIX,logger) {
 	var midiOutputPort = null;
-	function setOutput(outputName, callback) {
-		midiOutputPort = null;
-		midiAccess.then(function(midiAccess) {
-			midiAccess.outputs.forEach( function( output ) {
-				if (output.name==outputName) {
-					midiOutputPort = output;
-					console.log('found midi output '+outputName);
-					logger.log('midi.config.out',{id:midiOutputPort.id, name:midiOutputPort.name});
-					if (callback)
-						callback();
-				}
-			});
-			if (midiOutputPort==null) {
-				console.log('Cannot find midi output '+outputName);
-				alert('Could not find Midi output '+outputName);				  
-			}
-		});
-	};
+	var messages = [];
 	function sendRaw(message) {
+		if (midiOutputPort==null) {
+			console.log('delay send midi');
+			messages.push(message);
+			return;
+		}
 		try {
 			midiOutputPort.send( message );
 		}
@@ -244,14 +289,36 @@ midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAc
 			alert('Error sending midi message: '+err.message);
 		}
 	}
+	function setOutput(outputName, callback) {
+		midiOutputPort = null;
+		messages = [];
+		midiAccess.then(function(midiAccess) {
+			midiAccess.outputs.forEach( function( output ) {
+				if (output.name==outputName) {
+					midiOutputPort = output;
+					console.log('found midi output '+outputName);
+					logger.log('midi.config.out',{id:midiOutputPort.id, name:midiOutputPort.name});
+					if (callback)
+						callback();
+					for (var mi in messages) {
+						console.log('send delayed midi message');
+						var message = messages[mi];
+						sendRaw(message);
+					}
+					messages = [];
+				}
+			});
+			if (midiOutputPort==null) {
+				console.log('Cannot find midi output '+outputName);
+				alert('Could not find Midi output '+outputName);
+				messages = [];
+			}
+		});
+	};
 	function send(url) {
 		var hex = url;
 		if (hex.indexOf(MIDI_HEX_PREFIX)==0)
 			hex = hex.substring(MIDI_HEX_PREFIX.length);
-		if (midiOutputPort===null) {
-			console.log('discard midi send '+hex+' (no output)');
-			return;
-		}
 		var message = [];
 		for (var i=0; i+1<hex.length; i+=2) {
 			var b = hex.substring(i,i+2);

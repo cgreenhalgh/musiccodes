@@ -226,7 +226,9 @@
 				<li role="presentation" ng-class="{active:bottomTab==2}"><a href
 					ng-click="setBottomTab(2)">6. Codes and Actions</a></li>
 				<li role="presentation" ng-class="{active:bottomTab==3}"><a href
-					ng-click="setBottomTab(3)">7. Outputs</a></li>
+					ng-click="setBottomTab(3)">Controls</a></li>
+				<li role="presentation" ng-class="{active:bottomTab==4}"><a href
+					ng-click="setBottomTab(4)">7. Outputs</a></li>
 			</ul>
 
 <div ng-show="bottomTab==1">
@@ -299,6 +301,7 @@
       <input type="text" ng-model="marker.description">
       <label>At start:</label><input type="checkbox" ng-model="marker.atStart">
       <label>At end:</label><input type="checkbox" ng-model="marker.atEnd">
+      <label>Priority:</label><input type="number" ng-model="marker.priority" size="3">
       <label>Actions:</label>
       <ul>
         <li ng-repeat="action in marker.actions">
@@ -331,7 +334,71 @@
 <div ng-show="bottomTab==3">
 
 	<!-- <hr>
-	<h3>7. Outputs</h3> -->
+	<h3>7. Controls</h3> -->
+	
+	<p class="tab-intro">Specify controls:</p>
+	
+	<table>
+		<tbody>
+			<tr>
+				<td><label>Midi Control Input</label></td>
+				<td>
+					<!-- <input type="text" ng-model="parameters.midiInput" placeholder="(none)"> -->
+					<midi-input-selector ng-model="parameters.midiControl"></midi-input-selector>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	
+	
+	<datalist id="control-prefixes"><option value="event:load"><option value="event:start"><option value="event:end"><!-- <option value="osc.udp:///">  --><option value="data:text/x-midi-hex,"></datalist>
+
+  <ul class="markers">
+    <li ng-repeat="control in controls" ng-controller="ControlCtrl" class="marker">
+      <span class="glyphicon" aria-hidden="true" ng-class="{'glyphicon-triangle-right': isCollapsed, 'glyphicon-triangle-bottom': !isCollapsed}" ng-click="isCollapsed=(!isCollapsed)"></span>
+      <button ng-click="deleteControl($index)"  aria-label="Remove control"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+      <label>Input URL:</label> <input type="text" ng-model="control.inputUrl" list="control-prefixes" size="60">
+      <div uib-collapse="isCollapsed">
+		<div uib-collapse="!showState">
+		<label>Precondition:</label><input type="text" ng-model="control.precondition">
+		<label>Post state:</label>
+	      <div class="var" ng-repeat="var in variables">
+	        <span>{{var}}</span>=<input type="text"  size="6" ng-model="control.poststate[var]" placeholder="{{var }}">
+      	</div>
+      </div>
+      <label>Description:</label>
+      <input type="text" ng-model="control.description">
+      <label>Actions:</label>
+      <ul>
+        <li ng-repeat="action in control.actions">
+          <label>Channel:</label>
+          <input type="text" size="10" ng-model="action.channel">
+          <label>URL:</label>
+          <input type="text" ng-model="action.url" list="action-prefixes" size="60"> <urlchecker ng-model="action.url" parameters="parameters"></urlchecker>
+          <button ng-click="deleteAction($index)" aria-label="Remove action"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
+        </li>
+        <li >
+          <button ng-click="addAction()" aria-label="Add action"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+          <label>Channel:</label>
+          <input type="text" size="10" ng-model="control.newActionChannel">
+          <label>URL:</label>
+          <input type="text" ng-model="control.newActionUrl" list="action-prefixes" size="60"> <urlchecker ng-model="control.newActionUrl"></urlchecker>
+        </li>
+      </ul>
+      </div>
+    </li>
+    <li class="marker">
+      <button ng-click="addControl()" aria-label="Add control"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
+      <label>Input URL:</label> <input type="text" ng-model="newControlUrl" list="control-prefixes" size="60">
+    </li>
+  </ul>
+	
+</div>
+
+<div ng-show="bottomTab==4">
+
+	<!-- <hr>
+	<h3>8. Outputs</h3> -->
 	
 	<p class="tab-intro">Specify outputs:</p>
 	

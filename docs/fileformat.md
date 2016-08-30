@@ -8,6 +8,7 @@ Single top-level JSON object with properties:
 - `examples` - list of `example` objects
 - `defaultContext` - context config (v2)
 - `projections` - list of `projection` objects (v2)
+- `controls` - list of `control` objects (v2, todo)
 
 ## `parameters`:
 
@@ -26,6 +27,7 @@ Single top-level JSON object with properties:
 - `initstate` (map of name to value), initial state, used in code `precondition`s.
 - `midiInput` (string, default undefined), name of midi input device, if any
 - `midiOutput` (string, default undefined), name of midi output device, if any
+- `midiControl` (string, default undefined), name of midi control input device, if any (todo)
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
@@ -45,7 +47,7 @@ not yet implemented:
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 - `inexactParameters` - see below
 
-(todo) `inexactParameters` is object with properties:
+`inexactParameters` is object with properties:
 - `delayError` (number, default 1) weight given to delay errors vs note errors (default for all note errors is 1)
 - `noteInsertError` (number, default 1) weight given to note insertion errors, i.e. extra notes not in the code
 - `noteDeleteError` (number, default 1) weight given to note deletion errors, i.e. missing a note in the code
@@ -68,11 +70,11 @@ This is based on ArtCodes/Aestheticodes file format, pre November 2015.
 Object with properties:
 - `code` (string, required, no default), code associated with this marker/action - see below
 - `projection` - `id` of `projection` applied to notes for matching with marker (v2)
+- `priority` (float, default 0) higher-priority markers are matched first (v2, todo)
 - `atStart` (boolean, default false), require code to appear at start of group
 - `atEnd` (boolean, default false), require code to appear at end of group
 - `inexact` (boolean, default false), use inexact matching, i.e. code can be triggered with some errors
 - `inexactError` (float, default 0), allowable error when matching in inexact mode
-- `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
 - `title` (string), title of the action in showDetail view
@@ -84,6 +86,32 @@ Object with properties:
 
 No longer supported (v2):
 - `codeformat` 
+- `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
+
+## `control`
+
+(todo)
+
+For inputs from other system(s) that control the muzicodes system. e.g. from `midiControl` input.
+
+Object with properties:
+- `inputUrl` (string) URL-style specification of input trigger/control, comparable to action URLs. See below.
+
+and, like `marker`:
+- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `description` (string), description of the action in showDetail view (not currently used)
+- `precondition` (string, default true, i.e. code can always be matched), expression which if true enables code to be matched, can depend only on state variables.
+- `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
+
+Values for `inputUrl` include:
+- MIDI message, starting `data:text/x-midi-hex,`, e.g. `data:text/x-midi-hex,903a7f` (note on 60 channel 1) (todo)
+- OSC message, starting `osc.udp:///` (todo)
+- on load, `event:load`
+- on start of note stream, `event:start` 
+- on end of note stream, `event:end`
+ 
+(- on partial match of marker (todo, TBD) `event:match:TITLE:DEGREE`, which might include parameters in format `{{NAME}}` which cannot include `/` or `:`.)
+
 
 ## State
 

@@ -412,7 +412,7 @@ audio.directive('audioInputSelector', [function() {
 			function updateStatus(name) {
 				scope.status = '';
 				if (!name) {
-					scope.status = 'Not used';
+					scope.status = 'Default input';
 					return;
 				}
 				if (scope.audioInputOptions.indexOf(name)>=0)

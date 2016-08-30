@@ -7,12 +7,12 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
                                     'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher', 'oscout',
-                                    'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX',
+                                    'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX', 'midicontrols',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
                                     		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
                                     		CodeNode, CodeMatcher, CodeParser, InexactMatcher, oscout,
-                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX) {
+                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX, midicontrols) {
 	console.log('url: '+$location.absUrl());
 	var proc = new NoteProcessor();
 	var params = $location.search();
@@ -34,6 +34,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.activeGroups = {};
 	
 	$scope.markers = [];
+	$scope.controls = [];
 	
 	$scope.recording = false;
 	
@@ -64,6 +65,29 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	};
 	
 	$scope.lastGroup = null;
+	
+	function enact(actions) {
+		for (var ai in actions) {
+			var action = actions[ai];
+			if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
+				console.log('send midi '+action.url);
+				// midi output
+				midiout.send( action.url );
+			} else 	if (action.url.indexOf(OSC_UDP_PREFIX)==0 || action.url.indexOf(OSC_TCP_PREFIX)==0) {
+				console.log('send osc '+action.url);
+				// osc output
+				oscout.send( action.url );
+			} else {
+				if ($scope.channel==action.channel && action.url) {
+					console.log('open '+action.url);
+					if (action.url == $scope.actionUrl) 
+						$scope.actionRefresh = true;
+					else
+						$scope.actionUrl = action.url;
+				}
+			}
+		}
+	}
 	
 	function checkGroup(group) {
 		var notes = [];
@@ -109,27 +133,32 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 						socket.emit('action',marker);
 						if (marker.poststate!==undefined)
 							updateState(marker.poststate);
-						for (var ai in marker.actions) {
-							var action = marker.actions[ai];
-							if ($scope.channel==action.channel && action.url) {
-								console.log('open '+action.url);
-								if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
-									// midi output
-									midiout.send( action.url );
-								} else 	if (action.url.indexOf(OSC_UDP_PREFIX)==0 || action.url.indexOf(OSC_TCP_PREFIX)==0) {
-									// osc output
-									oscout.send( action.url );
-								} else {
-									if (action.url == $scope.actionUrl) 
-										$scope.actionRefresh = true;
-									else
-										$scope.actionUrl = action.url;
-								}
-							}
-						}
+						enact(marker.actions);
 					} else {
 						//console.log('No match, '+marker.codeformat+':'+code+' vs '+marker.code);
 					}
+				}
+			}
+		}
+	}
+
+	function checkControl(input) {
+		console.log('check control '+input);
+		for (var mi in $scope.controls) {
+			var control = $scope.controls[mi];
+			if (control.precondition===undefined)
+				control.preconditionok = true;
+			else
+				control.preconditionok = true==safeEvaluate($scope.experienceState, control.precondition);
+			if (!control.preconditionok)
+				continue;
+			if (control.inputUrl!==undefined && control.inputUrl.length>0) {
+				if (control.inputUrl == input) {
+					console.log('Matched control '+control.inputUrl+' '+control.description);
+					socket.emit('action',control);
+					if (control.poststate!==undefined)
+						updateState(control.poststate);
+					enact(control.actions);
 				}
 			}
 		}
@@ -152,6 +181,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				console.log('closed group '+group.id);
 				delete $scope.activeGroups[group.id];
 				checkGroup(group);
+				checkControl('event:end');
 			}
 		}
 		// GC old notes
@@ -232,6 +262,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 						if (!group.closed && $scope.activeGroups[group.id]===undefined) {
 							console.log('new active group '+group.id);
 							$scope.activeGroups[group.id] = group;
+							checkControl('event:start');
 						}
 						if (group.id==gid)
 							checkGroup(group);
@@ -246,11 +277,19 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	audionotes.onNote(onNote);
 	midinotes.onNote(onNote);
 	
+	function onMidiMessage(url) {
+		checkControl(url);
+	}
+	midicontrols.onMessage(onMidiMessage);
+	
 	function loaded(experience) {
 		socket.on('join.error', function(msg) {
 			alert('Error starting master: '+msg);
 		});
 		socket.emit('master',{room:$scope.room, pin:pin, channel:$scope.channel, experience:experience});
+		
+		// sort markers by priority
+		experience.markers.sort(function(a,b) { return (!!b.priority ? b.priority : 0)-(!!a.priority ? a.priority : 0); } );
 		
 		// prepapre marker actions
 		for (var mi in experience.markers) {
@@ -267,6 +306,21 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (marker.action!==undefined) {
 				marker.actions.push({url: marker.action, channel: ''});
 				delete marker.action;
+			}
+		}
+		if (experience.controls===undefined) {
+			experience.controls = [];
+		}
+		for (var mi in experience.controls) {
+			var control = experience.controls[mi];
+			if (control.actions===undefined)
+				control.actions = [];
+			else {
+				for (var ai in control.actions) {
+					var action = control.actions[ai];
+					if (action.channel===undefined)
+						action.channel = '';
+				}
 			}
 		}
 		$scope.context = experience.defaultContext;
@@ -307,7 +361,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			}
 		}
 		$scope.markers = experience.markers;
-
+		$scope.controls = experience.controls;
+		
 		var parameters = experience.parameters;
 		$scope.parameters = parameters;
 		if (!$scope.parameters.streamGap)
@@ -336,6 +391,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			audionotes.setInput(parameters.audioInput, parameters.audioChannel);
 			audionotes.start(parameters.vampParameters);
 		}
+		if (parameters.midiControl!==undefined && parameters.midiControl!='') {
+			console.log('using Midi control input '+parameters.midiControl);
+			midicontrols.start(parameters.midiControl);
+		}
 		if ($scope.midiOutputName!==undefined && $scope.midiOutputName!='') {
 			console.log('Using midi output '+$scope.midiOutputName);
 			midiout.start($scope.midiOutputName);
@@ -345,6 +404,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		if (experience.parameters.initstate!==undefined)
 			updateState(experience.parameters.initstate);
 
+		checkControl('event:load');
 	};
 	
 	$scope.stopRecording = function() {

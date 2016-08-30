@@ -148,6 +148,19 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	//$scope.experienceForm.$setDirty();
 	$scope.formChanged = true;
   };
+  $scope.addControl = function() {
+	  console.log('addControl');
+	var control = { inputUrl: $scope.newControlUrl, actions:[]};
+	$scope.newControlUrl = '';
+	$scope.controls.push( control );
+	//$scope.experienceForm.$setDirty();
+	$scope.formChanged = true;
+  };
+  $scope.deleteControl = function(index) {
+	$scope.controls.splice(index,1);  
+	//$scope.experienceForm.$setDirty();
+	$scope.formChanged = true;
+  };
   // defaults
   if ($scope.filename.indexOf('.json')>=0)
 	  $scope.name = $scope.filename.substring(0,$scope.filename.indexOf('.json'));
@@ -161,6 +174,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  vampParameters: { instrument: 0 },
 		  midiInput: '',
 		  midiOutput: '',
+		  midiControl: '',
 		  audioInput: '',
 		  audioChannel: 0
   };
@@ -168,6 +182,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
   $scope.projections = [];
   $scope.newProjection = {};
   $scope.markers = [];
+  $scope.controls = [];
   $scope.examples = [];
   $scope.channels = [''];
   $scope.variables = [];
@@ -202,6 +217,10 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     		  $scope.variables.push(v);
     }
     $scope.markers = data.markers;
+    if (data.controls!==undefined && data.controls!==null)
+    	$scope.controls = data.controls;
+    else
+    	$scope.controls = [];
     if (data.examples!==undefined && data.examples!==null)
     	$scope.examples = data.examples;
     else
@@ -243,7 +262,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	  if (error.status==404) {
 		  $scope.status = 'File does not exist';
 		  // new file
-		  var data = { parameters: {}, markers: [], examples: [] };
+		  var data = { parameters: {}, markers: [], examples: [], controls: [] };
 		  if ($scope.defaults!==undefined) {
 			  data.author = $scope.defaults.author;
 			  data.recordAudio = $scope.defaults.recordAudio;
@@ -284,6 +303,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	  }
 	  if ($scope.newMarkerCode || $scope.newMarkerTitle)
 	    $scope.addMarker();
+	  if ($scope.newControlUrl)
+		$scope.addControl();
 	  if ($scope.newInitstateName)
 		  $scope.addInitstate();
 	  if ($scope.newProjection.countsPerBeat || $scope.newProjection.pitchesPerSemitone)
@@ -293,7 +314,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 			  author: $scope.author, recordAudio: $scope.recordAudio,
 			  markers: $scope.markers, parameters: $scope.parameters,
 			  examples: $scope.examples, defaultContext: $scope.defaultContext, 
-			  projections: $scope.projections };
+			  projections: $scope.projections, controls: $scope.controls };
 	  // refresh channels
 	  $scope.channels = [''];
 	  for (var mi in $scope.markers) {
@@ -590,6 +611,26 @@ editorApp.controller('MarkerCtrl', ['$scope', function ($scope) {
 	};
 	$scope.deleteAction = function(index) {
 		$scope.marker.actions.splice(index,1);  
+		//$scope.experienceForm.$setDirty();
+		$scope.setFormChanged();
+	};
+}]);
+
+editorApp.controller('ControlCtrl', ['$scope', function ($scope) {
+	$scope.isCollapsed = false;
+	console.log('new ControlCtrl');
+	// nested...
+	$scope.addAction = function() {
+		console.log('Add action '+$scope.newActionUrl);
+		var action = {url: $scope.control.newActionUrl, channel: $scope.control.newActionChannel};
+		delete $scope.control.newActionUrl;
+		delete $scope.control.newActionChannel;
+		$scope.control.actions.push( action );
+		//$scope.experienceForm.$setDirty();
+		$scope.setFormChanged();
+	};
+	$scope.deleteAction = function(index) {
+		$scope.control.actions.splice(index,1);  
 		//$scope.experienceForm.$setDirty();
 		$scope.setFormChanged();
 	};
