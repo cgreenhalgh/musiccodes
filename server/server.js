@@ -14,6 +14,7 @@ function returnPublicFile(req, res) {
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
 };
+app.get('/content/*', returnPublicFile);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);
