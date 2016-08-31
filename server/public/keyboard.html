@@ -19,10 +19,11 @@
 
 	<div class="row">
 		<div class="col-md-12">
-			<keyboard-view midi-input="midiInput" midi-output="midiOutput"></keyboard-view>
+			<keyboard-view midi-input="midiInput" midi-output="midiOutput" midi-thru="midiThru"></keyboard-view>
 		</div>
 		<div class="col-md-12">
 			<label>MIDI input:</label><midi-input-selector ng-model="midiInput"></midi-input-selector>
+			<label>Copy Thru</label><input type="checkbox" ng-model="midiThru">
 			<label>MIDI output:</label><midi-output-selector ng-model="midiOutput"></midi-output-selector>
 		</div>
 	</div>

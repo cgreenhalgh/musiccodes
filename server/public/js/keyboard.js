@@ -4,6 +4,7 @@ app.controller('keyboardCtrl', ['$scope',
                                 function ($scope) {
 	$scope.midiInput = '';
 	$scope.midiOutput = '';
+	$scope.midiThru = false;
 }]);
 
 app.directive('keyboardView', ['midinotes', 'd3Service', '$window', 'midiout',
@@ -39,12 +40,22 @@ app.directive('keyboardView', ['midinotes', 'd3Service', '$window', 'midiout',
 		restrict: 'E',
 		scope: {
 			midiInput: '=',
-			midiOutput: '='
+			midiOutput: '=',
+			midiThru: '='
 		},
 		link: function(scope, element, attrs) {
 			
 			midinotes.onNote(function(note) {
 				console.log('Note: '+JSON.stringify(note));
+				if (scope.midiThru) {
+					if (note.velocity>0) {
+						console.log('thru note on '+note.midinote+', '+note.velocity);
+						midiout.sendRaw([0x90,note.midinote & 0x7f, note.velocity & 0x7f]);
+					} else {
+						console.log('thru note off '+note.midinote);
+						midiout.sendRaw([0x80,note.midinote & 0x7f, 0x7f]);
+					}
+				}
 				// e.g. Note: {"time":84.142,"note":"D3","freq":146.818035918866,"velocity":90,"off":false}
 				if (scope.svg && note.midinote && note.midinote>=0 && note.midinote<NOTES_X.length) {
 					scope.svg.selectAll('rect.key').data([NOTES_X[note.midinote]],function(d) { return d; })
