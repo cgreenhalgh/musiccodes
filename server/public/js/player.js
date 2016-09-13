@@ -223,6 +223,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	function onNote(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 
+		// only from softkeyboard... (localTime set, time not set!)
 		if (!!note.localTime && !note.time) {
 			if ($scope.reftime===null) {
 				// fudge
