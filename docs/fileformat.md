@@ -28,6 +28,8 @@ Single top-level JSON object with properties:
 - `midiInput` (string, default undefined), name of midi input device, if any
 - `midiOutput` (string, default undefined), name of midi output device, if any
 - `midiControl` (string, default undefined), name of midi control input device, if any (todo)
+- `audioInput` (string, default undefined => default), name of audio input device (if not midi)
+- `audioChannel` (number, default 0), channel of audio input (if not midi)
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use

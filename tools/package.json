@@ -1,0 +1,12 @@
+{
+  "name": "musiccodes-tools",
+  "version": "0.0.1",
+  "description": "musiccodes prototype tools",
+  "dependencies": {
+    "coffee-script": "^1.10.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "prepublish": "coffee --compile --output lib/ src/"
+  }
+}
