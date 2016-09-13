@@ -8,7 +8,7 @@ if process.argv.length <= 2
   console.error 'Writes output to stdout as CSV'
   process.exit 0
   
-headings = ['file','input','filters','nprofiles','profiles','ncodes','codes','nwildcards','ninexact','errors','actions','actiontypes','nchannels','channels','state','npreconditions','preconditions','nexamples']
+headings = ['file','input','filters','nprofiles','profiles','ncodes','codes','npitch','nrhythm','nboth','nwildcards','wildcards','ninexact','errors','actions','actiontypes','nchannels','channels','state','npreconditions','preconditions','nexamples']
 
 outrow = ( els ) ->
   out = ''
@@ -61,7 +61,7 @@ getinfo = ( exp ) ->
     info.nprofiles = 0
     info.profiles = ''
   # codes
-  info.ncodes = info.nwildcards = info.ninexact = info.npreconditions = info.nchannels = 0
+  info.ncodes = info.nwildcards = info.ninexact = info.npreconditions = info.nchannels = info.npitch = info.nrhythm = info.nboth = 0
   info.codes = []
   info.actions = []
   info.errors = []
@@ -71,6 +71,27 @@ getinfo = ( exp ) ->
   info.actiontypes = []
   for marker in (exp.markers ? [])
     code = marker.code
+    
+    rhythm = (code.indexOf '/') >= 0
+    pitch = /[a-gA-G]/.test code
+    if rhythm
+      if pitch
+        info.nboth++
+      else
+        info.nrhythm++
+    else if pitch
+      info.npitch++
+    
+    wc = false
+
+    for wildcard in wildcards
+      if (code.indexOf wildcard) >= 0
+        if (info.wildcards.indexOf wildcard)<0
+          info.wildcards.push wildcard
+        wc = true
+    if wc
+      info.nwildcards++      
+
     if marker.projection?
       code = marker.projection+':'+code
     else if marker.codeformat?
@@ -79,15 +100,6 @@ getinfo = ( exp ) ->
     info.ncodes++
     if (info.codes.indexOf code) < 0
       info.codes.push code
-
-    wc = false
-    for wildcard in wildcards
-      if (code.indexOf wildcard) >= 0
-        if (info.wildcards.indexOf wildcard)<0
-          info.wildcards.push wildcard
-        wc = true
-    if wc
-      info.nwildcards++      
 
     if marker.inexact
       info.ninexact++
