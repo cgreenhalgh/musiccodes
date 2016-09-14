@@ -8,7 +8,7 @@ if process.argv.length <= 2
   console.error 'Writes output to stdout as CSV'
   process.exit 0
   
-headings = ['file','input','filters','nprofiles','profiles','ncodes','codes','npitch','nrhythm','nboth','nwildcards','wildcards','ninexact','errors','actions','actiontypes','nchannels','channels','state','npreconditions','preconditions','nexamples']
+headings = ['file','input','filters','nprofiles','profiles','ncodes','codes','npitch','nrhythm','nboth','atstart','atend','wholephrase','anywhere','nwildcards','wildcards','ninexact','errors','actions','actiontypes','nchannels','channels','state','npreconditions','preconditions','nexamples']
 
 outrow = ( els ) ->
   out = ''
@@ -31,7 +31,7 @@ outrow = ( els ) ->
   
 outrow headings
 
-wildcards = ['.','*','+','{']
+wildcards = ['*','+','{','['] # . needs special treatment vs decimal point
 actiontypes = 
   midi: 'data:text/x-midi-hex'
   osc: 'osc.udp:'
@@ -40,7 +40,7 @@ actiontypes =
 # return info object
 getinfo = ( exp ) ->
   info = {}
-  # headings = ['file','input','filters','nprofiles','profiles','ncodes','nwildcards','wildcards','ninexact','errors','codes','nexamples','actions','nchannels','channels','state','npreconditions','preconditions']
+  # see headings 
   # input
   if exp.parameters?.midiInput?
     info.input = 'midi('+exp.parameters.midiInput+')'
@@ -61,7 +61,8 @@ getinfo = ( exp ) ->
     info.nprofiles = 0
     info.profiles = ''
   # codes
-  info.ncodes = info.nwildcards = info.ninexact = info.npreconditions = info.nchannels = info.npitch = info.nrhythm = info.nboth = 0
+  info.ncodes = info.nwildcards = info.ninexact = info.npreconditions = info.nchannels = info.npitch = info.nrhythm = info.nboth = 
+    info.atstart = info.atend = info.wholephrase = info.anywhere = 0
   info.codes = []
   info.actions = []
   info.errors = []
@@ -72,6 +73,17 @@ getinfo = ( exp ) ->
   for marker in (exp.markers ? [])
     code = marker.code
     
+    atstart = marker.atStart ? (code.indexOf '^')==0
+    atend = marker.atEnd ? (code.indexOf '$')>=0
+    if atstart and atend
+      info.wholephrase++
+    else if atstart
+      info.atstart++
+    else if atend
+      info.atend++
+    else
+      info.anywhere++
+
     rhythm = (code.indexOf '/') >= 0
     pitch = /[a-gA-G]/.test code
     if rhythm
@@ -89,8 +101,14 @@ getinfo = ( exp ) ->
         if (info.wildcards.indexOf wildcard)<0
           info.wildcards.push wildcard
         wc = true
+    # '.', not decimal point
+    if /[^0-9]\.[^0-9]/.test code
+      wc = true
+      if (info.wildcards.indexOf '.')<0
+        info.wildcards.push '.'
     if wc
-      info.nwildcards++      
+      info.nwildcards++
+     
 
     if marker.projection?
       code = marker.projection+':'+code
