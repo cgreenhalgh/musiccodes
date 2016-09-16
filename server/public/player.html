@@ -53,12 +53,16 @@
 		</div>
 	</div>
 	<div class="row">
-		<mus-partcodes class="col-md-4" markers="markers" last-group="lastGroup" experience-state="experienceState" code-matchers="codeMatchers"></mus-partcodes>
+		<div  class="col-md-4">
+			<mus-partcodes markers="markers" last-group="lastGroup" experience-state="experienceState" code-matchers="codeMatchers"></mus-partcodes>
+		</div>
 		<div class="col-md-4"  id="state">
 			<p>State (variables):</p>
 			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>
 		</div>
-		<url-view class="col-md-4 output" action-url="actionUrl" refresh="actionRefresh"></url-view>
+		<div class="col-md-4">
+			<url-view class=" output" action-url="actionUrl" refresh="actionRefresh"></url-view>
+		</div>
 	</div>
 </body>
 </html>
