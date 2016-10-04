@@ -148,8 +148,8 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 		// note 60 is middle C, which I think plugin calls C4, freq. is nominally 261.6Hz
 		var name = notes[note % 12]+String(Math.floor(note / 12)-1);
 		var freq = 261.6*Math.pow(2, (note-60)/12.0);
-		var time = (Date.now()-time0)*0.001;
-		var event = { time: time, note: name, midinote: note, freq: freq, velocity: vel, off: (vel==0) };
+		var localTime = Date.now();
+		var event = { localTime: localTime, note: name, midinote: note, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
 		logger.log('midi.note', note);
 		if (onNote!==null)

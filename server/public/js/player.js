@@ -209,7 +209,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.recordingTimer = $interval(function() {
 		if ($scope.reftime!==null) {
 			var now = 0.001*((new Date().getTime())-$scope.reftimeLocal);
-			//console.log('now '+now+' vs '+$scope.time);
+			if (Math.abs(now-$scope.time)>0.001*RECORDING_TIMESTEP*1.05)
+				console.log('warning: now '+now+' vs '+$scope.time+' (at '+(new Date().getTime())+')');
 			if (now > $scope.time) {
 				$scope.time = now;
 				if ($scope.noteGrouper!=null) {
@@ -223,22 +224,19 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	function onNote(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 
-		// only from softkeyboard... (localTime set, time not set!)
+		// localTime set, time not set!
 		if (!!note.localTime && !note.time) {
 			if ($scope.reftime===null) {
-				// fudge
+				// first note = 0
 				$scope.reftime = 0;
 				$scope.reftimeLocal = note.localTime;
 			}
 			note.time = (note.localTime-$scope.reftimeLocal)*0.001+$scope.reftime;
-		}
-		if ($scope.reftime===null) {
+		} else if ($scope.reftime===null) {
 			$scope.reftime = note.time;
 			$scope.reftimeLocal = new Date().getTime();
-		} else {
-			var now = 0.001*((new Date().getTime())-$scope.reftimeLocal);
-			$scope.reftimeLocal -= note.time - now;
-		}
+		} 
+		// cf reftime (first note time)
 		note.time = note.time-$scope.reftime;
 		
 		var n = $scope.activeNotes[note.note];

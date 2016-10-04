@@ -399,8 +399,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 				$scope.addingReftimeLocal = note.localTime;
 			}
 			note.time = (note.localTime-$scope.addingReftimeLocal)*0.001+$scope.addingReftime;
-		}
-		if ($scope.addingReftime===null) {
+		} else if ($scope.addingReftime===null) {
 			$scope.addingReftime = note.time;
 			$scope.addingReftimeLocal = new Date().getTime();
 		}
