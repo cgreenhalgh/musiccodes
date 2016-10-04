@@ -110,59 +110,8 @@
 	
 	<p class="tab-intro">Specify how notes are selected and grouped into phrases for matching:</p>
 	
-	<table>
-		<tbody>
-			<tr>
-				<td><label>Minimum Frequency</label></td>
-				<td><input type="number" step="1"
-					ng-model="parameters.minFrequency"> <span>{{
-						parameters.minFrequency | freq2note }}</span></td>
-			</tr>
-			<tr>
-				<td><label>Maxmimum Frequency</label></td>
-				<td><input type="number" step="1"
-					ng-model="parameters.maxFrequency"> <span>{{
-						parameters.maxFrequency | freq2note }}</span></td>
-			</tr>
-			<tr>
-				<td><label>Minimum Velocity (amplitude)</label></td>
-				<td><input type="number" step="1"
-					ng-model="parameters.minVelocity"> (0-127)</td>
-			</tr>
-			<tr>
-				<td><label>Maxmimum Velocity (amplitude)</label></td>
-				<td><input type="number" step="1"
-					ng-model="parameters.maxVelocity"> (0-127)</td>
-			</tr>
-			<tr>
-				<td><label>Maximum gap between note onsets (seconds)</label></td>
-				<td><input type="number" step="0.01"
-					ng-model="parameters.streamGap"></td>
-			</tr>
-			<tr>
-				<td><label>Maximum note duration (seconds)</label></td>
-				<td><input type="number" step="0.01"
-					ng-model="parameters.maxDuration"></td>
-			</tr>
-			<tr>
-				<td><label>Frequency ratio</label></td>
-				<td><input type="number" step="0.01"
-					ng-model="parameters.frequencyRatio"> <span>{{
-						parameters.frequencyRatio | ratio2interval }}</span></td>
-			</tr>
-			<tr>
-				<td><label>Monophonic</label></td>
-				<td><input type="checkbox" ng-model="parameters.monophonic"></td>
-			</tr>
-			<tr>
-				<td><label>If monophonic, minimum gap between note
-						onsets (seconds)</label></td>
-				<td><input type="number" step="0.01"
-					ng-model="parameters.monophonicGap"></td>
-			</tr>
-		</tbody>
-	</table>
-
+    <mus-filter-parameters parameters="parameters"></mus-filter-parameters>
+		
 </div>
 <div ng-show="topTab==5">
 	<!-- <h4>4. Note Transformations</h4> -->
@@ -245,11 +194,11 @@
 			<label>Title:</label> <input type="text" ng-model="example.title">
 			<button ng-click="deleteExample($index)" aria-label="Delete example"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
 			<mus-projection-choice projection="example.projection" projections="projections"></mus-projection-choice>
-			<muzicode notes="example.rawnotes" projection="example.projection" projections="projections" context="example.context"></muzicode>
+			<muzicode notes="example.rawnotes" parameters="parameters" projection="example.projection" projections="projections" context="example.context"></muzicode>
 			<button ng-click="playExample(example)">Play</button>
 			<button ng-click="exportExample(example)">Export</button>
 			<div uib-collapse="isCollapsed">
-				<div note-roll notes="example.rawnotes" parameters="parameters" context="example.context"></div>
+				<div note-roll notes="example.rawnotes" parameters="parameters" projection="example.projection" projections="projections" context="example.context"></div>
 				<mus-context context="example.context"></mus-context>
 			</div>
 		</li>

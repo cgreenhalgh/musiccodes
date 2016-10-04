@@ -14,22 +14,15 @@ Single top-level JSON object with properties:
 
 (added 2015-12-14)
 
-- `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
-- `frequencyRatio` (float, ratio, default 2.05), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
 - `vampParameters` - map of VAMP plugin parameters, default (for silvet plugin) `mode` = `0` (live), `instrument` = `0` (various/unknown).
-- `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
-- `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
-- `maxDuration` (float, seconds, default unlimited), maximum duration for a note (e.g. to deal with 'stuck' notes)
-- `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
-- `maxFrequency` (float, Hz, default 20000), maximum frequency of note to include in group(s)
-- `minVelocity` (int, 0-127, default 0), minimum midi note velocity of note to include in group(s)
-- `maxVelocity` (int, 0-127, default 127), maximum note velocity of note to include in group(s)
 - `initstate` (map of name to value), initial state, used in code `precondition`s.
 - `midiInput` (string, default undefined), name of midi input device, if any
 - `midiOutput` (string, default undefined), name of midi output device, if any
 - `midiControl` (string, default undefined), name of midi control input device, if any (todo)
 - `audioInput` (string, default undefined => default), name of audio input device (if not midi)
 - `audioChannel` (number, default 0), channel of audio input (if not midi)
+
+In addition any/all of the `projection` `filterParameters` can be specified as global default values 
 
 not yet implemented:
 - `vampPlugin` (string, default `silvet:silvet`), vamp feature extraction plugin to use
@@ -48,6 +41,7 @@ not yet implemented:
 - `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 - `inexactParameters` - see below
+- `filterParameters` - see below
 
 `inexactParameters` is object with properties:
 - `delayError` (number, default 1) weight given to delay errors vs note errors (default for all note errors is 1)
@@ -64,6 +58,18 @@ not yet implemented:
 
 Note that delay and tempo parameters both affect delays, and the lowest cost is taken. The delay parameters is expressed in an absolute +/- beat value and it can be used to represent the timing accuracy of beats. The tempo parameters are expressed as a fraction and can be used to represent the correspondence of tempo. The two measures differ mostly with respect to short delays: a delay parameter is likely to allow /no/ delay as an alternative while a tempo parameter will not. 
 
+`filterParameters` is object with properties:
+- `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
+- `frequencyRatio` (float, ratio, default infinite), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
+- `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
+- `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
+- `maxDuration` (float, seconds, default unlimited), maximum duration for a note (e.g. to deal with 'stuck' notes)
+- `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
+- `maxFrequency` (float, Hz, default 20000), maximum frequency of note to include in group(s)
+- `minVelocity` (int, 0-127, default 0), minimum midi note velocity of note to include in group(s)
+- `maxVelocity` (int, 0-127, default 127), maximum note velocity of note to include in group(s)
+
+The same properties in the top-level `parameters` are used as default values.
 
 ## `marker`
 

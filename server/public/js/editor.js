@@ -221,8 +221,14 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
     	$scope.controls = data.controls;
     else
     	$scope.controls = [];
-    if (data.examples!==undefined && data.examples!==null)
+    if (data.examples!==undefined && data.examples!==null) {
+        for (var ei in data.examples) {
+        	var example = data.examples[ei];
+        	if (example.filterParameters===undefined)
+        		example.filterParameters = {};
+        }
     	$scope.examples = data.examples;
+    }
     else
     	$scope.examples = [];
     // TODO update group/parameters?
@@ -470,7 +476,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 	}
 	$scope.doneAddExample = function() {
 		$scope.stopRecordingExample();
-		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes };
+		var example = { title: $scope.newExampleTitle, rawnotes: $scope.addingExampleNotes, filterParameters: {} };
 		example.context = JSON.parse(JSON.stringify($scope.defaultContext));
 		$scope.examples.push( example );
 		// tidy up
@@ -780,6 +786,15 @@ editorApp.directive('musProjection', [function() {
 		templateUrl: '/partials/mus-projection.html'
 	};
 }]);
+editorApp.directive('musFilterParameters', [function() {
+	return {
+		restrict: 'E',
+		scope: {
+			parameters: '='
+		},
+		templateUrl: '/partials/mus-filter-parameters.html'
+	};
+}]);
 editorApp.directive('musProjectionChoice', [function() {
 	return {
 		restrict: 'E',
@@ -909,6 +924,9 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 					scope.matches = [];
 					return;
 				}
+				// filter parameter overrides
+				values.parameters = angular.extend({}, values.parameters, projection.filterParameters);
+				//console.log('parameters',values.parameters);
 				// now again with start/end (don't mess up error messages!)
 				var code = values.code;
 				if (!values.atStart)

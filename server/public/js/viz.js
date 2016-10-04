@@ -44,7 +44,9 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 	        height: '@',
 	        period: '=',
 	        context: '=',
-	        onselect: '&'
+	        onselect: '&',
+	        projection: '=',
+	        projections: '='
 		},
 		link: function(scope, element, attrs) {
 			scope.times = [[0,0],[0,0]];
@@ -136,7 +138,7 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				// watch for data changes and re-render
 				// danger: gross change, i.e. new array only - causes re-grouping of notes
 				scope.$watch('notes', function(newVals, oldVals) {
-					return scope.regroup(newVals, scope.parameters);
+					return scope.regroup(newVals, scope.parameters, scope.projection, scope.projections);
 				});
 				// fine-grained change, e.g. allocation to new group causes re-render, not regroup!
 				scope.$watch('notes', function(newVals, oldVals) {
@@ -154,7 +156,16 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				});
 				// parameters affect grouping, which changes notes, which trigger render
 				scope.$watch('parameters', function(newVals, oldVals) {
-					return scope.regroup(scope.notes, newVals);
+					scope.regroup(scope.notes, newVals, scope.projection, scope.projections);
+					return scope.render(scope.notes, scope.time, scope.groups);
+				}, true);
+				scope.$watch('projection', function(newVals, oldVals) {
+					scope.regroup(scope.notes, scope.parameters, newVals, scope.projections);
+					return scope.render(scope.notes, scope.time, scope.groups);
+				});
+				scope.$watch('projections', function(newVals, oldVals) {
+					scope.regroup(scope.notes, scope.parameters, scope.projection, newVals);
+					return scope.render(scope.notes, scope.time, scope.groups);
 				}, true);
 				// context - wait for other updates??
 				scope.$watch('context', function(newVals, oldVals) {
@@ -163,8 +174,24 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 				}, true);
 
 				var localGroups = [];
-				scope.regroup = function(notes, parameters) {
-					if (!!parameters && !!notes) {
+				scope.regroup = function(notes, parameters, projection, projections) {
+					if (parameters===undefined)
+						parameters = {};
+					else
+						parameters = angular.extend({}, parameters);
+					if (!!projection && projections!==undefined && projections!==null) {
+						var proj = null;
+						for (var pi in projections) {
+							if (projection==projections[pi].id) {
+								proj = projections[pi];
+								break;
+							}
+						}
+						if (proj!==null && proj.filterParameters!==undefined) {
+							parameters = angular.extend(parameters, proj.filterParameters);
+						}
+					}
+					if (!!notes) {
 						console.log('viz re-grouping notes');
 						var noteGrouper = noteGrouperFactory.create(parameters);
 						for (var i in notes) {
