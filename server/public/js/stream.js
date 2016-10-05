@@ -29,7 +29,7 @@ stream.factory('noteGrouperFactory', function() {
 		console.log('noteGrouperFactory...');
 	var MAX_FREQUENCY = 20000, MIN_FREQUENCY = 1;
 	var nextGroupId = 1;
-	// parameters: streamGap, frequencyRatio, monophonic, monophonicGap, minFrequency, maxFrequency, minVelocity, maxVelocity
+	// parameters: streamGap, frequencyRatio, minFrequency, maxFrequency, minVelocity, maxVelocity
 	var Grouper = function(parameters) {
 		if (debug)
 			console.log('New Grouper');
@@ -61,13 +61,8 @@ stream.factory('noteGrouperFactory', function() {
 			if (!group.closed && !handled) {
 				// add to group?!
 				if (note.freq >= group.lowFreq && note.freq <= group.highFreq) {
-					// candidate for group - check monophonic
-					if (this.parameters.monophonic && note.time - group.lastTime < this.parameters.monophonicGap) {
-						// discard polyphonic note
-						if (debug)
-							console.log("discard polyphonic note with gap "+(note.time-group.lastTime));
-						handled = true;
-					} else {
+					// candidate for group - monophonic not handled here any more - see note processor mapRawNotes
+					{
 						group.lastTime = note.time;
 						//group.notes.push(note);
 						//group.count++;

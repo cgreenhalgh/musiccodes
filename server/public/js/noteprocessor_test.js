@@ -84,6 +84,24 @@ describe('muzicodes.codeui module', function() {
 				.toEqualApproximately([{midinote:69},{beats:2},{midinote: 69}]);
 			});
 		});
+		it('should reorder two notes within polyphonicGap time', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2 };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:440,time:100}, {freq:400,time:101}], projection))
+				.toEqualApproximately([{midinote:67.35},{beats:0},{midinote: 69}]);
+			});
+		});
+		it('should reorder two notes within polyphonicGap time', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2 };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:400,time:100}, {freq:440,time:101}], projection))
+				.toEqualApproximately([{midinote:67.35},{beats:0},{midinote: 69}]);
+			});
+		});
 		it('should map 2.2 beats at quant. 2 to 2 beats', function() {
 			inject(function(NoteProcessor) {
 				var projection = { countsPerBeat: 2 };

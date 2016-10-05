@@ -2,10 +2,6 @@
 <table>
 	<tbody>
 		<tr>
-			<td>Profile-specific note filter:</td>
-		</tr>
-
-		<tr>
 			<td><label>Minimum Frequency</label></td>
 			<td><input type="number" step="1"
 				ng-model="parameters.minFrequency"> <span>{{
@@ -43,7 +39,7 @@
 				ng-model="parameters.frequencyRatio"> <span>{{
 					parameters.frequencyRatio | ratio2interval }}</span></td>
 		</tr>
-		<tr>
+		<!-- <tr>
 			<td><label>Monophonic</label></td>
 			<td><input type="checkbox" ng-model="parameters.monophonic"></td>
 		</tr>
@@ -52,7 +48,7 @@
 					onsets (seconds)</label></td>
 			<td><input type="number" step="0.01"
 				ng-model="parameters.monophonicGap"></td>
-		</tr>
+		</tr> -->
 
 	</tbody>
 </table>

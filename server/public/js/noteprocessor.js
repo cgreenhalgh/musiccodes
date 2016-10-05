@@ -16,14 +16,40 @@ mod.factory('NoteProcessor', ['CodeNode', function(CodeNode) {
 		}
 		return notes;
 	}
-	NoteProcessor.prototype.mapRawNotes = function(context, rawNotes) {
+	NoteProcessor.prototype.mapRawNotes = function(context, rawNotes, projection) {
 		var notes = [];
 		var prevNote;
-		for (var ni in rawNotes) {
-			var rawNote = rawNotes[ni];
-			var newNotes = this.mapRawNote(context, rawNote, prevNote);
-			notes = notes.concat(newNotes);
-			prevNote = rawNote;
+		var polyphonicGap = 0;
+		if (projection!==undefined && !!projection.polyphonicGap) {
+			polyphonicGap = projection.polyphonicGap;
+			//console.log('using polyphonicGap '+polyphonicGap);
+		}
+		var syncNotes = [];
+		var ni = 0;
+		while(ni<rawNotes.length || syncNotes.length>0) {
+			var rawNote = null;
+			if (ni<rawNotes.length) {
+				rawNote = rawNotes[ni++];
+			}
+			if (syncNotes.length>0 && (rawNote===null || rawNote.time > syncNotes[0].time+polyphonicGap)) {
+				// flush
+				for (sni in syncNotes) {
+					syncNotes.sort(function(a,b) {
+						return a.freq - b.freq;
+					});
+					var newNotes = this.mapRawNote(context, syncNotes[sni], prevNote);
+					notes = notes.concat(newNotes);
+					prevNote = syncNotes[sni];
+				}				
+				syncNotes = [];
+			}
+			if (rawNote!==null) {
+				if (syncNotes.length>0) {
+					syncNotes.push(angular.extend({}, rawNote, {time:syncNotes[0].time}));
+				} else {
+					syncNotes.push(rawNote);
+				}
+			}
 		}
 		return notes;
 	}

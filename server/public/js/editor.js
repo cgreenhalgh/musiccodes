@@ -171,6 +171,7 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 		  frequencyRatio: 2.05,
 		  monophonic: false,
 		  monophonicGap: 0.1,
+		  polyphonicGap: 0,
 		  vampParameters: { instrument: 0 },
 		  midiInput: '',
 		  midiOutput: '',
@@ -682,7 +683,7 @@ editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 				// project notes through context and projection, normalise 
 				// to String
 				console.log('raw note: '+JSON.stringify(notes));
-				var newNotes = proc.mapRawNotes(scope.context, notes);
+				var newNotes = proc.mapRawNotes(scope.context, notes, projection);
 				console.log('context mapped: '+JSON.stringify(newNotes));
 				newNotes = proc.projectNotes(projection, newNotes);
 				console.log('projected: '+JSON.stringify(newNotes));
@@ -693,6 +694,7 @@ editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 			scope.code = text;
 		}
 		scope.$watch('notes', update, true);
+		scope.$watch('parameters', update, true);
 		scope.$watch('projection', update);
 		scope.$watch('projections', update, true);
 		scope.$watch('context', update, true);

@@ -124,7 +124,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				if (code===null) {
 					// generate...
 					console.log('raw note: '+JSON.stringify(notes));
-					var newNotes = proc.mapRawNotes($scope.context, notes);
+					var newNotes = proc.mapRawNotes($scope.context, notes, marker.projection);
 					console.log('context mapped: '+JSON.stringify(newNotes));
 					code = proc.projectNotes(marker.projection, newNotes);
 					console.log('projected: '+proc.notesToString(code));
@@ -217,7 +217,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	
 	var RECORDING_TIMESTEP = 100;
 	$scope.recordingTimer = $interval(function() {
-		if ($scope.reftime!==null) {
+		if ($scope.reftimeLocal!==null) {
 			var now = 0.001*((new Date().getTime())-$scope.reftimeLocal);
 			if (Math.abs(now-$scope.time)>0.001*RECORDING_TIMESTEP*1.05)
 				console.log('warning: now '+now+' vs '+$scope.time+' (at '+(new Date().getTime())+')');
@@ -235,24 +235,32 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}, RECORDING_TIMESTEP);
 
+	// fiddle factor for ? end of note delayed
+	var AUDIO_TIME_OFFSET = 100;
 	function onNote(note) {
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 
-		// localTime set, time not set!
+		// reftime is zero for time; reftimeLocal is zero for localTime
+		// localTime set, time not set! (midi or keys)
 		if (!!note.localTime && !note.time) {
-			if ($scope.reftime===null) {
-				// first note = 0
-				$scope.reftime = 0;
+			if ($scope.reftimeLocal===null) {
 				$scope.reftimeLocal = note.localTime;
 			}
-			note.time = (note.localTime-$scope.reftimeLocal)*0.001+$scope.reftime;
-		} else if ($scope.reftime===null) {
-			$scope.reftime = note.time;
-			$scope.reftimeLocal = new Date().getTime();
-		} 
-		// cf reftime (first note time)
-		note.time = note.time-$scope.reftime;
-		
+			note.time = (note.localTime-$scope.reftimeLocal)*0.001;
+		} else {
+			if ($scope.reftime===null) {
+				// audio
+				if ($scope.reftimeLocal===null) {
+					// first note
+					$scope.reftime = note.time;
+					$scope.reftimeLocal = new Date().getTime() - AUDIO_TIME_OFFSET;
+				} else {
+					$scope.reftime = note.time - ((new Date().getTime()) - $scope.reftimeLocal)*0.001 + AUDIO_TIME_OFFSET*0.001;
+				}
+			} 
+			// cf reftime (first note time)
+			note.time = note.time-$scope.reftime;
+		}		
 		var n = $scope.activeNotes[note.note];
 		if (n!==undefined && !!n.velocity) {
 			if (n.duration===undefined) 

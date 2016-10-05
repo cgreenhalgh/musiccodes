@@ -40,6 +40,7 @@ not yet implemented:
 - `id` (string), id/name by which projection is referred to in markers and examples
 - `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
+- `polyphonicGap` (float, seconds, default 0), maximum gap between note onsets that are considered to be 'at the same time' for polyphonic matching (these will be sorted in ascending frequency order). (added 2016-10-05)
 - `inexactParameters` - see below
 - `filterParameters` - see below
 
@@ -61,13 +62,16 @@ Note that delay and tempo parameters both affect delays, and the lowest cost is 
 `filterParameters` is object with properties:
 - `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
 - `frequencyRatio` (float, ratio, default infinite), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
-- `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
-- `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
 - `maxDuration` (float, seconds, default unlimited), maximum duration for a note (e.g. to deal with 'stuck' notes)
 - `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
 - `maxFrequency` (float, Hz, default 20000), maximum frequency of note to include in group(s)
 - `minVelocity` (int, 0-127, default 0), minimum midi note velocity of note to include in group(s)
 - `maxVelocity` (int, 0-127, default 127), maximum note velocity of note to include in group(s)
+
+Deprecated / removed (2016-10-05):
+- `monophonic` (boolean, default false), force note stream to monophonic (use first/lowest note)
+- `monophonicGap` (float, seconds, default 0.1), minimum time gap between note onsets for both to be output in monophonic mode
+
 
 The same properties in the top-level `parameters` are used as default values.
 

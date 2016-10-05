@@ -335,12 +335,12 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', 'stream
 					notenames.exit().remove();
 
 					var groups = svg.selectAll('rect.group').data(groups, function(d) { return d.id; });
-					groups.attr('width', function(d) { return xscale(d.lastTime)-xscale(d.time)+2; })
+					groups.attr('width', function(d) { return Math.max(2, xscale(d.lastTime)-xscale(d.time)+2); })
 					    .attr('x', function(d) { return xscale(d.time)-1; });
 					groups.enter().append('rect')
 					    .classed('group', true)
 					    .attr('height', function(d) { return yscale(d.lowFreq)-yscale(d.highFreq); })
-					    .attr('width', function(d) { return xscale(d.lastTime)-xscale(d.time)+2; })
+					    .attr('width', function(d) { return Math.max(2, xscale(d.lastTime)-xscale(d.time)+2); })
 					    .attr('x', function(d) { return xscale(d.time)-1; })
 					    .attr('y', function(d) { return yscale(d.highFreq); });
 					groups.exit().remove();
