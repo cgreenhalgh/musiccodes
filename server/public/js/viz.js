@@ -31,7 +31,8 @@ viz.factory('d3Service', ['$document', '$q', '$rootScope',
 	}
 ]);
 
-viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', function(d3Service,$window,noteGrouperFactory) {
+viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', 'streamutils',
+                           function(d3Service, $window, noteGrouperFactory, streamutils) {
 	console.log('note-roll...');
 	return {
 		restrict: 'EA',
@@ -178,7 +179,7 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 					if (parameters===undefined)
 						parameters = {};
 					else
-						parameters = angular.extend({}, parameters);
+						parameters = streamutils.extend({}, parameters);
 					if (!!projection && projections!==undefined && projections!==null) {
 						var proj = null;
 						for (var pi in projections) {
@@ -188,7 +189,7 @@ viz.directive('noteRoll', ['d3Service', '$window', 'noteGrouperFactory', functio
 							}
 						}
 						if (proj!==null && proj.filterParameters!==undefined) {
-							parameters = angular.extend(parameters, proj.filterParameters);
+							parameters = streamutils.extend(parameters, proj.filterParameters);
 						}
 					}
 					if (!!notes) {

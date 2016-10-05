@@ -2,6 +2,27 @@
 
 var stream = angular.module('muzicodes.stream', []);
 
+stream.factory('streamutils', function() {
+	return {
+		// extend ignoring '', null, undefined
+		extend: function() {
+			if (arguments.length==0) {
+				return {};
+			}
+			var res = arguments[0];
+			for (var ai=1; ai<arguments.length; ai++) {
+				var obj = arguments[ai];
+				for (var key in obj) {
+					var val = obj[key];
+					if (val!==null && val!=='' && val!==undefined)
+						res[key] = val;
+				}
+			}
+			return res;
+		}
+	};
+});
+
 stream.factory('noteGrouperFactory', function() {
 	var debug = false;
 	if (debug)

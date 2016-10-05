@@ -7,12 +7,12 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
                                     'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher', 'oscout',
-                                    'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX', 'midicontrols',
+                                    'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX', 'midicontrols', 'streamutils',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
                                     		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
                                     		CodeNode, CodeMatcher, CodeParser, InexactMatcher, oscout,
-                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX, midicontrols) {
+                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX, midicontrols, streamutils) {
 	console.log('url: '+$location.absUrl());
 	var proc = new NoteProcessor();
 	var params = $location.search();
@@ -65,6 +65,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	};
 	
 	$scope.lastGroups = {};
+	$scope.checkLastGroups = null;
 	
 	function enact(actions) {
 		for (var ai in actions) {
@@ -89,21 +90,25 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 	
-	function checkGroup(group) {
+	function checkGroup(group, projectionid) {
 		var notes = [];
 		for (var i in $scope.notes) {
 			var note = $scope.notes[i];
-			if (note.group[group.projectionid]==group.id)
+			if (note.group[projectionid]==group.id)
 				notes.push(note);
 		}
+		if (notes.length==0) {
+			console.log('warning: checkGroup for project '+projectionid+' found no notes');
+			return;
+		}
 		// publish to partcodes view
-		console.log('update lastGroup '+group.projectionid);
-		$scope.lastGroups[group.projectionid] = { notes: notes, closed: group.closed };
-		var codes = {};
+		console.log('update lastGroup for projection '+projectionid+' with ');
+		$scope.checkLastGroups[projectionid] = { notes: notes, closed: group.closed };
+		var code = null;
 		
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
-			if (marker.projection!=group.projectionid)
+			if (marker.projection.id!=projectionid)
 				continue;
 			if (codeMatchers[marker.code]!==undefined) {
 				// for partMatching's benefit
@@ -116,16 +121,13 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (!marker.preconditionok)
 				continue;
 			if (marker.projection!==undefined && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
-				var code = codes[marker.projection.id];
-				if (code===undefined) {
+				if (code===null) {
 					// generate...
 					console.log('raw note: '+JSON.stringify(notes));
 					var newNotes = proc.mapRawNotes($scope.context, notes);
 					console.log('context mapped: '+JSON.stringify(newNotes));
 					code = proc.projectNotes(marker.projection, newNotes);
 					console.log('projected: '+proc.notesToString(code));
-
-					codes[marker.projection.id] = code;
 				}
 				// always check code for partial feedback
 				if (code!==undefined && codeMatchers[marker.code]!==undefined &&
@@ -136,7 +138,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 						if (marker.poststate!==undefined)
 							updateState(marker.poststate);
 						enact(marker.actions);
-					} else {
+					} 
+					if (group.closed) {
+						// no longer matchable
+						// for partMatching's benefit
+						codeMatchers[marker.code].reset();						
 						//console.log('No match, '+marker.codeformat+':'+code+' vs '+marker.code);
 					}
 				}
@@ -182,8 +188,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				group.closed = true;
 				console.log('closed group '+group.projectionid+':'+group.id);
 				delete $scope.activeGroups[id];
-				checkGroup(group);
-				checkControl('event:end');
+				checkGroup(group, group.projectionid);
+				checkControl('event:end:'+group.projectionid);
 			}
 		}
 		// GC old notes
@@ -221,7 +227,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					var noteGrouper = $scope.noteGroupers[gi];
 					noteGrouper.setTime($scope.time);
 				}
+				$scope.checkLastGroups = {};
 				checkClosedGroups($scope.time);
+				// update partmatch view
+				$scope.lastGroups = $scope.checkLastGroups;
 			}
 		}
 	}, RECORDING_TIMESTEP);
@@ -252,6 +261,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		if (note.time > $scope.time)
 			$scope.time = note.time;
+		$scope.checkLastGroups = {};
 		if (!!note.velocity){
 			note.id = $scope.nextNoteId++;
 			$scope.notes.push(note);
@@ -259,29 +269,31 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			// TODO merge active notes
 			for (var projectionid in $scope.noteGroupers) {
 				var noteGrouper = $scope.noteGroupers[projectionid];
-				var gid = noteGrouper.addNote(angular.extend({},note));
+				var gid = noteGrouper.addNote(streamutils.extend({},note));
 				// TODO GC old notes
 				if (gid!==undefined && gid!==null) {
 					note.group[projectionid] = gid;
 					var groups = noteGrouper.getGroups();
-					console.log('updated group '+gid);
+					console.log('updated projection '+projectionid+' group '+gid);
 					for (var i in groups) {
 						var group = groups[i];
 						if (!group.closed && $scope.activeGroups[''+projectionid+':'+group.id]===undefined) {
-							console.log('new active group '+group.id);
+							console.log('new active group '+projectionid+':'+group.id);
 							$scope.activeGroups[''+projectionid+':'+group.id] = group;
 							group.projectionid = projectionid;
 							$scope.groups.push(group);
-							checkControl('event:start');
+							checkControl('event:start:'+projectionid);
 						}
 						if (group.id==gid)
-							checkGroup(group);
+							checkGroup(group, projectionid);
 					}
 				}
 			}
 			$scope.activeNotes[note.note] = note;
 		}
 		checkClosedGroups(note.time);
+		// update partmatch view
+		$scope.lastGroups = $scope.checkLastGroups;
 	};
 	$scope.onNote = onNote;
 	audionotes.onNote(onNote);
@@ -416,7 +428,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		for (var pi in experience.projections) {
 			var projection = experience.projections[pi];
-			$scope.noteGroupers[projection.id] = noteGrouperFactory.create(angular.extend({}, parameters, projection.filterParameters));
+			$scope.noteGroupers[projection.id] = noteGrouperFactory.create(streamutils.extend({}, parameters, projection.filterParameters));
 		}
 		
 		if (experience.parameters.initstate!==undefined)
@@ -526,6 +538,7 @@ playerApp.factory('safeEvaluate', function() {
 });
 
 playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', function(noteCoder, safeEvaluate, CodeNode) {
+	var debug = false;
 	return {
 		restrict: 'E',
 		scope: {
@@ -606,28 +619,42 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', fu
 			};
 			
 			function update(lastGroups, experienceState) {
-				console.log('update partcode preconditions...');
+				if (debug)
+					console.log('update partcode preconditions...');
 				for (var pi in scope.partcodes) {
 					var partcode = scope.partcodes[pi];
 					if (partcode.precondition===undefined)
 						partcode.preconditionok = true;
 					else {
 						partcode.preconditionok = true==safeEvaluate(experienceState, partcode.precondition);
-						console.log('precondition '+partcode.precondition+'='+partcode.preconditionok+' in '+JSON.stringify(experienceState));
+						if (debug)
+							console.log('precondition '+partcode.precondition+'='+partcode.preconditionok+' in '+JSON.stringify(experienceState));
 					}
 				}
-				if (!lastGroups)
-					return;
-				console.log('update partcodes...');
+				if (debug)
+					console.log('update partcodes...');
 				for (var pi in scope.partcodes) {
 					var partcode = scope.partcodes[pi];
+					for (var i in partcode.prefixes) {
+						//partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
+						partcode.prefixes[i].preconditionok = partcode.preconditionok;
+					}
+					// partcodes always have a projection (or partcode isn't made)
+					if (lastGroups===undefined || lastGroups[partcode.projection.id]===undefined) {
+						if (debug)
+							console.log('skip partcode '+pi+' without lastGroup');
+						continue;
+					}
 					if (partcode.code!==undefined && scope.codeMatchers[partcode.code]!==undefined) {
 						var matched = scope.codeMatchers[partcode.code].getMatchedIds();
 
 						var longest = 0;
 						for (var i in partcode.prefixes) {
 							var prefix = partcode.prefixes[i];
-							if ((prefix.atEnd && partcode.projection!==undefined && lastGroups[partcode.projection.id].closed && matched[scope.codeMatchers[partcode.code].node.id]!==undefined) || matched[prefix.id]!==undefined) {
+							if (debug)
+								console.log('partcode '+pi+' prefix '+i+' ')
+							if ((prefix.atEnd && lastGroups[partcode.projection.id].closed && matched[scope.codeMatchers[partcode.code].node.id]!==undefined) || 
+									(matched[prefix.id]!==undefined && !lastGroups[partcode.projection.id].closed)) {
 								prefix.matched = true;
 								if (prefix.length>length) {
 									longest = prefix.length;
@@ -637,10 +664,6 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', fu
 							}
 						}
 						partcode.longestPrefix = longest;
-						for (var i in partcode.prefixes) {
-							//partcode.prefixes[i].matched = (partcode.prefixes[i].length <= longest);
-							partcode.prefixes[i].preconditionok = partcode.preconditionok;
-						}
 					}
 				};
 			};
@@ -649,10 +672,12 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', fu
 				initMarkers(newValue);
 				update(scope.notes);
 			});
-			
+			// not fine-grained
 			scope.$watch('lastGroups', function(newValue) {
+				if (debug)
+					console.log('lastGroups changed to '+JSON.stringify(newValue));
 				update(newValue, scope.experienceState);
-			}, true);
+			});
 			scope.$watch('experienceState', function(newValue) {
 				update(scope.lastGroups, newValue);
 			}, true);

@@ -848,7 +848,9 @@ editorApp.directive('musCodeInput', ['CodeParser', function(CodeParser) {
 */
 
 editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor', 'InexactMatcher', 'noteGrouperFactory', 
-                                       function(CodeParser, CodeMatcher, NoteProcessor, InexactMatcher, noteGrouperFactory) {
+                                       'streamutils',
+                                       function(CodeParser, CodeMatcher, NoteProcessor, InexactMatcher, noteGrouperFactory,
+                                    		   streamutils) {
 	var parser = new CodeParser();
 	return {
 		restrict: 'E',
@@ -925,7 +927,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 					return;
 				}
 				// filter parameter overrides
-				values.parameters = angular.extend({}, values.parameters, projection.filterParameters);
+				values.parameters = streamutils.extend({}, values.parameters, projection.filterParameters);
 				//console.log('parameters',values.parameters);
 				// now again with start/end (don't mess up error messages!)
 				var code = values.code;
