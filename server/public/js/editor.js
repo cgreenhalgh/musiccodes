@@ -981,7 +981,7 @@ editorApp.directive('musCodeMatches', ['CodeParser','CodeMatcher','NoteProcessor
 						}
 						if (rawnotes.length>0) {
 							//console.log('check example group '+groupid+': '+JSON.stringify(rawnotes));
-							var notes = noteprocessor.mapRawNotes(example.context, rawnotes);
+							var notes = noteprocessor.mapRawNotes(example.context, rawnotes, projection);
 							if (!notes) {
 								scope.error = true;
 								scope.feedback = 'Sorry, could not map raw notes';

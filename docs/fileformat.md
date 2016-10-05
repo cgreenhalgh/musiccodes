@@ -38,9 +38,11 @@ not yet implemented:
 (v2)
 
 - `id` (string), id/name by which projection is referred to in markers and examples
-- `countsPerBeat` (integer (?!), default 1), quantisation applied to time, e.g. 1 => round to nearest beat, 2 => round to nearest half-beat
+- `countsPerBeat` (integer (?!), default 0), quantisation applied to time, e.g. 0 => ignore, 1 => round to nearest beat, 2 => round to nearest half-beat
 - `pitchesPerSemitone` (integer (?!), default 1), quantisation applied to pitch, e.g. 1 => round to nearest semitone, 2 => round to nearest quarter-tone
 - `polyphonicGap` (float, seconds, default 0), maximum gap between note onsets that are considered to be 'at the same time' for polyphonic matching (these will be sorted in ascending frequency order). (added 2016-10-05)
+- `polyphonicFilter` (string, default `all`) action to perform on simultaneous notes: `lowest` (keep lowest), `all` (keep all), `loudest` (keep loudest) (added 2016-10-05)
+- `pitchMap` (string, default `none`) mapping to perform on note pitch: `none` (no change), `octave4` (to octave 4), `C4` (to C4) (added 2016-10-05)
 - `inexactParameters` - see below
 - `filterParameters` - see below
 

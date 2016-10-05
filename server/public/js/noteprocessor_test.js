@@ -27,6 +27,7 @@ describe('muzicodes.codeui module', function() {
 	        							failed = [i, expected[i]];
 	        							break;
 	        						}
+	        						
 	        						var res = recurse(actual[i], expected[i]);
 	        						if (!res.pass) {
 	        							result.pass = res.pass;
@@ -39,6 +40,12 @@ describe('muzicodes.codeui module', function() {
 	        						result.message = function() {
 	        							return 'Failed asserting that array/object includes element "'
 	        							+ failed[0] + ' => ' + failed[1] + '"';
+	        						};
+	        					}
+	        					else if (expected.length!==undefined && actual.length!==undefined && actual.length!=expected.length) {
+	        						result.pass = false;
+	        						result.message = function() {
+	        							return 'Failed asserting that array includes '+expected.length+' elements';
 	        						};
 	        					}
 	        				} else {
@@ -100,6 +107,51 @@ describe('muzicodes.codeui module', function() {
 				var projection = { polyphonicGap: 2 };
 				expect((new NoteProcessor()).mapRawNotes(context, [{freq:400,time:100}, {freq:440,time:101}], projection))
 				.toEqualApproximately([{midinote:67.35},{beats:0},{midinote: 69}]);
+			});
+		});
+		it('should keep all notes with polyphonicFilter all', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2, polyphonicFilter: 'all' };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:400,time:100}, {freq:440,time:101}], projection))
+				.toEqualApproximately([{midinote:67.35},{beats:0},{midinote: 69}]);
+			});
+		});
+		it('should keep lowest note with polyphonicFilter lowest', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2, polyphonicFilter: 'lowest' };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:440,time:101},{freq:400,time:102}], projection))
+				.toEqualApproximately([{midinote:67.35}]);
+			});
+		});
+		it('should keep loudest  note with polyphonicFilter loudest', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2, polyphonicFilter: 'loudest' };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:400,time:100,velocity:100}, {freq:440,time:101,velocity:101}], projection))
+				.toEqualApproximately([{midinote:69}]);
+			});
+		});
+		it('should keep map notes to octave 4 with pitchMap octave4', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2, pitchMap: 'octave4' };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:220,time:100}], projection))
+				.toEqualApproximately([{midinote:69}]);
+			});
+		});
+		it('should keep map notes to C4 with pitchMap C4', function() {
+			inject(function(NoteProcessor) {
+				// A4 = 440 = 69
+				var context = { tempo: 120 };
+				var projection = { polyphonicGap: 2, pitchMap: 'C4' };
+				expect((new NoteProcessor()).mapRawNotes(context, [{freq:440,time:100}], projection))
+				.toEqualApproximately([{midinote:60}]);
 			});
 		});
 		it('should map 2.2 beats at quant. 2 to 2 beats', function() {

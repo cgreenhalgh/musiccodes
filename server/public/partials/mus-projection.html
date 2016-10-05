@@ -11,6 +11,20 @@
       <td><input type="number" step="1" min="0" ng-model="projection.countsPerBeat"></td></tr>
   <tr><td><label>If polyphonic, minimum gap between chords (seconds)</label></td>
 	  <td><input type="number" step="0.01" ng-model="projection.polyphonicGap"></td></tr>
+  <tr><td><label>Filter notes in Chords</label></td>
+	  <td><select ng-model="projection.polyphonicFilter">
+	  		<option value="">default (keep all)</option>
+	  		<option value="lowest">Keep lowest note</option>
+	  		<option value="loudest">Keep loudest note</option>
+	  		<option value="all">Keep all notes</option>
+	  </select></td></tr>
+  <tr><td><label>Translate pitch in code</label></td>
+	  <td><select ng-model="projection.pitchMap">
+	  		<option value="">default (no change)</option>
+	  		<option value="octave4">Always octave 4</option>
+	  		<option value="C4">Always C4</option>
+	  		<option value="none">Keep original</option>
+	  </select></td></tr>
   <tr><td>Inexact matching, timing:</td>
       <td></td></tr>
   <tr><td><label>Delay cost (default 1)</label></td>

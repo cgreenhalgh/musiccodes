@@ -5,14 +5,22 @@ mod.factory('NoteProcessor', ['CodeNode', function(CodeNode) {
 	function NoteProcessor() {
 		
 	};
-	NoteProcessor.prototype.mapRawNote = function(context, note, prevNote) {
+	NoteProcessor.prototype.mapRawNote = function(context, note, prevNote, projection) {
 		var notes = [];
 		if (prevNote!==undefined && prevNote.time!==undefined && note.time && context.tempo) {
 			notes.push({beats: (note.time-prevNote.time)*context.tempo/60 });
 		}
 		if (note.freq) {
-			// note 60 is middle C, C4, freq. is nominally 261.6Hz
-			notes.push({ midinote: Math.log2( note.freq / 261.6 )*12 + 60 });
+			if (projection!==undefined && 'octave4'==projection.pitchMap) {
+				var logfreq = Math.log2( note.freq / 261.6 );
+				notes.push({ midinote: (logfreq - Math.floor(logfreq))*12 + 60 });				
+			} else if (projection!==undefined && 'C4'==projection.pitchMap) {
+				// note 60 is middle C, C4, freq. is nominally 261.6Hz
+				notes.push({ midinote: 60 });
+			} else {
+				// note 60 is middle C, C4, freq. is nominally 261.6Hz
+				notes.push({ midinote: Math.log2( note.freq / 261.6 )*12 + 60 });
+			}
 		}
 		return notes;
 	}
@@ -24,6 +32,10 @@ mod.factory('NoteProcessor', ['CodeNode', function(CodeNode) {
 			polyphonicGap = projection.polyphonicGap;
 			//console.log('using polyphonicGap '+polyphonicGap);
 		}
+		var polyphonicFilter = 'all';
+		if (projection!==undefined && !!projection.polyphonicFilter) {
+			polyphonicFilter = projection.polyphonicFilter;
+		}
 		var syncNotes = [];
 		var ni = 0;
 		while(ni<rawNotes.length || syncNotes.length>0) {
@@ -33,11 +45,23 @@ mod.factory('NoteProcessor', ['CodeNode', function(CodeNode) {
 			}
 			if (syncNotes.length>0 && (rawNote===null || rawNote.time > syncNotes[0].time+polyphonicGap)) {
 				// flush
-				for (sni in syncNotes) {
+				if ('loudest' == polyphonicFilter) {
+					syncNotes.sort(function(a,b) {
+						return b.velocity - a.velocity;
+					});
+					syncNotes = syncNotes.slice(0,1);
+				} else {
 					syncNotes.sort(function(a,b) {
 						return a.freq - b.freq;
-					});
-					var newNotes = this.mapRawNote(context, syncNotes[sni], prevNote);
+					});						
+
+					if ('lowest' == polyphonicFilter) {
+						syncNotes = syncNotes.slice(0,1);							
+					}
+				}
+
+				for (sni in syncNotes) {
+					var newNotes = this.mapRawNote(context, syncNotes[sni], prevNote, projection);
 					notes = notes.concat(newNotes);
 					prevNote = syncNotes[sni];
 				}				
