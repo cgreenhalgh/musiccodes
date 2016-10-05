@@ -94,7 +94,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		var notes = [];
 		for (var i in $scope.notes) {
 			var note = $scope.notes[i];
-			if (note.group[projectionid]==group.id)
+			if (note.groups[projectionid]==group.id)
 				notes.push(note);
 		}
 		if (notes.length==0) {
@@ -200,9 +200,9 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				i--;				
 			}
 			// TODO suppress start of group matching if group shrunk?
-			for (var projectionid in note.group) {
-				if ($scope.activeGroups[''+projectionid+':'+note.group]!==undefined)
-					$scope.activeGroups[''+projectionid+':'+note.group].truncated = true;
+			for (var projectionid in note.groups) {
+				if ($scope.activeGroups[''+projectionid+':'+note.groups[projectionid]]!==undefined)
+					$scope.activeGroups[''+projectionid+':'+note.groups[projectionid]].truncated = true;
 			}
 		}
 		// GC old groups
@@ -265,14 +265,15 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		if (!!note.velocity){
 			note.id = $scope.nextNoteId++;
 			$scope.notes.push(note);
-			note.group = {};
+			note.groups = {};
 			// TODO merge active notes
 			for (var projectionid in $scope.noteGroupers) {
 				var noteGrouper = $scope.noteGroupers[projectionid];
 				var gid = noteGrouper.addNote(streamutils.extend({},note));
 				// TODO GC old notes
 				if (gid!==undefined && gid!==null) {
-					note.group[projectionid] = gid;
+					note.groups[projectionid] = gid;
+					note.group = true;
 					var groups = noteGrouper.getGroups();
 					console.log('updated projection '+projectionid+' group '+gid);
 					for (var i in groups) {
