@@ -533,12 +533,12 @@ playerApp.factory('safeEvaluate', function() {
 		try {
 			result = eval(safeexpression);
 			if (result===undefined) {
-				var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': undefined';
+				var msg = 'error evaluating '+safeexpression+' from '+expression+': undefined';
 				console.log(msg);
 				alert(msg);
 			}
 		} catch (ex) {
-			var msg = 'error evaluating '+name+'='+safeexpression+' from '+expression+': '+ex.message;
+			var msg = 'error evaluating '+safeexpression+' from '+expression+': '+ex.message;
 			console.log(msg);
 			alert(msg);
 		}
@@ -632,7 +632,7 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', fu
 					console.log('update partcode preconditions...');
 				for (var pi in scope.partcodes) {
 					var partcode = scope.partcodes[pi];
-					if (partcode.precondition===undefined)
+					if (partcode.precondition===undefined || partcode.precondition===null || partcode.precondition=='')
 						partcode.preconditionok = true;
 					else {
 						partcode.preconditionok = true==safeEvaluate(experienceState, partcode.precondition);
