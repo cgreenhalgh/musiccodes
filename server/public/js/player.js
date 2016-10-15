@@ -108,13 +108,17 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
+			if (marker.projection===undefined) {
+				console.log('ignore marker without projection: '+JSON.stringify(marker));
+				continue;
+			}
 			if (marker.projection.id!=projectionid)
 				continue;
 			if (codeMatchers[marker.code]!==undefined) {
 				// for partMatching's benefit
 				codeMatchers[marker.code].reset();
 			}
-			if (marker.precondition===undefined)
+			if (marker.precondition===undefined || marker.precondition===null || marker.precondition=='')
 				marker.preconditionok = true;
 			else
 				marker.preconditionok = true==safeEvaluate($scope.experienceState, marker.precondition);
