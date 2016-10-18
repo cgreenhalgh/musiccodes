@@ -90,7 +90,9 @@ Groups of notes are highlighted in a red box.
 
 Once an example has been recorded you can modify its context; currently this is tempo only. 
 
-You can also specify a "Matching profile" in which case the corresponding code will be displayed, which can be copied via the clipboard.
+You can also specify a "Matching profile" in which case the corresponding code will be displayed, which can be copied via the clipboard. Selecting a matching profile will also change the note filtering to use that matching profile rather than the global defaults.
+
+`Play` should play the example notes; `Export` will generate a textual version of the example notes which can be used in associated PureData scripts.
 
 #### 2. Note filter/Grouping tab (upper panel)
 
@@ -140,18 +142,6 @@ This require basic knowledge of Javascript expressions.
 For example, add an initial state variable `count` = `0`. Check the checkbox `Show states in codes`. Go to a code. Specify a precondition for that code such as `count<4` so that the code will only be matched if `count` is less than 4. specify a post state for count = `count+1` so that 1 is added to count each time the code is matched. The code would now only be matched 4 times in one experience.
 
 Note that variable names should only include '_' (underscore), letters or digits, and should not start with a digit.
-
-#### Examples tab (lower panel)
-
-This allows musical examples to be recorded and used to generate possible codes and check against existing codes. 
-
-To record a phrase press `Record`. Press `Stop` to stop recording, `Done` to add the example and `Cancel` to delete it. 
-
-Once an example has been added you can set the tempo for that example, select the matching profile and see the corresponding note sequence or simple code.
-
-The note timeline view will show the effects of any note filtering from the current matching profile and global defaults.
-
-`Play` should play the example notes; `Export` will generate a textual version of the example notes which can be used in associated PureData scripts.
 
 #### 6. Codes and Actions tab (lower panel)
 
