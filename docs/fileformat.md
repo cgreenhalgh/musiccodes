@@ -89,7 +89,7 @@ Object with properties:
 - `atEnd` (boolean, default false), require code to appear at end of group
 - `inexact` (boolean, default false), use inexact matching, i.e. code can be triggered with some errors
 - `inexactError` (float, default 0), allowable error when matching in inexact mode
-- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `actions` (array or objects), action(s) to be triggered (see below)
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
 - `title` (string), title of the action in showDetail view
 - `description` (string), description of the action in showDetail view (not currently used)
@@ -97,6 +97,13 @@ Object with properties:
 - `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
 - `precondition` (string, default true, i.e. code can always be matched), expression which if true enables code to be matched, can depend only on state variables.
 - `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
+
+Action in `actions` array is object with properties:
+- `url` (string, required)
+- `channel` (string, default '')
+- `post` (boolean, default false) only for http/https urls - use http POST rather than GET
+- `contentType` (string, default `text/plain`) for http POST only
+- `body` (string, default '') for HTTP POST only
 
 No longer supported (v2):
 - `codeformat` 

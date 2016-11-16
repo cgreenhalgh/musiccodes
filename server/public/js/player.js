@@ -78,6 +78,17 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				console.log('send osc '+action.url);
 				// osc output
 				oscout.send( action.url );
+			} else if (action.url && action.url.indexOf('http')==0 && !!action.post) {
+				console.log('post to '+action.url+' '+action.contentType+' '+action.body);
+				$http({method: 'POST', url: 
+					action.url, 
+					headers: {'Content-Type': (action.contentType ? action.contentType : 'text/plain') }, 
+					data: (action.body ? action.body : '') 
+				}).then(function(resp) {
+					console.log('Post ok');
+				}, function(resp) {
+					console.log('Post error: '+resp.status+' - '+resp.statusText);
+				});
 			} else {
 				if ($scope.channel==action.channel && action.url) {
 					console.log('open '+action.url);
