@@ -101,6 +101,39 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 	
+	function templateActions(marker) {
+		// may be control or marker
+		var result = angular.extend({}, marker);
+		result.actions = [];
+		for (var ai in marker.actions) {
+			var action = marker.actions[ai];
+			if (action.url && action.url.indexOf('{{')>=0) {
+				var newaction = angular.extend({}, action);
+				// template
+				newaction.url = '';
+				var next = 0;
+				var pos;
+				while((pos=action.url.indexOf('{{', next))>=0) {
+					newaction.url += action.url.substring(next, pos);
+					var next = action.url.indexOf('}}', pos);
+					if (next<0)
+						next = action.url.length;
+					var exp = action.url.substring(pos+2, next);
+					next = next+2;
+					var value = safeEvaluate($scope.experienceState, exp);
+					newaction.url += value;
+				}
+				if (pos<0) {
+					newaction.url += action.url.substring(next);
+				}
+				console.log('template '+action.url+' -> '+newaction.url);
+				result.actions.push(newaction);
+			} else {
+				result.actions.push(action);
+			}
+		}
+		return result;
+	}
 	function checkGroup(group, projectionid) {
 		var notes = [];
 		for (var i in $scope.notes) {
@@ -149,10 +182,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					codeMatchers[marker.code].match( code ) ) {
 					if ((!marker.atEnd && !group.closed) || (marker.atEnd && group.closed)) {
 						console.log('Matched marker '+marker.title+' code '+proc.notesToString(code));
-						socket.emit('action',marker);
+						var result = templateActions(marker);
+						socket.emit('action',result);
 						if (marker.poststate!==undefined)
 							updateState(marker.poststate);
-						enact(marker.actions);
+						enact(result.actions);
 					} 
 					if (group.closed) {
 						// no longer matchable
@@ -178,10 +212,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (control.inputUrl!==undefined && control.inputUrl.length>0) {
 				if (control.inputUrl == input) {
 					console.log('Matched control '+control.inputUrl+' '+control.description);
-					socket.emit('action',control);
+					var result = templateActions(control);
+					socket.emit('action',result);
 					if (control.poststate!==undefined)
 						updateState(control.poststate);
-					enact(control.actions);
+					enact(result.actions);
 				}
 			}
 		}
@@ -543,6 +578,7 @@ playerApp.factory('safeEvaluate', function() {
 		window.scriptstate['false'] = false;
 		window.scriptstate['true'] = true;
 		window.scriptstate['null'] = null;
+		window.scriptstate['encodeURIComponent'] = encodeURIComponent;
 		var result = null;
 		// is expression safe? escape all names as window.scriptstate. ...
 		var vpat = /([A-Za-z_][A-Za-z_0-9]*)|([^A-Za-z_])/g;

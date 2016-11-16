@@ -99,7 +99,7 @@ Object with properties:
 - `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
 
 Action in `actions` array is object with properties:
-- `url` (string, required)
+- `url` (string, required). (todo) the URL can include simple state expressions (see preconditions) to be substituted enclosed in '{{' and '}}' (can include `encodeURIComponent(...)`, but not much else apart from arithmetic)
 - `channel` (string, default '')
 - `post` (boolean, default false) only for http/https urls - use http POST rather than GET
 - `contentType` (string, default `text/plain`) for http POST only
