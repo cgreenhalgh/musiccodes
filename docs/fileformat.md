@@ -104,8 +104,6 @@ No longer supported (v2):
 
 ## `control`
 
-(todo)
-
 For inputs from other system(s) that control the muzicodes system. e.g. from `midiControl` input.
 
 Object with properties:
@@ -123,6 +121,15 @@ Values for `inputUrl` include:
 - on load, `event:load`
 - on start of note stream, `event:start:PROJECTIONNAME` where `PROJECTIONNAME` is the name of the note projection in which the stream has started. 
 - on end of note stream, `event:end:PROJECTIONNAME`
+- HTTP POST to server (see below), starting `post:` and followed by input name.
+
+HTTP POST for input ('post:' action):
+- POST to "/input"
+- url-encoded form body
+- parameter "room": room name (default "default")
+- parameter "pin": room pin/password (default "")
+- parameter "name": action name (required)
+- parameter "client": optional client identification
  
 (- on partial match of marker (todo, TBD) `event:match:TITLE:DEGREE`, which might include parameters in format `{{NAME}}` which cannot include `/` or `:`.)
 

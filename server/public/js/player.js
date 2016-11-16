@@ -317,11 +317,20 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	}
 	midicontrols.onMessage(onMidiMessage);
 	
+	// control input from server
+	function handleServerInput(msg) {
+		console.log('server input: '+msg.inputUrl);
+		if (msg.inputUrl) {
+			checkControl(msg.inputUrl);
+		}
+	}
+	
 	function loaded(experience) {
 		socket.on('join.error', function(msg) {
 			alert('Error starting master: '+msg);
 		});
 		socket.emit('master',{room:$scope.room, pin:pin, channel:$scope.channel, experience:experience});
+		socket.on('input', handleServerInput);
 		
 		// sort markers by priority
 		experience.markers.sort(function(a,b) { return (!!b.priority ? b.priority : 0)-(!!a.priority ? a.priority : 0); } );

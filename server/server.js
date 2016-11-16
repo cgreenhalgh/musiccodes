@@ -143,7 +143,6 @@ app.get('/testiframeurl', function(req,res) {
 	}
 });
 
-
 function escapeHTML(html) {
     return String(html)
     .replace(/&(?!\w+;)/g, '&amp;')
@@ -637,6 +636,36 @@ function log(room, component, event, info, level) {
 	}
 }
 var EDITORS = '_editors_';
+var MASTERS = '_masters_';
+
+app.post('/input', function(req,res) {
+	var room = req.query.room ? req.query.room : (req.body.room ? req.body.room : "default");
+	var pin = req.query.pin ? req.query.pin : (req.body.pin ? req.body.pin : "");
+	var name = req.query.name ? req.query.name : req.body.name;
+	var client = req.query.client ? req.query.client : (req.body.client ? req.body.client : "(undefined)");
+	console.log('action room='+room+', pin='+pin+', name='+name+', client='+client);
+	if (!name) {
+		console.log('POST /input with no input (client '+client+')');
+		res.status(400).send('no input name specified');
+		return;
+	}
+	if (rooms[room]===undefined) {
+		console.log('POST /input '+name+' for unknown room '+room+' (client '+client+')');
+		res.status(404).send('unknown room');
+		return;
+	} else if (rooms[room].pin !== pin) {
+		console.log('POST /input '+name+' for room '+room+' with incorrect pin (client '+client+')');
+		res.status(403).send('incorrect pin');
+		return;
+	}
+	// send to room
+	var msg = { "inputUrl":"post:"+encodeURIComponent(name) };
+	log(room, "server", 'input', msg, LEVEL_INFO); 
+    io.to(MASTERS+room).emit('input', msg);
+
+	res.status(200).send('');
+});
+
 
 function Client(socket) {
   this.socket = socket;
@@ -876,6 +905,7 @@ Client.prototype.onMaster = function(msg) {
     this.room = msg.room;
     this.master = true;
   }
+  this.socket.join(MASTERS+msg.room);
   if (this.room!==null && this.room!==undefined) {
 	  roomJoin(this.room, this.socket.id, true);
 	  // TODO: logUse set by experience
