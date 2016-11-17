@@ -35,6 +35,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	
 	$scope.markers = [];
 	$scope.controls = [];
+	$scope.buttons = [];
 	
 	$scope.recording = false;
 	
@@ -62,6 +63,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			}
 		}
 		logger.log( 'state.update', $scope.experienceState );
+		updateButtons();
 	};
 	
 	$scope.lastGroups = {};
@@ -421,6 +423,13 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 						action.channel = '';
 				}
 			}
+			if (control.inputUrl && control.inputUrl.indexOf('button:')>=0) {
+				var button = control;
+				button.title = control.inputUrl.substring('button:'.length);
+				$scope.buttons.push(button);
+				// TODO: precondition!
+				button.disabled = false;
+			}
 		}
 		for (var pi in experience.projections) {
 			var projection = experience.projections[pi];
@@ -514,6 +523,22 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		checkControl('event:load');
 	};
 	
+	function updateButtons() {
+		// update button preconditions
+		for (var bi in $scope.buttons) {
+			var button = $scope.buttons[bi];
+			if (button.precondition===undefined || button.precondition===null || button.precondition=='')
+				button.disabled = false;
+			else 
+				button.disabled = true!=safeEvaluate($scope.experienceState, button.precondition);					
+		}
+	}
+	
+	$scope.pressButton = function (button) {
+		console.log('pressButton('+JSON.stringify(button)+')');
+		checkControl(button.inputUrl);
+	}
+
 	$scope.stopRecording = function() {
 		 console.log('stop recording');
 		 audionotes.stop();
@@ -545,6 +570,14 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.selectNotes = function(notes) {
 		console.log("Player select notes: "+JSON.stringify(notes));
 		socket.emit('selectNotes', notes);
+	}
+	
+	$scope.keyup = function(event) {
+		//console.log('keyup');
+	}
+	$scope.keydown = function(ev) {
+		console.log('keydown, code='+ev.which);
+		checkControl('key:'+ev.which);
 	}
 }]);
 

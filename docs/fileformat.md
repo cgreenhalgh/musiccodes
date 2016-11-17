@@ -129,6 +129,8 @@ Values for `inputUrl` include:
 - on start of note stream, `event:start:PROJECTIONNAME` where `PROJECTIONNAME` is the name of the note projection in which the stream has started. 
 - on end of note stream, `event:end:PROJECTIONNAME`
 - HTTP POST to server (see below), starting `post:` and followed by input name.
+- when button pressed, `button:NAME` - the button is shown in the state area.
+- when key pressed, `key:KEYCODE`
 
 HTTP POST for input ('post:' action):
 - POST to "/input"

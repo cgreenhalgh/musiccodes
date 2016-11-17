@@ -21,6 +21,8 @@ m.directive('softkeyboard', ['logger', function(logger) {
 			var KEY_TIME0 = Date.now();
 			var KEY_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 			var handleKey = function(ev, down) {
+			  ev.preventDefault();
+			  ev.stopPropagation();
 			  console.log('Key '+(down ? 'down':'up')+', code='+ev.which);
 			  var midi = -1;
 			  for (var i=0; i<KEYS.length; i++) {
