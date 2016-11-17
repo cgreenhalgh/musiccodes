@@ -103,7 +103,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 	
-	function templateString(actionurl) {
+	function templateString(actionurl, extrastate) {
 		// template
 		var newactionurl = '';
 		var next = 0;
@@ -115,7 +115,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				next = actionurl.length;
 			var exp = actionurl.substring(pos+2, next);
 			next = next+2;
-			var value = safeEvaluate($scope.experienceState, exp);
+			var value = safeEvaluate($scope.experienceState, exp, extrastate);
 			newactionurl += value;
 		}
 		if (pos<0) {
@@ -123,7 +123,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		return newactionurl;
 	}
-	function templateActions(marker) {
+	function templateActions(marker, extrastate) {
 		// may be control or marker
 		var result = angular.extend({}, marker);
 		result.actions = [];
@@ -132,10 +132,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if ((action.url && action.url.indexOf('{{')>=0) || (action.body && action.body.indexOf('{{')>=0)) {
 				var newaction = angular.extend({}, action);
 				if (action.url) {
-					newaction.url = templateString(action.url);
+					newaction.url = templateString(action.url, extrastate);
 				}
 				if (action.body) {
-					newaction.body = templateString(action.body);
+					newaction.body = templateString(action.body, extrastate);
 				}
 				console.log('template '+action.url+' -> '+newaction.url+' (body '+action.body+' -> '+newaction.body+')');
 				result.actions.push(newaction);
@@ -223,7 +223,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (control.inputUrl!==undefined && control.inputUrl.length>0) {
 				if (control.inputUrl == input) {
 					console.log('Matched control '+control.inputUrl+' '+control.description);
-					var result = templateActions(control);
+					var result = templateActions(control, extrastate);
 					socket.emit('action',result);
 					if (control.poststate!==undefined)
 						updateState(control.poststate, extrastate);
