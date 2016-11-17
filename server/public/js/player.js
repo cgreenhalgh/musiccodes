@@ -49,11 +49,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.codeMatchers = codeMatchers;
 	
 	$scope.experienceState = {};
-	function updateState(state) {
+	function updateState(state, extrastate) {
 		var output = {};
 		for (var name in state) {
 			var expression = state[name];
-			output[name] = safeEvaluate($scope.experienceState, expression);
+			output[name] = safeEvaluate($scope.experienceState, expression, extrastate);
 			console.log('State '+name+' = '+output[name]+' = '+expression);
 		}
 		for (var name in output) {
@@ -199,7 +199,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 
-	function checkControl(input) {
+	function checkControl(input, extrastate) {
 		console.log('check control '+input);
 		for (var mi in $scope.controls) {
 			var control = $scope.controls[mi];
@@ -215,7 +215,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					var result = templateActions(control);
 					socket.emit('action',result);
 					if (control.poststate!==undefined)
-						updateState(control.poststate);
+						updateState(control.poststate, extrastate);
 					enact(result.actions);
 				}
 			}
@@ -365,9 +365,9 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	
 	// control input from server
 	function handleServerInput(msg) {
-		console.log('server input: '+msg.inputUrl);
+		console.log('server input: '+msg.inputUrl+' with params='+JSON.stringify(msg.params));
 		if (msg.inputUrl) {
-			checkControl(msg.inputUrl);
+			checkControl(msg.inputUrl, {params:msg.params});
 		}
 	}
 	
@@ -571,17 +571,25 @@ playerApp.directive('urlView', ['$http', '$sce', '$timeout',function($http, $sce
 
 // messy function!!
 playerApp.factory('safeEvaluate', function() {
-	return function(state, expression) {
+	return function(state, expression, morestate) {
 		window.scriptstate = {};
 		for (var si in state)
 			window.scriptstate[si] = state[si];
+		if (!!morestate) {
+			for (var si in morestate)
+				window.scriptstate[si] = morestate[si];			
+		}
 		window.scriptstate['false'] = false;
 		window.scriptstate['true'] = true;
 		window.scriptstate['null'] = null;
 		window.scriptstate['encodeURIComponent'] = encodeURIComponent;
+		window.scriptstate['Math'] = Math;
+		window.scriptstate['String'] = String;
+		window.scriptstate['Number'] = Number;
 		var result = null;
 		// is expression safe? escape all names as window.scriptstate. ...
-		var vpat = /([A-Za-z_][A-Za-z_0-9]*)|([^A-Za-z_])/g;
+		// allow . within expression, e.g. Math.random, params.name
+		var vpat = /([A-Za-z_][A-Za-z_0-9.]*)|([^A-Za-z_])/g;
 		var match = null;
 		var safeexpression = '';
 		while((match=vpat.exec(expression))!==null) {

@@ -4,6 +4,7 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var dateFormat = require('dateformat');
 var osc = require("osc");
+var extend = require('extend');
 
 app.get('/', function(req, res){
   console.log('get /');
@@ -639,10 +640,11 @@ var EDITORS = '_editors_';
 var MASTERS = '_masters_';
 
 app.post('/input', function(req,res) {
-	var room = req.query.room ? req.query.room : (req.body.room ? req.body.room : "default");
-	var pin = req.query.pin ? req.query.pin : (req.body.pin ? req.body.pin : "");
-	var name = req.query.name ? req.query.name : req.body.name;
-	var client = req.query.client ? req.query.client : (req.body.client ? req.body.client : "(undefined)");
+	var params = extend({}, req.query, req.body);
+	var room = params.room ? params.room : "default";
+	var pin = params.pin ? params.pin : "";
+	var name = params.name;
+	var client = params.client ? params.client : "(undefined)";
 	console.log('action room='+room+', pin='+pin+', name='+name+', client='+client);
 	if (!name) {
 		console.log('POST /input with no input (client '+client+')');
@@ -659,7 +661,7 @@ app.post('/input', function(req,res) {
 		return;
 	}
 	// send to room
-	var msg = { "inputUrl":"post:"+encodeURIComponent(name) };
+	var msg = { "inputUrl":"post:"+encodeURIComponent(name), params: params };
 	log(room, "server", 'input', msg, LEVEL_INFO); 
     io.to(MASTERS+room).emit('input', msg);
 

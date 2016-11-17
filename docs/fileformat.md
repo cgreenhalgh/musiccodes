@@ -137,6 +137,7 @@ HTTP POST for input ('post:' action):
 - parameter "pin": room pin/password (default "")
 - parameter "name": action name (required)
 - parameter "client": optional client identification
+- other parameters will be passed through as properties of an object which is the value of the termporary variable "params" in action post-state
  
 (- on partial match of marker (todo, TBD) `event:match:TITLE:DEGREE`, which might include parameters in format `{{NAME}}` which cannot include `/` or `:`.)
 
