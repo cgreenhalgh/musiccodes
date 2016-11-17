@@ -101,32 +101,41 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 	}
 	
+	function templateString(actionurl) {
+		// template
+		var newactionurl = '';
+		var next = 0;
+		var pos;
+		while((pos=actionurl.indexOf('{{', next))>=0) {
+			newactionurl += actionurl.substring(next, pos);
+			var next = actionurl.indexOf('}}', pos);
+			if (next<0)
+				next = actionurl.length;
+			var exp = actionurl.substring(pos+2, next);
+			next = next+2;
+			var value = safeEvaluate($scope.experienceState, exp);
+			newactionurl += value;
+		}
+		if (pos<0) {
+			newactionurl += actionurl.substring(next);
+		}
+		return newactionurl;
+	}
 	function templateActions(marker) {
 		// may be control or marker
 		var result = angular.extend({}, marker);
 		result.actions = [];
 		for (var ai in marker.actions) {
 			var action = marker.actions[ai];
-			if (action.url && action.url.indexOf('{{')>=0) {
+			if ((action.url && action.url.indexOf('{{')>=0) || (action.body && action.body.indexOf('{{')>=0)) {
 				var newaction = angular.extend({}, action);
-				// template
-				newaction.url = '';
-				var next = 0;
-				var pos;
-				while((pos=action.url.indexOf('{{', next))>=0) {
-					newaction.url += action.url.substring(next, pos);
-					var next = action.url.indexOf('}}', pos);
-					if (next<0)
-						next = action.url.length;
-					var exp = action.url.substring(pos+2, next);
-					next = next+2;
-					var value = safeEvaluate($scope.experienceState, exp);
-					newaction.url += value;
+				if (action.url) {
+					newaction.url = templateString(action.url);
 				}
-				if (pos<0) {
-					newaction.url += action.url.substring(next);
+				if (action.body) {
+					newaction.body = templateString(action.body);
 				}
-				console.log('template '+action.url+' -> '+newaction.url);
+				console.log('template '+action.url+' -> '+newaction.url+' (body '+action.body+' -> '+newaction.body+')');
 				result.actions.push(newaction);
 			} else {
 				result.actions.push(action);
@@ -589,17 +598,42 @@ playerApp.factory('safeEvaluate', function() {
 		var result = null;
 		// is expression safe? escape all names as window.scriptstate. ...
 		// allow . within expression, e.g. Math.random, params.name
-		var vpat = /([A-Za-z_][A-Za-z_0-9.]*)|([^A-Za-z_])/g;
+		var vpat = /([A-Za-z_][A-Za-z_0-9.]*)|(\\['"\\brftv])|(\\[^'"\\brftv])|([^A-Za-z_\\])/g;
 		var match = null;
 		var safeexpression = '';
+		var inquote = null;
 		while((match=vpat.exec(expression))!==null) {
-			if (match[1]!==undefined) 
-				safeexpression = safeexpression+'(window.scriptstate.'+match[1]+')';
-			else if (match[2]!==undefined)
+			if (match[1]!==undefined) {
+				if (inquote===null) 
+					safeexpression = safeexpression+'(window.scriptstate.'+match[1]+')';
+				else
+					safeexpression = safeexpression+match[1];
+			}
+			else if (match[2]!==undefined) {
+				if (inquote===null) {
+					var msg = 'error evaluating '+expression+': escape found outside string: '+match[3];
+					console.log(msg);
+					alert(msg);
+					return null;					
+				}
 				safeexpression = safeexpression+match[2];
+			} else if (match[3]!==undefined) {
+				var msg = 'error evaluating '+expression+': invalid escape '+match[3];
+				console.log(msg);
+				alert(msg);
+				return null;
+			} else if (match[4]=='"' || match[4]=="'") {
+				if (inquote===null)
+					inquote = match[4];
+				else if (inquote==match[4]) 
+					inquote = null;
+				safeexpression = safeexpression+match[4];
+			} else if (match[4]!==undefined)
+				safeexpression = safeexpression+match[4];
 		}
 		try {
 			result = eval(safeexpression);
+			//console.log('safeEvaluation '+expression+' -> '+safeexpression+' = '+result);
 			if (result===undefined) {
 				var msg = 'error evaluating '+safeexpression+' from '+expression+': undefined';
 				console.log(msg);
