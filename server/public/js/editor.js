@@ -426,7 +426,8 @@ editorApp.controller('ExperienceCtrl', ['$scope', '$http', '$routeParams', 'getI
 					$scope.addingGroups = $scope.addingGrouper.getGroups();
 			}
 			$scope.addingExampleNotes.push(note);
-			$scope.addingActiveNotes[note.note] = note;
+			if (note.duration===undefined)
+				$scope.addingActiveNotes[note.note] = note;
 		}
 	};
 	$scope.onNote = onNote;
