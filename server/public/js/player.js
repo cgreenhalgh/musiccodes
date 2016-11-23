@@ -214,7 +214,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		console.log('check control '+input);
 		for (var mi in $scope.controls) {
 			var control = $scope.controls[mi];
-			if (control.precondition===undefined)
+			if (control.precondition===undefined || control.precondition===null || control.precondition=='')
 				control.preconditionok = true;
 			else
 				control.preconditionok = true==safeEvaluate($scope.experienceState, control.precondition);
@@ -245,7 +245,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		for (var id in $scope.activeGroups) {
 			var group = $scope.activeGroups[id];
-			if (group.closed || (!group.closed && group.lastTime<time-$scope.parameters.streamGap)) {
+			if (group.closed || (!group.closed && group.heldNotes.length==0 && group.lastTime<time-$scope.parameters.streamGap)) {
 				group.closed = true;
 				console.log('closed group '+group.projectionid+':'+group.id);
 				delete $scope.activeGroups[id];
@@ -324,8 +324,24 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}		
 		var n = $scope.activeNotes[note.note];
 		if (n!==undefined && !!n.velocity) {
-			if (n.duration===undefined) 
+			if (n.duration===undefined) {
 				n.duration = note.time-n.time;
+				// end heldNotes
+				for (var gi in $scope.activeGroups) {
+					var group = $scope.activeGroups[gi];
+					for (var ni=0; ni<group.heldNotes.length; ni++) {
+						var held = group.heldNotes[ni];
+						if (held.id==n.id) {
+							console.log('end held note '+held.id);
+							held.duration = n.duration;
+							group.heldNotes.splice(ni, 1);
+							ni--;
+							if (held.time+held.duration > group.lastTime)
+								group.lastTime = held.time+held.duration;
+						}
+					}
+				}
+			}
 			delete $scope.activeNotes[note.note];
 		}
 		if (note.time > $scope.time)
@@ -628,6 +644,7 @@ playerApp.factory('safeEvaluate', function() {
 		window.scriptstate['Math'] = Math;
 		window.scriptstate['String'] = String;
 		window.scriptstate['Number'] = Number;
+		window.scriptstate['JSON'] = JSON;
 		var result = null;
 		// is expression safe? escape all names as window.scriptstate. ...
 		// allow . within expression, e.g. Math.random, params.name

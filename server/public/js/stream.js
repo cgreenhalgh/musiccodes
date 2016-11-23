@@ -64,6 +64,12 @@ stream.factory('noteGrouperFactory', function() {
 					// candidate for group - monophonic not handled here any more - see note processor mapRawNotes
 					{
 						group.lastTime = note.time;
+						if (!!this.parameters.useNoteOff) {
+							if (note.duration!==undefined)
+								group.lastTime += note.duration;
+							else
+								group.heldNotes.push( note );
+						}
 						//group.notes.push(note);
 						//group.count++;
 						handled = true;
@@ -84,7 +90,13 @@ stream.factory('noteGrouperFactory', function() {
 		}
 
 		if (!handled) {
-			var group = { id: nextGroupId++, closed: false, time: note.time, lastTime: note.time };
+			var group = { id: nextGroupId++, closed: false, time: note.time, lastTime: note.time, heldNotes: [] };
+			if (!!this.parameters.useNoteOff) {
+				if (note.duration!==undefined)
+					group.lastTime += note.duration;
+				else
+					group.heldNotes.push( note );
+			}
 			group.lowFreq = Math.max(this.parameters.frequencyRatio ? note.freq/this.parameters.frequencyRatio : MIN_FREQUENCY,
 				this.parameters.minFrequency!==undefined ? this.parameters.minFrequency : MIN_FREQUENCY);
 			group.highFreq = Math.min(this.parameters.frequencyRatio ? note.freq*this.parameters.frequencyRatio : MAX_FREQUENCY,
@@ -115,6 +127,21 @@ stream.factory('noteGrouperFactory', function() {
 		for (var id in this.groups) {
 			var group = this.groups[id];
 			// close
+			if (!!this.parameters.useNoteOff) {
+				for (var ni=0; ni<group.heldNotes.length; ni++) {
+					var note = group.heldNotes[ni];
+					if (note.duration!==undefined) {
+						if (note.time+note.duration > group.lastTime)
+							group.lastTime = note.time+note.duration;
+						group.heldNotes.splice(ni, 1);
+						ni--;
+						console.log('held note ended in group '+group.id+'; '+goup.heldNotes.length+' remain');
+					}
+				}
+				if (group.heldNotes.length>0)
+					// can't close yet
+					continue;
+			}
 			if (!group.closed && group.lastTime<time-this.parameters.streamGap) {
 				group.closed = true;
 				if (debug)

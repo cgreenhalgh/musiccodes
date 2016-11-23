@@ -63,6 +63,7 @@ Note that delay and tempo parameters both affect delays, and the lowest cost is 
 
 `filterParameters` is object with properties:
 - `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
+- `useNoteOff` (bool, default false), gap starts from note off rather than note on
 - `frequencyRatio` (float, ratio, default infinite), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
 - `maxDuration` (float, seconds, default unlimited), maximum duration for a note (e.g. to deal with 'stuck' notes)
 - `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
