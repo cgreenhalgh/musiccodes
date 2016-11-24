@@ -254,7 +254,7 @@
       <label>Priority:</label><input type="number" ng-model="marker.priority" size="3">
       <label>Actions:</label>
       <ul>
-        <mus-action ng-repeat="action in control.actions"></mus-action>
+        <mus-action ng-repeat="action in marker.actions"></mus-action>
         <li >
           <button ng-click="addAction()" aria-label="Add action"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
           <label>Channel:</label>
