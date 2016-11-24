@@ -32,7 +32,15 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.groups = [];
 	$scope.activeNotes = {};
 	$scope.activeGroups = {};
-	
+	// in order { url, params, time }
+	$scope.delays = [];
+	$scope.delayTimer = null;
+	$scope.delayTimerTime = 0;
+	$scope.delayTimeLabel = (new Date()).toISOString().substr(11, 8);
+	setInterval(function() {
+		$scope.delayTimeLabel =  (new Date()).toISOString().substr(11, 8);		
+	}, 1000);
+
 	$scope.markers = [];
 	$scope.controls = [];
 	$scope.buttons = [];
@@ -68,6 +76,49 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	
 	$scope.lastGroups = {};
 	$scope.checkLastGroups = null;
+
+	function checkDelays() {
+		var date = new Date();
+		var now = date.getTime();
+		for (var di=0; di<$scope.delays.length; di++) {
+			var delay = $scope.delays[di];
+			if (now >= delay.time) {
+				console.log('Fire delay '+delay.url);
+				checkControl(delay.url, {params:delay.params});
+
+				$scope.delays.splice(di, 1);
+				di--;
+			}
+		}
+		if ($scope.delayTimer!==null && ($scope.delays.length==0 || $scope.delayTimerTime!=$scope.delays[0].time)) {
+			clearTimeout($scope.delayTimer);
+			$scope.delayTimer = null;
+		}
+		if ($scope.delays.length>0 && $scope.delayTimer===null) {
+			$scope.delayTimerTime = $scope.delays[0].time;
+			console.log('schedule timer in '+($scope.delays[0].time-now)+'ms');
+			$scope.delayTimer = setTimeout(function() {
+				$scope.delayTimer = null;
+				checkDelays();
+			}, $scope.delays[0].time-now);
+		}
+	}
+	$scope.clearDelays= function() {
+		console.log('clear delays ('+$scope.delays.length+')');
+		if ($scope.delayTimer!==null) {
+			clearTimeout($scope.delayTimer);
+			$scope.delayTimer = null;
+		}
+		$scope.delays = [];
+	}
+	$scope.fireDelays = function() {
+		var now = new Date().getTime();
+		for (var di in $scope.delays) {
+			var delay = $scope.delays[di];
+			delay.time = now;
+		}
+		checkDelays();
+	}
 	
 	function enact(actions) {
 		for (var ai in actions) {
@@ -91,6 +142,31 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				}, function(resp) {
 					console.log('Post error: '+resp.status+' - '+resp.statusText);
 				});
+			} else if (action.url.indexOf('delay:')==0) {
+				var delaytime = action.delay && action.delay>0 ? action.delay : 0;
+				console.log('delay '+action.url+' by '+delaytime+' with params='+JSON.stringify(action.params));
+				var now = (new Date()).getTime();
+				var time = now+Math.floor(delaytime*1000);
+				var delay = { url: action.url, params: action.params, time: time, label: 'at '+(new Date(time).toISOString().substr(11, 8)) };
+				var di=0;
+				for (; di<$scope.delays.length; di++) {
+					if($scope.delays[di].time > time)
+						break;
+				}
+				$scope.delays.splice(di, 0, delay);
+				checkDelays();
+			} else if (action.url.indexOf('cancel:')==0) {
+				var name = action.url.substring(7);
+				console.log('cancel delays '+name);
+				for (var di=0; di<$scope.delays.length; di++) {
+					var delay = $scope.delays[di];
+					if (name=='*' || name==delay.url.substring(6)) {
+						console.log('Cancel delay '+delay.url);
+						$scope.delays.splice(di, 1);
+						di--;
+					}
+				}
+				checkDelays();
 			} else {
 				if ($scope.channel==action.channel && action.url) {
 					console.log('open '+action.url);
@@ -102,6 +178,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			}
 		}
 	}
+
 	
 	function templateString(actionurl, extrastate) {
 		// template

@@ -60,6 +60,8 @@
 			<button ng-repeat="button in buttons" ng-disabled="button.disabled" ng-click="pressButton(button)" ng-class="{disabled: button.disabled}">{{button.title}}</button>
 			<p>State (variables):</p>
 			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>
+			<p>Delays: <button ng-click="clearDelays()">Clear All</button><button ng-click="fireDelays()">Do All</button> (now {{ delayTimeLabel }})</p>
+			<ul><li ng-repeat="delay in delays">{{delay.url}} {{delay.label}} ({{delay.params}})</ul>
 		</div>
 		<div class="col-md-4">
 			<url-view class=" output" action-url="actionUrl" refresh="actionRefresh"></url-view>

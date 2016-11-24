@@ -223,8 +223,8 @@
   <!-- <h4>6. Codes and Actions</h4> -->
 
 	<p class="tab-intro">Specify codes and actions to be performed:</p>
-	<datalist id="action-prefixes"><option value="http:"><option value="https:"><option value="data:text/plain,"><option value="osc.udp:"><option value="data:text/x-midi-hex,"></datalist>
-	<datalist id="action-content-types"><option value="text/plan"><option value="application/json"><option value="application/x-www-form-urlencoded"></datalist>
+	<datalist id="action-prefixes"><option value="http:"><option value="https:"><option value="data:text/plain,"><option value="osc.udp:"><option value="data:text/x-midi-hex,"><option value="delay:"><option value="cancel:"></datalist>
+	<datalist id="action-content-types"><option value="text/plain"><option value="application/json"><option value="application/x-www-form-urlencoded"></datalist>
 
   <ul class="markers">
     <li ng-repeat="marker in markers" ng-controller="MarkerCtrl" class="marker">
@@ -254,17 +254,7 @@
       <label>Priority:</label><input type="number" ng-model="marker.priority" size="3">
       <label>Actions:</label>
       <ul>
-        <li ng-repeat="action in marker.actions">
-          <label>Channel:</label>
-          <input type="text" size="10" ng-model="action.channel">
-          <label>URL:</label>
-          <input type="text" ng-model="action.url" list="action-prefixes" size="60">
-            <label ng-if="action.url.indexOf('http')==0">Post:<input ng-if="action.url.indexOf('http')==0" type="checkbox" ng-model="action.post"></label>
-            <input ng-if="action.post" type="text" ng-model="action.body">
-            <label ng-if="action.post">Content type:</label><input  ng-if="action.post"type="text" ng-model="action.contentType" list="action-content-types">
-            <urlchecker ng-model="action.url" parameters="parameters"></urlchecker>
-          <button ng-click="deleteAction($index)" aria-label="Remove action"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        </li>
+        <mus-action ng-repeat="action in control.actions"></mus-action>
         <li >
           <button ng-click="addAction()" aria-label="Add action"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
           <label>Channel:</label>
@@ -305,7 +295,7 @@
 	</table>
 	
 	
-	<datalist id="control-prefixes"><option value="event:load"><option value="event:start"><option value="event:end"><!-- <option value="osc.udp:///">  --><option value="data:text/x-midi-hex,"><option value="post:"><option value="button:"></datalist>
+	<datalist id="control-prefixes"><option value="event:load"><option value="event:start"><option value="event:end"><!-- <option value="osc.udp:///">  --><option value="data:text/x-midi-hex,"><option value="post:"><option value="button:"><option value="delay:"></datalist>
 
   <ul class="markers">
     <li ng-repeat="control in controls" ng-controller="ControlCtrl" class="marker">
@@ -324,17 +314,7 @@
       <input type="text" ng-model="control.description">
       <label>Actions:</label>
       <ul>
-        <li ng-repeat="action in control.actions">
-          <label>Channel:</label>
-          <input type="text" size="10" ng-model="action.channel">
-          <label>URL:</label>
-          <input type="text" ng-model="action.url" list="action-prefixes" size="60">
-            <label ng-if="action.url.indexOf('http')==0">Post:<input ng-if="action.url.indexOf('http')==0" type="checkbox" ng-model="action.post"></label>
-            <input ng-if="action.post" type="text" ng-model="action.body">
-            <label ng-if="action.post">Content type:</label><input  ng-if="action.post"type="text" ng-model="action.contentType" list="action-content-types">
-            <urlchecker ng-model="action.url" parameters="parameters"></urlchecker>
-          <button ng-click="deleteAction($index)" aria-label="Remove action"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></button>
-        </li>
+        <mus-action ng-repeat="action in control.actions"></mus-action>
         <li >
           <button ng-click="addAction()" aria-label="Add action"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span></button>
           <label>Channel:</label>

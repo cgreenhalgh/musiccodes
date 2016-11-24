@@ -789,6 +789,38 @@ editorApp.directive('musProjection', [function() {
 		templateUrl: '/partials/mus-projection.html'
 	};
 }]);
+editorApp.directive('musAction', [function() {
+	return {
+		restrict: 'E',
+		templateUrl: '/partials/mus-action.html',
+		
+		controller: function($scope, $element) {
+			if ($scope.action.params === undefined) {
+				$scope.action.params = {}
+			}
+			// not sure which using $scope.newParamName doesn't bind back :-/
+			$scope.action.newParamName = '';
+			$scope.action.newParamValue = '';
+			console.log('mus-action controller with $index='+$scope.$index+' and action='+$scope.action);
+			$scope.delete = function() {
+				console.log('delete mus-action index '+$scope.$index);
+				$scope.deleteAction($scope.$index);
+			}
+			$scope.addParam = function() {
+				console.log('mus-action add param '+$scope.action.newParamName+'='+$scope.action.newParamValue);
+				if ($scope.action.newParamName) {
+					$scope.action.params[$scope.action.newParamName] = $scope.action.newParamValue;
+					$scope.action.newParamName = $scope.action.newParamValue = '';
+				}
+			}
+			$scope.deleteParam = function(name) {
+				console.log('mus-action delete param '+name);
+				if ($scope.action.params !== undefined && name)
+					delete $scope.action.params[name];
+			}
+		}
+	};
+}]);
 editorApp.directive('musFilterParameters', [function() {
 	return {
 		restrict: 'E',

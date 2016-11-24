@@ -100,11 +100,13 @@ Object with properties:
 - `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
 
 Action in `actions` array is object with properties:
-- `url` (string, required). (todo) the URL can include simple state expressions (see preconditions) to be substituted enclosed in '{{' and '}}' (can include `encodeURIComponent(...)`, but not much else apart from arithmetic)
+- `url` (string, required). (todo) the URL can include simple state expressions (see preconditions) to be substituted enclosed in '{{' and '}}' (can include `encodeURIComponent(...)`, but not much else apart from arithmetic). See Actions, below.
 - `channel` (string, default '')
 - `post` (boolean, default false) only for http/https urls - use http POST rather than GET
 - `contentType` (string, default `text/plain`) for http POST only
 - `body` (string, default '') for HTTP POST only
+- `delay` (float, default 0) delay in seconds for `delay:` action
+- `params` (object) map of optional parameter values for `delay:` action (like poststate)
 
 No longer supported (v2):
 - `codeformat` 
@@ -132,6 +134,7 @@ Values for `inputUrl` include:
 - HTTP POST to server (see below), starting `post:` and followed by input name.
 - when button pressed, `button:NAME` - the button is shown in the state area.
 - when key pressed, `key:KEYCODE`
+- when a delay is up, `delay:NAME` - additional parameters are available in temporary variable params (cf `post:`)
 
 HTTP POST for input ('post:' action):
 - POST to "/input"
@@ -188,6 +191,22 @@ Actions are URLs. By default they are loaded into an iframe when triggered.
 
 Note that simple text can be encoded using data URIs, e.g. `data:text/plain,hello`. Strictly these should be %-escaped for all characters other than letters and digits.
 
+### HTTP POST actions
+
+HTTP/HTTPS actions are done as GET by default (loaded in channel viewer). If `post` is set then HTTP POST is used. Additional options for POST are:
+- `contentType` (string, default `text/plain`) for http POST only
+- `body` (string, default '') for HTTP POST only
+
+### delay actions
+
+A URI of the form `delay:NAME` causes a delayed event which will trigger controls with the same URI (i.e. `delay:NAME`). The action has the following additional parameters:
+- `delay` (float, default 0) delay in seconds for `delay:` action
+- `params` (object) map of optional parameter values for `delay:` action (like poststate)
+
+A URI of the form `cancel:NAME` will cancel any outstanding (scheduled) delayed events of that name.
+
+A URI of the form `cancel:*` will cancel all outstanding (scheduled) delayed events. (Note, there is no support for general regular expressions in names.)
+
 ### Midi actions
 
 A data URI with the non-standard MIME type `text/x-midi-hex` will be output to the current MIDI output channel (if any). All bytes are output immediately. Each byte is encoded as two hex digits. E.g. `data:text/x-midi-hex,903a7f` is note on, middle C, max velocity.
@@ -197,7 +216,6 @@ A data URI with the non-standard MIME type `text/x-midi-hex` will be output to t
 A URI with the protocol `osc.udp:` will send an [Open Sound Control](http://opensoundcontrol.org/introduction-osc) message over UDP. The hostname and port are the address of the OSC server to send to; the path is the OSC address. After a comma is the OSC type string, and the arguments themselves follow, comma-separated. Currently supported data types are 'i' (integer), 'f' (float), 's' (string, url-encoded) and 'b' (binary, hex-encoded). Note that only individually messages can currently be sent, i.e. not packets containing multiple messages.  
 
 For example, the URI `osc.udp://1.2.3.4:9001/test/address,if,40,1.0` will send a message to the OSC server on the machine with IP address/hostname `1.2.3.4`, running on port `9001`, with OSC address pattern `/test/address` and two arguments, `40` (an integer, type `i`) and `1.0` (a float, type `f`). Please refer to documentation of the server for the messages that it supports.
-
 
 ## `code`
 
