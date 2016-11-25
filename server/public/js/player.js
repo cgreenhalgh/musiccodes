@@ -222,6 +222,13 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		}
 		return result;
 	}
+	function fireMarker(marker, extrastate) {
+		var result = templateActions(marker, extrastate);
+		socket.emit('action',result);
+		if (marker.poststate!==undefined)
+			updateState(marker.poststate, extrastate);
+		enact(result.actions);
+	}
 	function checkGroup(group, projectionid) {
 		var notes = [];
 		for (var i in $scope.notes) {
@@ -270,11 +277,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					codeMatchers[marker.code].match( code ) ) {
 					if ((!marker.atEnd && !group.closed) || (marker.atEnd && group.closed)) {
 						console.log('Matched marker '+marker.title+' code '+proc.notesToString(code));
-						var result = templateActions(marker);
-						socket.emit('action',result);
-						if (marker.poststate!==undefined)
-							updateState(marker.poststate);
-						enact(result.actions);
+						fireMarker(marker);
 					} 
 					if (group.closed) {
 						// no longer matchable
@@ -286,7 +289,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			}
 		}
 	}
-
+	$scope.fireMarker = function(marker) {
+		console.log('Force fire marker '+marker.title);
+		fireMarker(marker);
+	}
+	
 	function checkControl(input, extrastate) {
 		console.log('check control '+input);
 		for (var mi in $scope.controls) {
@@ -300,11 +307,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (control.inputUrl!==undefined && control.inputUrl.length>0) {
 				if (control.inputUrl == input) {
 					console.log('Matched control '+control.inputUrl+' '+control.description);
-					var result = templateActions(control, extrastate);
-					socket.emit('action',result);
-					if (control.poststate!==undefined)
-						updateState(control.poststate, extrastate);
-					enact(result.actions);
+					fireMarker(control, extrastate);
 				}
 			}
 		}
@@ -922,6 +925,13 @@ playerApp.directive('musPartcodes', ['noteCoder', 'safeEvaluate', 'CodeNode', fu
 
 			initMarkers(scope.markers);
 			update(scope.lastGroups, scope.experienceState);
+			
+			scope.fireCode = function(partcode) {
+				console.log('fire code '+partcode.marker.title);
+				// HACK
+				if (scope.$parent.fireMarker)
+					scope.$parent.fireMarker(partcode.marker);
+			} 
 		}
 	};
 }]);
