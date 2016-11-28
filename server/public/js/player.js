@@ -133,15 +133,25 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				oscout.send( action.url );
 			} else if (action.url && action.url.indexOf('http')==0 && !!action.post) {
 				console.log('post to '+action.url+' '+action.contentType+' '+action.body);
-				$http({method: 'POST', url: 
-					action.url, 
-					headers: {'Content-Type': (action.contentType ? action.contentType : 'text/plain') }, 
-					data: (action.body ? action.body : '') 
-				}).then(function(resp) {
-					console.log('Post ok');
-				}, function(resp) {
-					console.log('Post error: '+resp.status+' - '+resp.statusText);
-				});
+				var retry = function(count) {
+					$http({method: 'POST', url: 
+						action.url, 
+						headers: {'Content-Type': (action.contentType ? action.contentType : 'text/plain') }, 
+						data: (action.body ? action.body : '') 
+					}).then(function(resp) {
+						console.log('Post ok');
+					}, function(resp) {
+						// seeing some net::ERR_SOCKET_NOT_CONNECTED with status -1...
+						if (count>0 && resp.status == -1) {
+							count--;
+							console.log('Post error: '+resp.status+' - '+resp.statusText+' - retrying ('+count+' attempts remaining)');
+							retry(count);
+							return;
+						}
+						console.log('Post error: '+resp.status+' - '+resp.statusText);
+					});
+				}
+				retry(3);
 			} else if (action.url.indexOf('delay:')==0) {
 				var delaytime = action.delay && action.delay>0 ? action.delay : 0;
 				console.log('delay '+action.url+' by '+delaytime+' with params='+JSON.stringify(action.params));
