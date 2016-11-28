@@ -15,7 +15,28 @@ function returnPublicFile(req, res) {
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
 };
-app.get('/content/*', returnPublicFile);
+function returnPublicFileCors(req, res) {
+	// CORS
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	  var url = require('url').parse(req.url);
+	  // decode?!
+	  var path = '/public';
+	  var parts = req.url.split('/');
+	  for (var pi in parts) {
+		  var part = parts[pi];
+		  var p = decodeURIComponent(part);
+		  if (p=='.' || p=='')
+			  continue;
+		  if (p=='..') {
+				res.status(403).send('cannot send parent directory: '+req.url);
+				return;
+		  }
+		  path += '/'+p;
+	  }
+	  console.log('get ' + req.url + ' -> ' + path);
+	  res.sendFile(__dirname + path);
+	};
+app.get('/content/*', returnPublicFileCors);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);
@@ -640,6 +661,8 @@ var EDITORS = '_editors_';
 var MASTERS = '_masters_';
 
 app.post('/input', function(req,res) {
+	// CORS
+	res.setHeader('Access-Control-Allow-Origin', '*');
 	var params = extend({}, req.query, req.body);
 	var room = params.room ? params.room : "default";
 	var pin = params.pin ? params.pin : "";

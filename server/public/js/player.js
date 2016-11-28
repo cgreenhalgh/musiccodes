@@ -298,17 +298,15 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		console.log('check control '+input);
 		for (var mi in $scope.controls) {
 			var control = $scope.controls[mi];
-			if (control.precondition===undefined || control.precondition===null || control.precondition=='')
-				control.preconditionok = true;
-			else
-				control.preconditionok = true==safeEvaluate($scope.experienceState, control.precondition);
-			if (!control.preconditionok)
-				continue;
-			if (control.inputUrl!==undefined && control.inputUrl.length>0) {
-				if (control.inputUrl == input) {
-					console.log('Matched control '+control.inputUrl+' '+control.description);
-					fireMarker(control, extrastate);
-				}
+			if (control.inputUrl!==undefined && control.inputUrl.length>0 && control.inputUrl == input) {
+				if (control.precondition===undefined || control.precondition===null || control.precondition=='')
+					control.preconditionok = true;
+				else
+					control.preconditionok = true==safeEvaluate($scope.experienceState, control.precondition, extrastate);
+				if (!control.preconditionok)
+					continue;
+				console.log('Matched control '+control.inputUrl+' '+control.description);
+				fireMarker(control, extrastate);
 			}
 		}
 	}
