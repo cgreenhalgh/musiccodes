@@ -86,8 +86,8 @@ app.get('/experiences/:experience/:version', function(req,res) {
 	console.log('get experience '+req.params.experience+' version '+req.params.version);
 	res.sendFile(EXPERIENCES_DIR+req.params.experience+'.'+req.params.version);
 });
-app.use(require('body-parser').json());
-app.use(require('body-parser').urlencoded({ extended: true })); 
+app.use(require('body-parser').json({limit: '50mb', inflate: true}));
+app.use(require('body-parser').urlencoded({ extended: true, limit: '50mb', inflate: true })); 
 
 app.put('/experiences/:experience', function(req,res) {
 	console.log('put experience '+req.params.experience);
