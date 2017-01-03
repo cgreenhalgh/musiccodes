@@ -29,7 +29,7 @@
 <script src="/js/context.js"></script>
 <script src="/vendor/socket.io-1.2.0.js"></script>
 </head>
-<body ng-controller='PlayerCtrl'>
+<body ng-controller='PlayerCtrl' ng-keydown="keydown($event)" ng-keyup="keyup($event)">
 
 	<div id='header' class="row">
 		<div class="col-md-4" uib-collapse="!recording && !listening">
@@ -57,8 +57,11 @@
 			<mus-partcodes markers="markers" last-groups="lastGroups" experience-state="experienceState" code-matchers="codeMatchers"></mus-partcodes>
 		</div>
 		<div class="col-md-4"  id="state">
+			<button ng-repeat="button in buttons" ng-disabled="button.disabled" ng-click="pressButton(button)" ng-class="{disabled: button.disabled}">{{button.title}}</button>
 			<p>State (variables):</p>
 			<ul><li ng-repeat="(name,value) in experienceState">{{name}}={{value}}</ul>
+			<p>Delays: <button ng-click="clearDelays()">Clear All</button><button ng-click="fireDelays()">Do All</button> (now {{ delayTimeLabel }})</p>
+			<ul><li ng-repeat="delay in delays">{{delay.url}} {{delay.label}} ({{delay.params}})</ul>
 		</div>
 		<div class="col-md-4">
 			<url-view class=" output" action-url="actionUrl" refresh="actionRefresh"></url-view>

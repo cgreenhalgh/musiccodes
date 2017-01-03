@@ -4,6 +4,7 @@ var io = require('socket.io')(http);
 var fs = require('fs');
 var dateFormat = require('dateformat');
 var osc = require("osc");
+var extend = require('extend');
 
 app.get('/', function(req, res){
   console.log('get /');
@@ -14,7 +15,28 @@ function returnPublicFile(req, res) {
   console.log('get ' + req.url + ' -> ' + url.pathname);
   res.sendFile(__dirname + '/public' + url.pathname);
 };
-app.get('/content/*', returnPublicFile);
+function returnPublicFileCors(req, res) {
+	// CORS
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	  var url = require('url').parse(req.url);
+	  // decode?!
+	  var path = '/public';
+	  var parts = req.url.split('/');
+	  for (var pi in parts) {
+		  var part = parts[pi];
+		  var p = decodeURIComponent(part);
+		  if (p=='.' || p=='')
+			  continue;
+		  if (p=='..') {
+				res.status(403).send('cannot send parent directory: '+req.url);
+				return;
+		  }
+		  path += '/'+p;
+	  }
+	  console.log('get ' + req.url + ' -> ' + path);
+	  res.sendFile(__dirname + path);
+	};
+app.get('/content/*', returnPublicFileCors);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);
@@ -64,8 +86,8 @@ app.get('/experiences/:experience/:version', function(req,res) {
 	console.log('get experience '+req.params.experience+' version '+req.params.version);
 	res.sendFile(EXPERIENCES_DIR+req.params.experience+'.'+req.params.version);
 });
-app.use(require('body-parser').json());
-app.use(require('body-parser').urlencoded({ extended: true })); 
+app.use(require('body-parser').json({limit: '50mb', inflate: true}));
+app.use(require('body-parser').urlencoded({ extended: true, limit: '50mb', inflate: true })); 
 
 app.put('/experiences/:experience', function(req,res) {
 	console.log('put experience '+req.params.experience);
@@ -142,7 +164,6 @@ app.get('/testiframeurl', function(req,res) {
 		res.send('-3');		
 	}
 });
-
 
 function escapeHTML(html) {
     return String(html)
@@ -637,6 +658,39 @@ function log(room, component, event, info, level) {
 	}
 }
 var EDITORS = '_editors_';
+var MASTERS = '_masters_';
+
+app.post('/input', function(req,res) {
+	// CORS
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	var params = extend({}, req.query, req.body);
+	var room = params.room ? params.room : "default";
+	var pin = params.pin ? params.pin : "";
+	var name = params.name;
+	var client = params.client ? params.client : "(undefined)";
+	console.log('action room='+room+', pin='+pin+', name='+name+', client='+client);
+	if (!name) {
+		console.log('POST /input with no input (client '+client+')');
+		res.status(400).send('no input name specified');
+		return;
+	}
+	if (rooms[room]===undefined) {
+		console.log('POST /input '+name+' for unknown room '+room+' (client '+client+')');
+		res.status(404).send('unknown room');
+		return;
+	} else if (rooms[room].pin !== pin) {
+		console.log('POST /input '+name+' for room '+room+' with incorrect pin (client '+client+')');
+		res.status(403).send('incorrect pin');
+		return;
+	}
+	// send to room
+	var msg = { "inputUrl":"post:"+encodeURIComponent(name), params: params };
+	log(room, "server", 'input', msg, LEVEL_INFO); 
+    io.to(MASTERS+room).emit('input', msg);
+
+	res.status(200).send('');
+});
+
 
 function Client(socket) {
   this.socket = socket;
@@ -876,6 +930,7 @@ Client.prototype.onMaster = function(msg) {
     this.room = msg.room;
     this.master = true;
   }
+  this.socket.join(MASTERS+msg.room);
   if (this.room!==null && this.room!==undefined) {
 	  roomJoin(this.room, this.socket.id, true);
 	  // TODO: logUse set by experience

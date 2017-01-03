@@ -7,6 +7,7 @@
     "bower": "^1.3.1",
     "dateformat": "^1.0.12",
     "express": "^4.10.2",
+    "extend": "^3.0.0",
     "osc": "^2.1.0",
     "rdflib": "^0.6.0",
     "request": "^2.72.0",

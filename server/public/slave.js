@@ -42,7 +42,7 @@ socket.on('action', function(marker) {
   var time = (new Date()).getTime();
   for (var ai in marker.actions) {
     var action = marker.actions[ai];
-    if (channel==action.channel) {
+    if (channel==action.channel && !action.post) {
       console.log('open '+action.url);
       $('#viewframe').attr('src',action.url);
     }

@@ -1,7 +1,8 @@
 <p>Part-codes:</p>
 <ul class="partcodes">
 	<li ng-repeat="partcode in partcodes | orderBy: ['-preconditionok','-longestPrefix','code.length']  track by partcode.id" class="partcode">
-		<div class="prefix-label">({{ partcode.projection.id }} {{ partcode.projection.polyphonicFilter }} {{ partcode.projection.pitchMap }}) {{ partcode.marker.title!==undefined ? '"'+partcode.marker.title+'" ' : '' }}-> {{ partcode.marker.actions | actionsToText }}</div>
+		<div class="prefix-label"><button ng-disabled='!partcode.preconditionok' ng-class='{disabled: !partcode.preconditionok}' ng-click='fireCode(partcode)' style='padding-top:0;padding-bottom:0;font-size:70%;'>!</button>
+		({{ partcode.projection.id }} {{ partcode.projection.polyphonicFilter }} {{ partcode.projection.pitchMap }}) {{ partcode.marker.title!==undefined ? '"'+partcode.marker.title+'" ' : '' }}-> {{ partcode.marker.actions | actionsToText }}</div>
 		<div class="prefixes">
 			<span class="precondition" ng-class="{'precondition-true':  partcode.preconditionok, 'precondition-false': !partcode.preconditionok }">{{ partcode.precondition }}</span>
 			<span ng-repeat="prefix in partcode.prefixes" class="prefix" ng-class="{'prefix-matched': prefix.matched, 'prefix-unmatched': !prefix.matched && prefix.preconditionok, 'prefix-precondition-false': !prefix.preconditionok }">{{ prefix.text }}</span>

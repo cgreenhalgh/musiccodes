@@ -63,6 +63,7 @@ Note that delay and tempo parameters both affect delays, and the lowest cost is 
 
 `filterParameters` is object with properties:
 - `streamGap` (float, seconds, default 2.0), maximum gap between note onsets that are considered part of the same note stream by the default stream classifier
+- `useNoteOff` (bool, default false), gap starts from note off rather than note on
 - `frequencyRatio` (float, ratio, default infinite), maximum pitch/frequency ratio between a note and the first note of a stream group for the new note to be considered part of the same note stream by the default stream classifier.
 - `maxDuration` (float, seconds, default unlimited), maximum duration for a note (e.g. to deal with 'stuck' notes)
 - `minFrequency` (float, Hz, default 0), minimum frequency of note to include in group(s)
@@ -89,7 +90,7 @@ Object with properties:
 - `atEnd` (boolean, default false), require code to appear at end of group
 - `inexact` (boolean, default false), use inexact matching, i.e. code can be triggered with some errors
 - `inexactError` (float, default 0), allowable error when matching in inexact mode
-- `actions` (array or objects), action(s) to be triggered; each object should have a `url` and optionally a `channel` (default channel is '').
+- `actions` (array or objects), action(s) to be triggered (see below)
 - `action` (string, URL, deprecated - use `actions`), the action, e.g. target page to load, when code is detected (associated with default channel '')
 - `title` (string), title of the action in showDetail view
 - `description` (string), description of the action in showDetail view (not currently used)
@@ -98,13 +99,20 @@ Object with properties:
 - `precondition` (string, default true, i.e. code can always be matched), expression which if true enables code to be matched, can depend only on state variables.
 - `poststate` (map of state names to value), updates to be made to state if marker is triggeres (simultaneous assignment).
 
+Action in `actions` array is object with properties:
+- `url` (string, required). (todo) the URL can include simple state expressions (see preconditions) to be substituted enclosed in '{{' and '}}' (can include `encodeURIComponent(...)`, but not much else apart from arithmetic). See Actions, below.
+- `channel` (string, default '')
+- `post` (boolean, default false) only for http/https urls - use http POST rather than GET
+- `contentType` (string, default `text/plain`) for http POST only
+- `body` (string, default '') for HTTP POST only
+- `delay` (float, default 0) delay in seconds for `delay:` action
+- `params` (object) map of optional parameter values for `delay:` action (like poststate)
+
 No longer supported (v2):
 - `codeformat` 
 - `showDetail` (boolean, default ?), when code is detected show title prompt (`true`) or trigger action immediately (`false`)
 
 ## `control`
-
-(todo)
 
 For inputs from other system(s) that control the muzicodes system. e.g. from `midiControl` input.
 
@@ -123,6 +131,19 @@ Values for `inputUrl` include:
 - on load, `event:load`
 - on start of note stream, `event:start:PROJECTIONNAME` where `PROJECTIONNAME` is the name of the note projection in which the stream has started. 
 - on end of note stream, `event:end:PROJECTIONNAME`
+- HTTP POST to server (see below), starting `post:` and followed by input name.
+- when button pressed, `button:NAME` - the button is shown in the state area.
+- when key pressed, `key:KEYCODE`
+- when a delay is up, `delay:NAME` - additional parameters are available in temporary variable params (cf `post:`)
+
+HTTP POST for input ('post:' action):
+- POST to "/input"
+- url-encoded form body
+- parameter "room": room name (default "default")
+- parameter "pin": room pin/password (default "")
+- parameter "name": action name (required)
+- parameter "client": optional client identification
+- other parameters will be passed through as properties of an object which is the value of the termporary variable "params" in action post-state
  
 (- on partial match of marker (todo, TBD) `event:match:TITLE:DEGREE`, which might include parameters in format `{{NAME}}` which cannot include `/` or `:`.)
 
@@ -170,6 +191,22 @@ Actions are URLs. By default they are loaded into an iframe when triggered.
 
 Note that simple text can be encoded using data URIs, e.g. `data:text/plain,hello`. Strictly these should be %-escaped for all characters other than letters and digits.
 
+### HTTP POST actions
+
+HTTP/HTTPS actions are done as GET by default (loaded in channel viewer). If `post` is set then HTTP POST is used. Additional options for POST are:
+- `contentType` (string, default `text/plain`) for http POST only
+- `body` (string, default '') for HTTP POST only
+
+### delay actions
+
+A URI of the form `delay:NAME` causes a delayed event which will trigger controls with the same URI (i.e. `delay:NAME`). The action has the following additional parameters:
+- `delay` (float, default 0) delay in seconds for `delay:` action
+- `params` (object) map of optional parameter values for `delay:` action (like poststate)
+
+A URI of the form `cancel:NAME` will cancel any outstanding (scheduled) delayed events of that name.
+
+A URI of the form `cancel:*` will cancel all outstanding (scheduled) delayed events. (Note, there is no support for general regular expressions in names.)
+
 ### Midi actions
 
 A data URI with the non-standard MIME type `text/x-midi-hex` will be output to the current MIDI output channel (if any). All bytes are output immediately. Each byte is encoded as two hex digits. E.g. `data:text/x-midi-hex,903a7f` is note on, middle C, max velocity.
@@ -179,7 +216,6 @@ A data URI with the non-standard MIME type `text/x-midi-hex` will be output to t
 A URI with the protocol `osc.udp:` will send an [Open Sound Control](http://opensoundcontrol.org/introduction-osc) message over UDP. The hostname and port are the address of the OSC server to send to; the path is the OSC address. After a comma is the OSC type string, and the arguments themselves follow, comma-separated. Currently supported data types are 'i' (integer), 'f' (float), 's' (string, url-encoded) and 'b' (binary, hex-encoded). Note that only individually messages can currently be sent, i.e. not packets containing multiple messages.  
 
 For example, the URI `osc.udp://1.2.3.4:9001/test/address,if,40,1.0` will send a message to the OSC server on the machine with IP address/hostname `1.2.3.4`, running on port `9001`, with OSC address pattern `/test/address` and two arguments, `40` (an integer, type `i`) and `1.0` (a float, type `f`). Please refer to documentation of the server for the messages that it supports.
-
 
 ## `code`
 
