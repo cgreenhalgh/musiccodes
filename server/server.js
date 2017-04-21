@@ -37,6 +37,7 @@ function returnPublicFileCors(req, res) {
 	  res.sendFile(__dirname + path);
 	};
 app.get('/content/*', returnPublicFileCors);
+app.get('/assets/*', returnPublicFileCors);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);

@@ -1,0 +1,103 @@
+<!doctype html>
+<html ng-app="climbApp">
+  <head>
+    <title>Climb! Projection View (Prototype/experiment)</title>
+    <link rel="stylesheet" href="/css/climbview.css"></script>
+	<script src="vendor/jquery-1.11.1.js"></script> 
+	<script src="/vendor/angular/angular.js"></script>
+	<script src="/vendor/angular-animate/angular-animate.js"></script>
+	<script src="vendor/socket.io-1.2.0.js"></script>
+	<script src="js/climbview.js"></script>
+  </head>
+  <body ng-controller='climbCtrl' >
+      <div class="view">
+        <svg id="svg" viewBox="0 0 400 300">
+    	    <defs>
+				<radialGradient id="maskGradient">
+        			<stop offset="37%" stop-color="rgba(0,0,0,0)"></stop>
+        			<stop offset="40%" stop-color="rgba(0,0,0,0.1)"></stop>
+        			<stop offset="50%" stop-color="rgba(0,0,0,1)"></stop>
+    			</radialGradient>
+    			<clipPath id="mountainClip">
+		        	<polygon points="50 300 150 150 170 170 210 100 350 300"/>
+    			</clipPath>
+    			<clipPath id="cloudClip">
+    				<!-- <circle cx="50" cy="50" r="50" fill="blue"/> -->
+					<use xlink:href="/assets/cloudshadow.svg#layer1" />
+				</clipPath>
+			</defs>
+			<!-- sky -->
+        	<rect id="sky" width="400" height="300" ng-class="{sunny: sunny}"/>
+        	<!-- sun -->
+        	<circle id="sun" cx="90" cy="40" r="30" ng-class="{sunny: sunny}"/>
+        	<!-- mountain -->
+        	<g>
+        		<!--  mountain intself -->
+        		<g id="mountainTransform" ng-class="{muzicode:muzicode}" transform="translate(0)">
+		        	<polygon id="mountainOutline" points="50 300 150 150 170 170 210 100 350 300" ng-class="{muzicode:muzicode}"/>
+				</g>
+				<!--  image - one for now -->
+        		<g clip-path="url(#mountainClip)" >
+        			<g  transform="translate(50 100) scale(3)">
+						<rect width="100" height="100" fill="black"/>
+
+			        	<!-- <rect id="mountain" width="400" height="300" style="fill:grey"/> -->
+			        	<g id="image1" class="moving-image" ng-class="{visible:visible}" transform="matrix(1 0 0 1 0 0)">
+				        	<image xlink:href="/content/basecamp.jpg" width="100" height="100" x="0" y="0" preserveAspectRatio="xMidYMid slice"/>
+				        </g>
+				    </g>
+		        </g>
+			</g>
+			<!-- shadow of cloud -->
+			<g transform="translate(100 200)" style="display:none">
+					<g transform="matrix(0.3 0 0 0.1 0 0)" clip-path="url(#cloudClip)">
+						<rect class="cloud-shadow" width="600" height="600" />
+					</g>
+			</g>
+			<g ng-repeat="(n,cloud) in clouds" ng-attr-transform="translate({{cloud.x}} {{ cloud.y }})">
+			    <g ng-repeat="(m,raindrop) in raindrops" ng-attr-transform="translate({{raindrop.x}})">
+					<!-- rain -->
+					<g transform="translate(50 50)" ng-if="rainy">	
+						<g transform="scale(1.3)">
+							<g class="raindrop" ng-class="{raining: raining, raindrop1: (n+m)%3 ==0, raindrop2: (n+m)%3 ==1, raindrop3: (n+m)%3 ==2 }" >
+								<use xlink:href="/assets/raindrop.svg#drop"></use>
+							</g>
+						</g>
+					</g>
+					<!-- snowflake -->
+					<g transform="translate(70 50)" ng-if="snowy">
+						<g class="snowdrop" ng-class="{snowing: snowing, snowdrop1: (n+m)%3 ==0, snowdrop2: (n+m)%3 ==1, snowdrop3: (n+m)%3 ==2 }" >
+							<g transform="scale(0.3)">
+								<use xlink:href="/assets/snowflake.svg#snowflake"></use>
+							</g>
+						</g>
+					</g>
+				</g>
+			</g>
+			<!-- cloud -->
+			<g ng-repeat="cloud in clouds" ng-attr-transform="translate({{cloud.x}} {{ cloud.y }})">
+				<g ng-class="{'not-rainy': !rainy && !snowy, 'left-cloud': cloud.x < 120, 'right-cloud': cloud.x >= 120}">
+					<!--  cloud -->
+					<g transform="scale(0.8)">
+						<use xlink:href="/assets/cloud.svg#layer1"></use>
+					</g>
+					
+				</g>
+			</g>
+			
+        	<!-- final mask -->
+        	<rect id="mask" x="-200" y="-200" width="800" height="800" fill="url(#maskGradient)"/>
+        	
+        </svg>
+      </div>
+      <div class="test">
+      	<ul>
+      		<li>Sunny: <input type="checkbox" ng-model="sunny"></li>
+      		<li>Rainy: <input type="checkbox" ng-model="rainy"></li>
+      		<li>Snowy: <input type="checkbox" ng-model="snowy"></li>
+      		<li>Visible: <input type="checkbox" ng-model="visible"></li>
+      		<li>Muzicode: <input type="checkbox" ng-model="muzicode"></li>
+      	</ul>
+      </div>
+  </body>
+</html>

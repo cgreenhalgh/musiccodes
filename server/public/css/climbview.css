@@ -1,0 +1,168 @@
+html {
+}
+
+body {
+	font: 13px Helvetica, Arial;
+	background-color: #000;
+	margin: 0;
+	padding: 0;
+}
+
+.view {
+	margin: 0;
+	padding: 0;
+	border-style: none;
+	position: fixed;
+	top: -1px;
+	right: -1px;
+	bottom: -1px;
+	left: -1px;
+	margin: 0;
+	/*box-sizing: border-box;*/
+	/*width: 100%;
+	height: 100%;*/
+	/*object-fit: contain;*/
+	/*display: none;*/
+}
+
+#svg {
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* for circular mask */
+#mask {
+  background: -webkit-linear-gradient(left,rgba(255,0,0,0),rgba(255,0,0,1)); /*Safari 5.1-6*/
+  background: -o-linear-gradient(right,rgba(255,0,0,0),rgba(255,0,0,1)); /*Opera 11.1-12*/
+  background: -moz-linear-gradient(right,rgba(255,0,0,0),rgba(255,0,0,1)); /*Fx 3.6-15*/
+  background: linear-gradient(to right, rgba(255,0,0,0), rgba(255,0,0,1)); /*Standard*/
+	/*background: radial-gradient(rgba(1,0,0,0) 80%, rgba(1,0,0,1));*/
+	/*display: none;*/
+}
+
+.drop {
+	fill: red;
+}
+#sky {
+	fill:rgb(0,0,180);
+   -webkit-transition: fill 1s; /* Safari */
+    transition: fill 1s;
+}
+#sky.sunny {
+	fill:rgb(0,0,250);
+}
+#sun {
+	fill: rgb(255,210,50);
+	fill-opacity: 0;
+   -webkit-transition: fill-opacity 1s; /* Safari */
+    transition: fill-opacity 1s;
+}
+#sun.sunny {
+	fill-opacity: 1;
+}
+.left-cloud {
+	transition: transform 3s;
+}
+.left-cloud.not-rainy {
+	transform: translate(-200px,0px);
+}
+.right-cloud {
+	transition: transform 3s;
+}
+.right-cloud.not-rainy {
+	transform: translate(200px,0px);
+}
+
+@keyframes raindrop-fall {
+	0% { transform: translate(0px,0px); }
+	100% { transform: translate(20px,200px); }
+}
+
+.raindrop {
+	animation-name: raindrop-fall;
+	animation-duration: 1.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	transition: opacity 2s;
+	opacity: 0;
+}
+.raindrop1 {
+	animation-delay: 1s;
+}
+.raindrop2 {
+	animation-delay: 0.3s;
+}
+.raindrop3 {
+	animation-delay: 0.8s;
+}
+.raindrop.raining {
+	opacity: 1;
+}
+.snowdrop {
+	animation-name: raindrop-fall;
+	animation-duration: 2.5s;
+	animation-iteration-count: infinite;
+	animation-timing-function: linear;
+	transition: opacity 2s;
+	opacity: 0;
+}
+.snowdrop1 {
+	animation-delay: 2s;
+}
+.snowdrop2 {
+	animation-delay: 0.2s;
+}
+.snowdrop3 {
+	animation-delay: 1.3s;
+}
+.snowdrop.snowing {
+	opacity: 1;
+}
+
+.cloud-shadow {
+	fill:#000;
+	fill-opacity:0.5; 
+}
+
+.moving-image {
+	transition: opacity 3s;
+	opacity: 0;
+}
+.moving-image.visible {
+	opacity: 1;
+}
+
+#mountainOutline {
+	stroke-width:10;
+	stroke: rgb(120,120,120);
+	transition: stroke 2s, stroke-width 2s;
+}
+
+#mountainOutline.muzicode {
+	stroke: gold;
+	stroke-width: 20px;
+}
+
+#mountainTransform {
+	transition: transform 2s;
+}
+#mountainTransform.muzicode {
+	transform: /*matrix(1.1 0 0 1.1 -10 -20)*/ scale(1.1) translate(-20px,-20px); 
+}
+
+.test {
+	margin: 0;
+	padding: 0;
+	border-style: none;
+	position: fixed;
+	top: -1px;
+	right: -1px;
+	margin: 0;
+	background: white;
+	/*box-sizing: border-box;*/
+	/*width: 100%;
+	height: 100%;*/
+	/*object-fit: contain;*/
+	/*display: none;*/
+}
