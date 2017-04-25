@@ -66,7 +66,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 	videoTexture.magFilter = THREE.LinearFilter;
 	videoTexture.format = THREE.RGBFormat;
 
-	var geometry = new THREE.PlaneBufferGeometry( SIZE/2, SIZE/2 );
+	var geometry = new THREE.PlaneBufferGeometry( SIZE, SIZE );
 	geometry.rotateZ(Math.PI);
 	var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: false, side: THREE.DoubleSide, map: videoTexture /*, overdraw: 0.5 */} );
 
@@ -74,7 +74,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 	backgrounds.add( videoBackground );
 	
 	// IMAGE background
-	var movingGeometry = new THREE.PlaneBufferGeometry( SIZE/2, SIZE/2 );
+	var movingGeometry = new THREE.PlaneBufferGeometry( SIZE, SIZE );
 	movingGeometry.rotateZ(Math.PI);
 	// ready to animate offset by uv mapping
 	var uv = movingGeometry.getAttribute('uv');
@@ -168,7 +168,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		videoTexture.magFilter = THREE.LinearFilter;
 		videoTexture.format = THREE.RGBFormat;
 	
-		geometry = new THREE.PlaneGeometry( SIZE/2, SIZE/2 );
+		geometry = new THREE.PlaneGeometry( SIZE, SIZE );
 		geometry.rotateZ(Math.PI);
 		material = new THREE.MeshBasicMaterial( { color: color, opacity: 0, transparent: true, side: THREE.DoubleSide, alphaMap: videoTexture /*, overdraw: 0.5 */} );
 		plane = new THREE.Mesh( geometry, material );
@@ -207,7 +207,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		info.tx = Math.random()*(1-minsize)*imagesize;
 		info.ty = Math.random()*(1-minsize)*imagesize;
 		var max = Math.max(info.tx, info.ty);
-		info.tsz = minsize*imagesize+Math.random()*(max-minsize*imagesize);
+		info.tsz = minsize*imagesize+Math.random()*(imagesize-max-minsize*imagesize);
 		info.alpha = 0;
 		var mpix = Math.max(Math.abs(info.tx-info.x0), Math.abs(info.ty-info.y0), 
 				Math.abs(info.tx+info.tsz-(info.x0+info.sz0)), 
