@@ -1,8 +1,13 @@
 var climbApp = angular.module('climbApp', ['ngAnimate']);
 // main player app
-climbApp.controller('climbCtrl', ['$scope', '$interval',
-                                    function ($scope, $interval) {
+climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
+                                    function ($scope, $interval, $document, $window) {
 	console.log('climbCtrl');
+	
+	// bad?
+	var canvas = $('#canvas');
+	console.log('canvas: '+canvas);
+	
 	$scope.muzicode = false;
 	$scope.visible = false;
 	$scope.sunny = false;
@@ -10,16 +15,6 @@ climbApp.controller('climbCtrl', ['$scope', '$interval',
 	$scope.raining = false;
 	$scope.snowy = false;
 	$scope.snowing = false;
-	$scope.clouds = [
-		{x: 100, y: 50},
-		{x: 200, y: 70},
-		{x: 50, y: 80}
-	];
-	$scope.raindrops = [
-		{x: -50 },
-		{x: 0},
-		{x: 30}
-	];
 	$scope.$watch('rainy', function(newValue,oldValue) {
 		if (newValue) {
 			// delay raining
@@ -36,112 +31,156 @@ climbApp.controller('climbCtrl', ['$scope', '$interval',
 			$scope.snowing = false;
 		}
 	})
-	var delays = {};
-	$scope.getDelay = function(x) {
-		if (delays[x]===undefined) {
-			delays[x] = Math.random();
-		}
-		return delays[x];	
+	
+	var scene = new THREE.Scene();
+	var SIZE = 100;
+	var camera = new THREE.OrthographicCamera( -SIZE*2/3, SIZE*2/3, -SIZE/2, SIZE/2, -SIZE/2, SIZE/2 );
+	camera.position.z = 0;
+
+	var renderer = new THREE.WebGLRenderer( { 
+		canvas: canvas[0], 
+		alpha: true, 
+		premultipliedAlpha: false,
+		antialias: true, //default
+		preserveDrawingBuffer: false //default
+	});
+
+	var backgrounds = new THREE.Group();
+	scene.add( backgrounds );
+	
+	// create the video element
+	var video	= document.createElement('video');
+	video.width	= 320;
+	video.height	= 240;
+	video.autoplay	= true;
+	video.loop	= true;
+	video.preload = 'auto';
+	video.src	= '/content/Stones_Background2.mp4';
+
+
+	// create the texture
+	var videoTexture	= new THREE.VideoTexture( video );
+	videoTexture.minFilter = THREE.LinearFilter;
+	videoTexture.magFilter = THREE.LinearFilter;
+	videoTexture.format = THREE.RGBFormat;
+
+	var geometry;
+	var movingGeometry = new THREE.PlaneBufferGeometry( SIZE/2, SIZE/2 );
+	movingGeometry.rotateZ(Math.PI);
+	var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: false, side: THREE.DoubleSide, map: videoTexture /*, overdraw: 0.5 */} );
+	
+	var uv = movingGeometry.getAttribute('uv');
+	console.log('uv = '+JSON.stringify(uv));
+	// {"0":0,"1":1,"2":1,"3":1,"4":0,"5":0,"6":1,"7":0}
+	//uv.array["0"] = 0.5;
+	var uv0 = [0,1,1,1,0,0,1,0];
+	uv.dynamic = true;
+	
+	//var material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} );
+	var plane = new THREE.Mesh( movingGeometry, material );
+	//plane.translateX(50);
+	//plane.translateY(-50);
+	plane.translateZ(0);
+	backgrounds.add( plane );
+	
+	var loader = new THREE.TextureLoader();
+	/*
+	 loader.load( '/content/baseCamp.jpg', function ( texture ) {
+		console.log('loaded texture');
+		// presumes 4:3
+		var geometry = new THREE.PlaneGeometry( SIZE*4/3/2, SIZE/2 );
+		geometry.rotateZ(Math.PI);
+		var material = new THREE.MeshBasicMaterial( { color: 0xffffff, side: THREE.DoubleSide, map: texture } ); //, overdraw: 0.5
+		var mesh = new THREE.Mesh( geometry, material );
+		//mesh.position.z = 2;//higher is closer to camera/near clip
+		//backgrounds.remove(plane);
+		backgrounds.add( mesh );
+	} );
+	*/
+	loader.load( '/assets/marker-icon.png', function ( texture ) {
+		console.log('loaded texture 2');
+		// presumes 4:3
+		var geometry = new THREE.PlaneGeometry( SIZE/4, SIZE/4 );
+		geometry.rotateZ(Math.PI);
+		var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, side: THREE.DoubleSide, map: texture /*, overdraw: 0.5 */} );
+		var mesh = new THREE.Mesh( geometry, material );
+		mesh.position.z = 2;//higher is closer to camera/near clip
+		mesh.position.x = SIZE/3;
+		//backgrounds.remove(plane);
+		backgrounds.add( mesh );
+	} );
+
+	// video?!
+	// create the video element
+	//var video;
+	video = document.createElement('video');
+	video.width	= 320;
+	video.height	= 240;
+	video.autoplay	= true;
+	video.loop	= true;
+	video.preload = 'auto';
+	//video.src	= '/content/Stones_Rain.mp4';
+	video.src	= '/content/Stones_Snow.mp4';
+
+	// create the texture
+	var videoTexture	= new THREE.VideoTexture( video );
+	videoTexture.minFilter = THREE.LinearFilter;
+	videoTexture.magFilter = THREE.LinearFilter;
+	videoTexture.format = THREE.RGBFormat;
+
+	geometry = new THREE.PlaneGeometry( SIZE/2, SIZE/2 );
+	geometry.rotateZ(Math.PI);
+	videoMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, side: THREE.DoubleSide, alphaMap: videoTexture /*, overdraw: 0.5 */} );
+	plane = new THREE.Mesh( geometry, videoMaterial );
+	//plane.translateX(50);
+	//plane.translateY(-50);
+	plane.position.z = 14;
+	backgrounds.add( plane );
+
+	
+	function onResize() {
+		var width = window.innerWidth;
+		// fixed 4:3
+		//var height = window.innerHeight;
+		var height = width*3/4;
+		canvas.height(height);
+		
+		console.log('resize width='+width+', height='+height);
+		renderer.setSize(width, height);
 	}
-}]);
+	
+	$($window).on('resize' ,function() {
+		console.log('resize');
+		onResize();
+	});
+	onResize();
+	
+	var theta = 0;
+	function animate() {
+		window.requestAnimationFrame(animate);
+		//console.log('animate');
+		//backgrounds.position.x = Math.sin(theta);
+		theta += Math.PI/100;
 
-climbApp.animation('.moving-image', ['$animateCss', '$timeout', function($animateCss, $timeout) {
-	console.log('animation moving-image');
-
-	return {
-		addClass: function(element, className, doneFn) {
-			var moving = element.hasClass('moving-image');
-			console.log('initially moving = '+moving);
-			var info = element.data('moving');
-			console.log('moving-image addClass '+className+' to element '+element.attr('id')+' with info '+JSON.stringify(info));
-			console.log('l transform = '+element.prop('transform'));
-			//var svgDoc = element[0].getSVGDocument();
-			//console.log('svgDoc = '+svgDoc);
-			var transform = element[0].getCTM();
-			// scale x, scale y, offset x, offset y
-			console.log('transform = '+transform.a+' '+transform.d+' '+transform.e+' '+transform.f);
-			var maxmove = 0.04;
-			var minsize = 0.6;
-			var imagesize = 100;
-			var maketarget = function(info) {
-				info.x0 = info.x;
-				info.y0 = info.y;
-				info.sz0 = info.sz;
-				info.tx = Math.random()*(1-minsize)*imagesize;
-				info.ty = Math.random()*(1-minsize)*imagesize;
-				var max = Math.max(info.tx, info.ty);
-				info.tsz = minsize*imagesize+Math.random()*(max-minsize*imagesize);
-				info.alpha = 0;
-				var mpix = Math.max(Math.abs(info.tx-info.x0), Math.abs(info.ty-info.y0), 
-						Math.abs(info.tx+info.tsz-(info.x0+info.sz0)), 
-						Math.abs(info.ty+info.tsz-(info.y0+info.sz0)))
-				if (mpix > maxmove)
-					info.dalpha = maxmove/mpix;
-				else
-					info.dalpha = 1;
-				console.log('mpix='+mpix+' -> dalpha='+info.dalpha);
-			};
-			
-			if (info===undefined) {
-				info = {xs:1, ys:1, x:0, y: 0, 
-						sz:imagesize, 
-						moving:true};
-			} else {
-				info.moving = true;
+		/*if( video.readyState === video.HAVE_ENOUGH_DATA ) {	
+			//console.log('update video');
+			videoTexture.needsUpdate	= true;	
+		}*/
+		if ($scope.snowy) {
+			videoMaterial.opacity = 1-Math.cos(theta);
+			videoMaterial.needsUpdate = true;
+		}
+		
+		// animate texture coordinates on background image
+		if ($scope.rainy) {
+			var x = Math.sin(theta)*0.25+0.25;
+			for (var i=0; i<8; i+=2) {
+				uv.array[i] = x+0.5*uv0[i];
 			}
-			maketarget(info);
-			element.data('moving', info);
-			// can't seem to animate on the SVG element
-			/*var anim = $animateCss(element, {
-				from: { 'ng-attr-transform': "matrix(1 0 0 1 0 0)",
-					opacity: 1 },
-				to: { 'ng-attr-transform': "matrix(2 0 0 2 0 0)",
-					opacity: 2},
-				duration: 3
-			});
-			anim.start().then(function() { console.log('done'); doneFn(); });
-			*/
-			var DELAY = 100;
-			var LONG_DELAY = 100;
-			var update = function() {
-				var delay = DELAY;
-				var info = element.data('moving');
-				if (!info.moving) {
-					console.log('not moving -> done');
-					doneFn();
-					return;
-				}
-				info.alpha = info.alpha+info.dalpha;
-				if (info.alpha>=1) {
-					info.x = info.tx;
-					info.y = info.ty;
-					info.sz = info.tsz;
-					maketarget(info);
-					delay = LONG_DELAY;
-				} else {
-					info.x = info.x0+info.alpha*(info.tx-info.x0);
-					info.y = info.y0+info.alpha*(info.ty-info.y0);
-					info.sz = info.sz0+info.alpha*(info.tsz-info.sz0);
-				}
-				element.data('moving', info);
-				element.attr('transform', 'matrix('+(100/info.sz)+' 0 0 '+(100/info.sz)+' '+(-info.x)+' '+(-info.y)+')');
-				$timeout(update, delay);
-			};
-			$timeout(update, DELAY);
-			// do some cool animation and call the doneFn
-		},
-		removeClass: function(element, className, doneFn) {
-			console.log('moving-image removeClass '+className);
-			var info = element.data('moving');
-			info.moving = false;
-			element.data('moving', info);
-			doneFn();
-			// do some cool animation and call the doneFn
-		},
-		setClass: function(element, addedClass, removedClass, doneFn) {
-			console.log('moving-image setClass '+addedClass+' / '+removedClass);
-			doneFn();
-			// do some cool animation and call the doneFn
-		}
+			uv.needsUpdate = true;
+		}		
+		// render
+		renderer.render(scene, camera);
 	}
+	animate();
 }]);
