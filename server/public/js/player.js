@@ -593,7 +593,10 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		if ($scope.midiInputName!==undefined && $scope.midiInputName!='') {
 			console.log('using Midi input '+$scope.midiInputName);
 			$scope.state = 'midiinput';
-			midinotes.start($scope.midiInputName);
+			midinotes.start($scope.midiInputName, function(err, input) {
+				// report to MPM
+				mpmAgent.configure({noteInput:{inputType:'MIDI',inputName:input,ok:(err===null),error:err}});
+			});
 		} else {
 			$scope.state = 'audioinput';
 			console.log('using Audio input');
@@ -607,16 +610,25 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				$scope.recordingStatus = "Listening";
 				$scope.recordingStopped = false;
 			}
-			audionotes.setInput(parameters.audioInput, parameters.audioChannel);
+			audionotes.setInput(parameters.audioInput, parameters.audioChannel, function(err) {
+				// report to MPM
+				mpmAgent.configure({noteInput:{inputType:'audio',inputName:parameters.audioInput,inputChannel:parameters.audioChannel,ok:(err===null),error:err}});			
+			});
 			audionotes.start(parameters.vampParameters);
 		}
 		if (parameters.midiControl!==undefined && parameters.midiControl!='') {
 			console.log('using Midi control input '+parameters.midiControl);
-			midicontrols.start(parameters.midiControl);
+			midicontrols.start(parameters.midiControl, function(err, control) {
+				// report to MPM
+				mpmAgent.configure({controlInput:{inputType:'MIDI',inputName:control,ok:(err===null),error:err}});			
+			});
 		}
 		if ($scope.midiOutputName!==undefined && $scope.midiOutputName!='') {
 			console.log('Using midi output '+$scope.midiOutputName);
-			midiout.start($scope.midiOutputName);
+			midiout.start($scope.midiOutputName, function(err, output) {
+				// report to MPM
+				mpmAgent.configure({controlOutput:{outputType:'MIDI',outputName:output,ok:(err===null),error:err}});			
+			});
 		}
 		for (var pi in experience.projections) {
 			var projection = experience.projections[pi];
@@ -663,12 +675,19 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$http.get(experienceFile).then(function(res) {
 		var data = res.data;
 		$scope.state = 'loaded';
+		// TODO: version of experience?
+		//console.log('experience headers', res.headers());
+		// headers should include ETAG, length and last-modified!
+		mpmAgent.configure({experience:{url:experienceFile,ok:true,loaded:(new Date().toISOString()),
+			etag:res.headers('etag'),lastModified:res.headers('last-modified'),contentLength:res.headers('content-length')}});
 		loaded(data);
 	}, function(error) {
 		$scope.state = 'error';
 		if (error.status==404) {
+			mpmAgent.configure({experience:{url:experienceFile,ok:false,error:'File not found'}});
 			alert('Sorry, that experience doesn\'t seem to exist ('+experienceFile+')');
 		} else {
+			mpmAgent.configure({experience:{url:experienceFile,ok:false,error:'Error loading experience'+$error.status}});
 			alert('Sorry, could load that experience: '+error.statusText+' ('+experienceFile+')');
 		}
 	});

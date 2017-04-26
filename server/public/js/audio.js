@@ -274,20 +274,31 @@ audio.factory('audionotes', ['socket', '$rootScope', 'audioContext', function(so
             navigator.mozGetUserMedia ||
             navigator.msGetUserMedia);
 	
-	function setInputInternal(constraints) {
+	function setInputInternal(constraints, label, channel, callback) {
 		console.log('set audio input '+JSON.stringify(constraints));
+		var ok = function(stream) {
+			if (callback)
+				callback(null, label, channel);
+			onStream(stream);
+		}, err = function(e) {
+			if (callback)
+				callback('Error finding audio input '+label+' (channel '+channel+'): '+err);
+			onStreamError(e);
+		};
 		if (typeof navigator.getUserMedia == 'function') {
-			navigator.getUserMedia(constraints, onStream, onStreamError);
+			navigator.getUserMedia(constraints, ok, err);
 		} else if (navigator.mediaDevices!==undefined && typeof navigator.mediaDevices.getUserMedia == 'function') {
 			var p = navigator.mediaDevices.getUserMedia(constraints);
-			p.then(onStream);
-			p.catch(onStreamError);
+			p.then(ok);
+			p.catch(err);
 		} else {
+			if (callback)
+				callback('Could not find browser audio input support');
 			alert('Sorry, could not find audio input support on this browser');
 		}
 	}
 	
-	function setInput(label, channel) {
+	function setInput(label, channel, callback) {
 		channel = channel || 0;
 		inputChannel = channel;
 		// get audio input
@@ -312,14 +323,14 @@ audio.factory('audionotes', ['socket', '$rootScope', 'audioContext', function(so
 						// chrome - see https://bugs.chromium.org/p/chromium/issues/detail?id=453876
 						constraints.audio.mandatory.echoCancellation = false;
 					}
-					setInputInternal(constraints);
+					setInputInternal(constraints, label, channel, callback);
 				});
 			} else {
-				setInputInternal({audio:true});
+				setInputInternal({audio:true}, label, channel, callback);
 				// default
 			}
 		} else {
-			setInputInternal({audio:true});
+			setInputInternal({audio:true}, label, channel, callback);
 		}
 	}
 	function setChannel(channel) {

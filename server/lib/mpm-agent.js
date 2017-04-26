@@ -66,6 +66,7 @@ var osreport = {
 
 var processinfo = getProcessInfo();
 var processiri = getUuidIri();
+var config = {};
 function getProcReport() {
 	return {
 		datetime: datetime(),
@@ -73,7 +74,8 @@ function getProcReport() {
 		processType: 'Node.js',
 		'@type': 'Process',
 		title: process.argv[1],
-		'@id': processiri
+		'@id': processiri,
+		config: config
 	}
 };
 //console.log(JSON.stringify(procreport, null, 2));
@@ -233,3 +235,10 @@ module.exports.init = function(moreinfo) {
 	}
 	report();
 };
+module.exports.configure = function(values) {
+	for (var k in values) {
+		config[k] = values[k];
+	}
+	report();
+}
+

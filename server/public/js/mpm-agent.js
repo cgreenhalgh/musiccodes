@@ -41,6 +41,7 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 	var inited = false;
 	var sockets = {};
 	var info = {};
+	var config = {};
 	var iri = 'urn:uuid:'+uuid.v1();
 	console.log('MPM Agent running: '+iri);
 	var datetime =  (new Date()).toISOString();
@@ -87,7 +88,8 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 		// introspect...
 		info.url = $location.absUrl();
 		return { '@id': iri, '@type':'Process', processType: 'BrowserView', title: document.title, 
-			info: info, datetime: datetime, expire: 2*MPM_REPORT_INTERVAL };
+			info: info, datetime: datetime, expire: 2*MPM_REPORT_INTERVAL,
+			config: config };
 	}
 	var timeout = null;
 	function report(socket) {
@@ -126,10 +128,15 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 			for (var k in moreinfo) {
 				info[k] = moreinfo[k];
 			}
-			inited = true;
 			report();
 		},
-		connect: connect
+		connect: connect,
+		configure: function(values) {
+			for (var k in values) {
+				config[k] = values[k];
+			}
+			report();
+		}
 	};
 }]);
 

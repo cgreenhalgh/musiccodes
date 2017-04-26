@@ -172,7 +172,7 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 		}
 	}
 
-	function setInput(inputName) {
+	function setInput(inputName, callback) {
 		stop();
 		midiAccess.then(function(midiAccess) {
 			var found = false;
@@ -191,11 +191,15 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 						console.log( str );
 						processMidiMessage( event.data );
 					}
+					if (callback)
+						callback(null, inputName);
 				}				
 			});
 			if(midiInputPort==null) {
 				console.log('Cannot find midi input '+inputName);
 				alert('Could not find Midi input '+inputName);
+				if (callback) 
+					callback('Could not find midi input: '+inputName);
 			}
 		});
 	}
@@ -205,9 +209,9 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 		},
 		setInput: setInput,
 		stop: stop,
-		start: function(inputName) {
+		start: function(inputName, callback) {
 			console.log('midi start');
-			setInput(inputName);
+			setInput(inputName, callback);
 		}
 	};
 }]);
@@ -234,7 +238,7 @@ midi.factory('midicontrols', ['midiAccess','MIDI_HEX_PREFIX','$rootScope', 'logg
 			onMessage(url);
 	}
 
-	function setInput(inputName) {
+	function setInput(inputName, callback) {
 		stop();
 		midiAccess.then(function(midiAccess) {
 			var found = false;
@@ -248,11 +252,15 @@ midi.factory('midicontrols', ['midiAccess','MIDI_HEX_PREFIX','$rootScope', 'logg
 					midiInputPort.onmidimessage = function(event) {
 						processMidiMessage( event.data );
 					}
+					if (callback)
+						callback(null, inputName);
 				}				
 			});
 			if(midiInputPort==null) {
 				console.log('Cannot find midi control input '+inputName);
 				alert('Could not find Midi control input '+inputName);
+				if (callback) 
+					callback('Could not find midi control input: '+inputName);
 			}
 		});
 	}
@@ -262,9 +270,9 @@ midi.factory('midicontrols', ['midiAccess','MIDI_HEX_PREFIX','$rootScope', 'logg
 		},
 		setInput: setInput,
 		stop: stop,
-		start: function(inputName) {
+		start: function(inputName, callback) {
 			console.log('midi control start');
-			setInput(inputName);
+			setInput(inputName, callback);
 		}
 	};
 }]);
@@ -299,7 +307,7 @@ midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAc
 					console.log('found midi output '+outputName);
 					logger.log('midi.config.out',{id:midiOutputPort.id, name:midiOutputPort.name});
 					if (callback)
-						callback();
+						callback(null, outputName);
 					for (var mi in messages) {
 						console.log('send delayed midi message');
 						var message = messages[mi];
@@ -312,6 +320,8 @@ midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAc
 				console.log('Cannot find midi output '+outputName);
 				alert('Could not find Midi output '+outputName);
 				messages = [];
+				if (callback)
+					callback('Could not find Midi output: '+outputName);
 			}
 		});
 	};
