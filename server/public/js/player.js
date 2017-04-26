@@ -1,18 +1,20 @@
 var playerApp = angular.module('playerApp', ['ngAnimate','ui.bootstrap',
                                              'muzicodes.audio','muzicodes.viz','muzicodes.stream','muzicodes.midi','muzicodes.logging',
                                              'muzicodes.softkeyboard','muzicodes.codeui','muzicodes.noteprocessor',
-                                             'muzicodes.context','muzicodes.osc']);
+                                             'muzicodes.context','muzicodes.osc','mpm-agent']);
 // main player app
 playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'audionotes', '$interval',
                                     'noteGrouperFactory', 'midinotes', 'noteCoder', 'safeEvaluate',
                                     'MIDI_HEX_PREFIX', 'midiout', 'logger', '$window', 'NoteProcessor',
                                     'CodeNode','CodeMatcher','CodeParser', 'InexactMatcher', 'oscout',
                                     'OSC_UDP_PREFIX', 'OSC_TCP_PREFIX', 'midicontrols', 'streamutils',
+                                    'mpmAgent',
                                     function ($scope, $http, $location, socket, audionotes, $interval,
                                     		noteGrouperFactory, midinotes, noteCoder, safeEvaluate,
                                     		MIDI_HEX_PREFIX, midiout, logger, $window, NoteProcessor,
                                     		CodeNode, CodeMatcher, CodeParser, InexactMatcher, oscout,
-                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX, midicontrols, streamutils) {
+                                    		OSC_UDP_PREFIX, OSC_TCP_PREFIX, midicontrols, streamutils,
+                                    		mpmAgent) {
 	console.log('url: '+$location.absUrl());
 	var proc = new NoteProcessor();
 	var params = $location.search();
