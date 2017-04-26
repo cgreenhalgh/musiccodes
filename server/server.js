@@ -6,6 +6,9 @@ var dateFormat = require('dateformat');
 var osc = require("osc");
 var extend = require('extend');
 
+// MPM agent - default
+var mpmAgent = require('./lib/mpm-agent');
+
 app.get('/', function(req, res){
   console.log('get /');
   res.sendFile(__dirname + '/public/index.html');
@@ -37,6 +40,7 @@ function returnPublicFileCors(req, res) {
 	  res.sendFile(__dirname + path);
 	};
 app.get('/content/*', returnPublicFileCors);
+app.get('/assets/*', returnPublicFileCors);
 app.get('/vendor/*', returnPublicFile);
 app.get('/css/*.css', returnPublicFile);
 app.get('/js/*', returnPublicFile);

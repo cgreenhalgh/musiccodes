@@ -1,0 +1,27 @@
+<!doctype html>
+<html ng-app="climbApp">
+  <head>
+    <title>Climb! Projection View (Prototype/experiment)</title>
+    <link rel="stylesheet" href="/css/climbview.css"></script>
+	<script src="vendor/jquery-1.11.1.js"></script> 
+	<script src="/vendor/angular/angular.js"></script>
+	<script src="/vendor/angular-animate/angular-animate.js"></script>
+	<script src="vendor/socket.io-1.2.0.js"></script>
+	<script src="vendor/three.js"></script>
+	<script src="js/climbview.js"></script>
+  </head>
+  <body ng-controller='climbCtrl' >
+     <div class="view">
+        <canvas id="canvas"></canvas>
+     </div> 
+      <div class="test">
+      	<ul>
+      		<li>Sunny: <input type="checkbox" ng-model="sunny"></li>
+      		<li>Rainy: <input type="checkbox" ng-model="rainy"></li>
+      		<li>Snowy: <input type="checkbox" ng-model="snowy"></li>
+      		<li>Visible: <input type="checkbox" ng-model="visible"></li>
+      		<li>Muzicode: <input type="checkbox" ng-model="muzicode"></li>
+      	</ul>
+      </div>
+  </body>
+</html>

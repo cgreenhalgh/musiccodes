@@ -1,0 +1,48 @@
+html {
+}
+
+body {
+	font: 13px Helvetica, Arial;
+	background-color: #000;
+	margin: 0;
+	padding: 0;
+}
+
+.view {
+	margin: 0;
+	padding: 0;
+	border-style: none;
+	position: fixed;
+	top: -1px;
+	right: -1px;
+	bottom: -1px;
+	left: -1px;
+	margin: 0;
+	/*box-sizing: border-box;*/
+	/*width: 100%;
+	height: 100%;*/
+	/*object-fit: contain;*/
+	/*display: none;*/
+}
+
+#canvas{
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.test {
+	margin: 0;
+	padding: 0;
+	border-style: none;
+	position: fixed;
+	top: -1px;
+	right: -1px;
+	margin: 0;
+	background: white;
+	/*box-sizing: border-box;*/
+	/*width: 100%;
+	height: 100%;*/
+	/*object-fit: contain;*/
+	/*display: none;*/
+}
