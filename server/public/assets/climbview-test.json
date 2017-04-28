@@ -1,0 +1,55 @@
+{
+  "title": "Climbview /vagrant/scoretools/test/mkGameEngine2-view.json from test/mkGameEngine2-config.yml",
+  "generated": "2017-04-28T13:00:06.671Z",
+  "preload": [
+    "noanimationurl",
+    "noweather_url",
+    "defaultmuzicodeurl",
+    "rain_url",
+    "snow_url",
+    "sun_url",
+    "storm_url",
+    "wind_url",
+    "baseCamp.jpg",
+    "stones.jpg",
+    "path.jpg",
+    "ending.jpg",
+    "https://i.imgsafe.org/c5fd4eaf6b.png"
+  ],
+  "layers": [
+    {
+      "title": "background",
+      "channel": "v.background",
+      "loop": true,
+      "fadeIn": 2,
+      "fadeOut": 2,
+      "crossfade": false
+    },
+    {
+      "title": "animation",
+      "channel": "v.animation",
+      "defaultUrl": "noanimationurl",
+      "loop": false,
+      "fadeIn": 0,
+      "fadeOut": 0,
+      "crossfade": true
+    },
+    {
+      "title": "weather",
+      "channel": "v.weather",
+      "loop": true,
+      "fadeIn": 2,
+      "fadeOut": 3,
+      "crossfade": true
+    },
+    {
+      "title": "muzicode",
+      "channel": "v.muzicode",
+      "loop": false,
+      "fadeIn": 0.5,
+      "fadeOut": 1,
+      "holdTime": 0.2,
+      "crossfade": true
+    }
+  ]
+}

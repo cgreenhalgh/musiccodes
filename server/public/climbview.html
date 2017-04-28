@@ -9,18 +9,21 @@
 	<script src="vendor/socket.io-1.2.0.js"></script>
 	<script src="vendor/three.js"></script>
 	<script src="js/climbview.js"></script>
+	<script src="/vendor/uuid.js"></script>
+	<script src="/js/socket.js"></script>
+	<script src="/js/logging.js"></script>
+	<script src="/js/mpm-agent.js"></script>
   </head>
   <body ng-controller='climbCtrl' >
      <div class="view">
         <canvas id="canvas"></canvas>
      </div> 
-      <div class="test">
+      <div class="test" ng-if="test">
       	<ul>
-      		<li>Sunny: <input type="checkbox" ng-model="sunny"></li>
-      		<li>Rainy: <input type="checkbox" ng-model="rainy"></li>
-      		<li>Snowy: <input type="checkbox" ng-model="snowy"></li>
-      		<li>Visible: <input type="checkbox" ng-model="visible"></li>
-      		<li>Muzicode: <input type="checkbox" ng-model="muzicode"></li>
+      		<datalist id="urls"><option ng-repeat="url in preload" value="{{url}}"></datalist>
+      		<li ng-repeat="layer in layers">{{layer.title}}: 
+      			<input type="text" ng-model="layer.url" list="urls" size="20">
+      		</li>
       	</ul>
       </div>
   </body>
