@@ -155,8 +155,18 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				}
 				retry(3);
 			} else if (action.url.indexOf('delay:')==0) {
-				var delaytime = action.delay && action.delay>0 ? action.delay : 0;
-				console.log('delay '+action.url+' by '+delaytime+' with params='+JSON.stringify(action.params));
+				var delaytime = 0;
+				if (action.delay) {
+					delaytime = safeEvaluate($scope.experienceState, action.delay, action.params);
+					try {
+						delaytime = Number(delaytime);
+					}
+					catch (err) {
+						console.log('Error: delay '+action.delay+' did not evaluate to number');
+						delaytime = 0;
+					}
+				}
+				console.log('delay '+action.url+' by '+action.delay+'->'+delaytime+' with params='+JSON.stringify(action.params));
 				var now = (new Date()).getTime();
 				var time = now+Math.floor(delaytime*1000);
 				var delay = { url: action.url, params: action.params, time: time, label: 'at '+(new Date(time).toISOString().substr(11, 8)) };

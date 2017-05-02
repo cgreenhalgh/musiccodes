@@ -200,7 +200,7 @@ HTTP/HTTPS actions are done as GET by default (loaded in channel viewer). If `po
 ### delay actions
 
 A URI of the form `delay:NAME` causes a delayed event which will trigger controls with the same URI (i.e. `delay:NAME`). The action has the following additional parameters:
-- `delay` (float, default 0) delay in seconds for `delay:` action
+- `delay` (float expression, default 0, evaluated) delay in seconds for `delay:` action
 - `params` (object) map of optional parameter values for `delay:` action (like poststate)
 
 A URI of the form `cancel:NAME` will cancel any outstanding (scheduled) delayed events of that name.
