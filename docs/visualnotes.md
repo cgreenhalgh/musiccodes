@@ -108,8 +108,6 @@ Tested [SVG](https://www.w3schools.com/graphics/svg_reference.asp) in `climbview
 
 ## To do
 
-- climbview holdTime support
-- climbview socket.io - handle channel events
 - experience generator weather delays
 - experience generator weather visual events
 - mpmagent (browser) default to same server host as html page (for remote display)

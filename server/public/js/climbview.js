@@ -1,9 +1,9 @@
 var climbApp = angular.module('climbApp', ['ngAnimate', 'muzicodes.socket', 'muzicodes.logging', 'mpm-agent']);
 // main player app
 climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window', '$http', 'mpmAgent', 
-								'$location',
+								'$location', '$timeout', 'socket',
                                     function ($scope, $interval, $document, $window, $http, mpmAgent,
-                                    		$location) {
+                                    		$location, $timeout, socket) {
 	console.log('url: '+$location.absUrl());
 
 	var params = $location.search();
@@ -69,7 +69,18 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			$(video).on('ended', function() {
 				onEnded(url);
 			});
-			
+			$(video).on('ended', function() {
+				onEnded(url);
+			});
+			$(video).on('canplay', function() {
+				if (usecount[url]>0) {
+					console.log('play on canplay '+url);
+					video.play();
+				}
+				else {
+					console.log('ignore canplay for currently unused video '+url);
+				}
+			});
 			// create the texture
 			var texture	= new THREE.VideoTexture( video );
 			texture.minFilter = THREE.LinearFilter;
@@ -113,8 +124,11 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			group.position.z = i;
 			scene.add(group);
 
+			layer_info.group = group;
 			layer_info.materials = [];
 			layer_info.urls = [null,null];
+			layer_info.meshes = [];
+			layer_info.visible = [false,false];
 			for (var to=0; to<=1; to++) {
 				
 				var geometry = new THREE.PlaneBufferGeometry( WIDTH, HEIGHT );
@@ -127,11 +141,12 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				var mesh = new THREE.Mesh( geometry, material );
 				mesh.position.z = to/2;
 
+				layer_info.meshes[to] = mesh;
 				/*var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: false, opacity: 1, side: THREE.DoubleSide } ); //, map: videoTexture } ); //, overdraw: 0.5 
 				var mesh = new THREE.Mesh( geometry, material );
 				mesh.position.z = 0.75;
 				*/
-				group.add( mesh );
+				//group.add( mesh );
 			}
 			layer_infos[i] = layer_info;
 		}
@@ -145,6 +160,12 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		tmp = layer_info.urls[0];
 		layer_info.urls[0] = layer_info.urls[1];
 		layer_info.urls[1] = tmp;
+		tmp = layer_info.visible[0];
+		layer_info.visible[0] =  layer_info.visible[1];
+		layer_info.visible[1] = tmp;
+		tmp = layer_info.meshes[0];
+		layer_info.meshes[0] =  layer_info.meshes[1];
+		layer_info.meshes[1] = tmp;
 	}
 	function stop(url) {
 		if (url!==null) {
@@ -176,10 +197,31 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				console.log('start layer '+i+' transition to '+url);
 				stop(layer_info.urls[1]);
 				layer_info.urls[1] = url;
+				if (layer_info.visible[1]) {
+					layer_info.group.remove(layer_info.meshes[1]);
+					layer_info.visible[1] = false;
+				}
+				if (layer_info.holdtimer) {
+					$timeout.cancel(layer_info.holdtimer);
+					layer_info.holdtimer = null;
+				}
+				if (layer.holdTime || layer.holdTime===0) {
+					var delay = 1000*(layer.fadeIn+layer.holdTime);
+					console.log('set holdtime fade out in '+delay);
+					layer_info.holdtimer = $timeout(function() {
+						console.log('clearing layer '+i+' after holdtime');
+						layer.url = null;
+					}, delay);
+				}
 				if (url==null) {
 					layer_info.materials[1].opacity = 0;
 					
 				} else {
+					if (!layer_info.visible[1]) {
+						layer_info.group.add(layer_info.meshes[1]);
+						layer_info.visible[1] = true;
+					}
+
 					layer_info.materials[1].map = load(url);
 					layer_info.materials[1].needsUpdate = true;
 					if (layer.fadeIn>0 || layer.fadeOut>0) 
@@ -196,6 +238,8 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 							video.autoplay = true;
 							if (video.readyState==4)
 								video.play();
+							else
+								console.log('cannot play immediate: state = '+video.readyState);
 						}
 						video.loop = !!layer.loop;
 						usecount[url]++;
@@ -204,6 +248,25 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			}
 		}
 	}, true);
+
+	socket.on('join.warning', function(msg) {
+		  alert('Warning joining session: '+msg);
+		});
+
+	function handleAction(action) {
+		if (action.post)
+			return;
+		for (var i in $scope.layers) {
+			var layer = $scope.layers[i];
+			if (layer.channel==action.channel ) {
+				url = action.url;
+				if (!url)
+					url = null;
+				console.log('action: set layer '+i+' url to '+url);
+				layer.url = url;
+			}
+		}
+	}
 	
 	$scope.layers = [];
 	$scope.preload = [];
@@ -218,6 +281,24 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		preload($scope.preload);
 		buildLayers(data.layers);
 		$scope.layers = data.layers;
+		
+		socket.on('action', function(marker) {
+			console.log('new marker: '+marker);
+			//var time = (new Date()).getTime();
+			for (var ai in marker.actions) {
+				var action = marker.actions[ai];
+				handleAction(action);
+			}
+		});
+		
+		var channels = [];
+		for (var i in $scope.layers) {
+			var layer = $scope.layers[i];
+			channels.push(layer.channel);
+		}
+		console.log('Slave: Room = '+$scope.room+', channels='+channels);
+		socket.emit('slave',{room:$scope.room,channel:channels});
+
 	}, function(error) {
 		if (error.status==404) {
 			mpmAgent.configure({viewconfig:{url:configfile,ok:false,error:'File not found'}});
@@ -276,6 +357,10 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					// gone
 					stop(layer_info.urls[0]);
 					layer_info.urls[0] = null;
+					if (layer_info.visible[0]) {
+						layer_info.group.remove(layer_info.meshes[0]);
+						layer_info.visible[0] = false;
+					}
 				}
 			}
 			if (layer_info.urls[1]!==null) {
