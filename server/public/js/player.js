@@ -125,6 +125,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	function enact(actions) {
 		for (var ai in actions) {
 			var action = actions[ai];
+			if (!action.url)
+				continue;
 			if (action.url.indexOf(MIDI_HEX_PREFIX)==0) {
 				console.log('send midi '+action.url);
 				// midi output
