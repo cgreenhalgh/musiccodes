@@ -189,6 +189,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					}
 				}
 				checkDelays();
+			} else if (action.url.indexOf('emit:')==0) {
+				// handled by server
 			} else {
 				if ($scope.channel==action.channel && action.url) {
 					console.log('open '+action.url);

@@ -31,6 +31,7 @@ Event names:
 - `log.end`: explicit end of log file
 - `audio.record`: started recording audio
 - `audio.stop`: stopped (recording) audio
+- `action.emit`: socket.io emit action performed
 
 `log.start` event info fields:
 - `application`: from `package.json` `name`, `"musiccodes-server"`
@@ -62,7 +63,12 @@ Event names:
 
 `audio.record` event info fields:
 - `filename`: audio filename
-                   
+
+`action.emit` event info fiels:
+- `message`: message name
+- `room`: room sent to
+- `data`: message data
+
 ## Background
 
 Log start info fields from daoplayer:

@@ -714,8 +714,8 @@ editorApp.directive('muzicode', ['NoteProcessor', function(NoteProcessor) {
 	};
 }]);
 
-editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PREFIX', 'OSC_TCP_PREFIX', 'OSC_UDP_PREFIX', 'oscout',
-                                   function($http, $timeout, midiout, MIDI_HEX_PREFIX, OSC_TCP_PREFIX, OSC_UDP_PREFIX, oscout) {
+editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PREFIX', 'OSC_TCP_PREFIX', 'OSC_UDP_PREFIX', 'oscout', 'socket', 
+                                   function($http, $timeout, midiout, MIDI_HEX_PREFIX, OSC_TCP_PREFIX, OSC_UDP_PREFIX, oscout, socket) {
 	return {
 		restrict: 'E',
 		scope: {
@@ -747,6 +747,10 @@ editorApp.directive('urlchecker', ['$http', '$timeout', 'midiout', 'MIDI_HEX_PRE
 					return;
 				} else if (url.indexOf('data:text/plain,')==0) {
 					$scope.status = 'OK';
+					return;
+				} else if (url.indexOf('emit:')==0) {
+					$scope.status = 'Emit';
+					socket.emit('test.emit', url);
 					return;
 				} else if (url.indexOf('http:')!=0 && url.indexOf('https:')!=0) {
 					$scope.status = 'Unsupported URL';

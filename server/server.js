@@ -1,3 +1,5 @@
+console.log('starting musiccodes server...');
+
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -5,6 +7,8 @@ var fs = require('fs');
 var dateFormat = require('dateformat');
 var osc = require("osc");
 var extend = require('extend');
+var adapter = require('socket.io-redis');
+var process = require('process');
 
 // MPM agent - default
 var mpmAgent = require('./lib/mpm-agent');
@@ -423,11 +427,14 @@ app.post('/update', function(req,res) {
 	});
 	
 });
-var DEFAULT_SETTINGS = { machineNickname:'', defaultAuthor:'', defaultLogUse:true, defaultRecordAudio:false };
+var DEFAULT_SETTINGS = { machineNickname:'', defaultAuthor:'', defaultLogUse:true, defaultRecordAudio:false, useRedis:false, redisHost:"127.0.0.1", redisPort:"6379", redisPassword:'' };
 var settings = {};
 try {
 	fs.accessSync(__dirname+'/settings.json', fs.R_OK);
 	settings = JSON.parse(fs.readFileSync(__dirname+'/settings.json','utf8'));
+	// new defaults
+	if (settings.useRedis===undefined)
+		settings.useRedis = false;
 } catch (err) {
 	console.log('Error reading '+__dirname+'/settings.json: '+err.message);
 }
@@ -517,6 +524,11 @@ function send_settings(res, status, out) {
 	'<tr><td>Default author:</td><td><input type="text" name="defaultAuthor" value="'+escapeHTML(settings.defaultAuthor)+'"></td></tr>'+
 	//'<tr><td>Default log use:</td><td><input type="checkbox" name="defaultLogUse" value="true" '+(settings.defaultLogUse ? 'checked="checked"' : '')+'"></td></tr>'+
 	'<tr><td>Default record audio:</td><td><input type="checkbox" name="defaultRecordAudio" value="true" '+(settings.defaultRecordAudio ? 'checked="checked"' : '')+'"></td></tr>'+
+	'<tr><td>Use Redis:</td><td><input type="checkbox" name="useRedis" value="true" '+(settings.useRedis ? 'checked="checked"' : '')+'"></td></tr>'+
+	'<tr><td>Redis host:</td><td><input type="text" name="redisHost" value="'+escapeHTML(settings.redisHost ? settings.redisHost : "127.0.0.1")+'"></td></tr>'+
+	'<tr><td>Redis port:</td><td><input type="number" name="redisPort" value="'+escapeHTML(settings.redisPort ? settings.redisPort : 6379)+'"></td></tr>'+
+	'<tr><td>Redis password:</td><td><input type="text" name="redisPassword" value="'+escapeHTML(settings.redisPassword ? settings.redisPassword: "")+'"></td></tr>'+
+	'<tr><td>Force restart:</td><td><input type="checkbox" name="forceRestart" value="true"></td></tr>'+
 	'<tr><td></td><td><input type="submit" value="Update"></td></tr>'+
 	'</tbody></table></form>'+
 	'<p><a href="/">Back</a></p>'
@@ -540,6 +552,18 @@ app.post('/settings', function(req,res) {
 		settings.defaultAuthor = req.body.defaultAuthor;
 	//settings.defaultLogUse = (req.body.defaultLogUse!==undefined && req.body.defaultLogUse=='true');
 	settings.defaultRecordAudio = (req.body.defaultRecordAudio!==undefined && req.body.defaultRecordAudio=='true');
+	var old = {useRedis: settings.useRedis, redisHost: settings.redisHost, redisPort: settings.redisPort};
+	settings.useRedis = (req.body.useRedis!==undefined && req.body.useRedis=='true');
+	if (req.body.redisHost!==undefined)
+		settings.redisHost= req.body.redisHost;
+	if (req.body.redisPort!==undefined) {
+		try {
+			settings.redisPort = Number(req.body.redisPort);			
+		}
+		catch (err) {
+			console.log('Error with redisPort '+req.body.redisPort+': '+err.message);
+		}
+	}
 	try {
 		fs.writeFileSync(__dirname+'/settings.json', JSON.stringify(settings), 'utf8');
 		console.log('updated settings to '+JSON.stringify(settings));
@@ -549,7 +573,14 @@ app.post('/settings', function(req,res) {
 		out += '<p>Error: could not write settings.json: '+err.message+'</p><hr>';
 		status = 500;
 	}
-	send_settings(res, status, out);				
+	send_settings(res, status, out);
+	var forceRestart = (req.body.forceRestart!==undefined && req.body.forceRestart=='true');
+	if (forceRestart) {
+		console.log('force restart from settings');
+		process.exit(-1);
+	}
+	if (settings.useRedis!=old.useRedis || settings.redisHost!=old.redisHost || settings.redisPort!=old.redisPort)
+		handleRedisConfig(settings);
 });
 
 function roomJoin(room, id, masterFlag) {
@@ -659,6 +690,8 @@ function log(room, component, event, info, level) {
 			log.log.write(JSON.stringify(entry));
 			log.log.write('\n');
 		}
+	} else {
+		console.log('no log for room '+room+': component='+component+' event='+event+' info='+JSON.stringify(info)+' level='+level)
 	}
 }
 var EDITORS = '_editors_';
@@ -729,6 +762,9 @@ function Client(socket) {
   });
   socket.on('action', function(msg) {
     self.action(msg);
+  });
+  socket.on('test.emit', function(msg) {
+	  self.testEmit(msg);
   });
   socket.on('parameters', function(msg) {
     self.parameters(msg);
@@ -957,12 +993,54 @@ Client.prototype.onSlave = function(msg) {
   if (rooms[msg.room]===undefined)
     this.socket.emit('join.warning', 'Unknown room');
 };
+
+function actionEmit(url, clientRoom) {
+	try {
+		// emit:MESSAGE:ROOM:TEXT
+		var args = url.split(':');
+		if (args.length >= 3) {
+			var message = args[1];
+			var room = args[2];
+			var text = null;
+			if (args.length >= 4) {
+				text = args.slice(3).join(':');
+			}
+			// send message to room
+			log(clientRoom, 'server', 'action.emit',{message:message,room:room,data:text});
+			io.to(room).emit(message, text);
+		}
+	} catch (err) {
+		// should never happen
+		console.log('error processing emit: '+url+' ('+err.message+')', err);
+		console.log(err.stack);
+	}
+	
+}
+Client.prototype.testEmit = function(msg) {
+	console.log('test.emit '+msg);
+	actionEmit(msg, this.room);
+}
+
 Client.prototype.action = function(msg) {
   // marker...
   if (this.master) {
     console.log("relay action to room "+this.room+": "+msg);
     log(this.room, 'server', 'action.tiggered', msg);
     io.to(this.room).emit('action', msg);
+    // handle emit: action
+    try {
+    	if (msg && msg.actions) {
+    		for (var ai in msg.actions) {
+    			var action = msg.actions[ai];
+    			if (action.url && action.url.indexOf('emit:')==0) {
+    				actionEmit(action.url, this.room);
+    			}
+    		}
+    	}
+    } catch (err) {
+    	// should never happen!
+    	console.log('error processing actions for emit in '+JSON.stringify(msg)+' ('+err.message+')', err);
+    }
   } else {
     console.log("discard action for non-master");
   }
@@ -1071,6 +1149,64 @@ Client.prototype.oscSend = function(surl) {
 		this.socket.emit('osc.error','osc send error: '+err.message);
 	}
 };
+
+var redisAdapter = null;
+
+function handleRedisConfig(settings) {
+	// clear
+	console.log('clear socket.io adapter');
+	if (redisAdapter!==null) {
+		io.adapter();
+		try {
+			redisAdapter.pubClient.quit();			
+		} catch (err) {
+			console.log('error quitting old redis pub client: '+err.message);
+		}
+		try {
+			redisAdapter.subClient.quit();			
+		} catch (err) {
+			console.log('error quitting old redis sub client: '+err.message);
+		}
+		redisAdapter = null;
+	}
+	if (settings.useRedis) {
+		try {
+			var redisHost = settings.redisHost ? settings.redisHost : "127.0.0.1";
+			var redisPort = settings.redisPort ? settings.redisPort : 6379;
+			var redisPassword = settings.redisPassword ? settings.redisPassword : '';
+			console.log('set socket.io redis adapter '+redisHost+':'+redisPort);
+			var config = { host: redisHost, port: redisPort, auth_pass: redisPassword };
+			// default retry, etc.?!
+			redisAdapter = adapter(config);
+			function redisError(err) {
+				console.log('redis error: '+err);
+			}
+			redisAdapter.prototype.on('error', redisError);
+			redisAdapter.pubClient.on('error', redisError);
+			redisAdapter.subClient.on('error', redisError);
+			redisAdapter.pubClient.on('ready', function() { console.log('redis pub ready'); });
+			redisAdapter.subClient.on('ready', function() { console.log('redis sub ready'); });
+			redisAdapter.pubClient.on('connected', function() { console.log('redis pub connected'); });
+			redisAdapter.subClient.on('connected', function() { console.log('redis sub connected'); });
+			redisAdapter.pubClient.on('reconnecting', function() { console.log('redis pub reconnecting'); });
+			redisAdapter.subClient.on('reconnecting', function() { console.log('redis sub reconnecting'); });
+			io.of('/').adapter.on('error', function(err) {
+				console.log('socket.io adapter error '+err);
+			});
+			io.adapter(redisAdapter);
+//			io.adapter(adapter({ host: 'localhost', port: 6379 }));
+		}
+		catch (err) {
+			console.log('error setting up new redis adapter: '+err.message, err);
+		}
+	}
+}
+
+handleRedisConfig(settings);
+
+io.on('error', function(err) {
+	console.log('socket.io error: '+err);
+})
 
 io.on('connection', function(socket){
   var client = new Client(socket);

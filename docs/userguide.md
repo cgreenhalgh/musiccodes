@@ -254,3 +254,18 @@ A URI with the protocol `osc.udp:` will send an [Open Sound Control](http://open
 For example, the URI `osc.udp://1.2.3.4:9001/test/address,if,40,1.0` will send a message to the OSC server on the machine with IP address/hostname `1.2.3.4`, running on port `9001`, with OSC address pattern `/test/address` and two arguments, `40` (an integer, type `i`) and `1.0` (a float, type `f`). Please refer to documentation of the server for the messages that it supports.
 
 Note that DNS-SD (aka Bonjour) and mDNS are not currently supported for identifying OSC servers. For example a host address ending `.local` will not work, although `localhost` or `127.0.0.1` should work to refer to the machine hosting muzicodes. A port number must always be specified.
+
+## The Muzicode App
+
+To link a muzicodes server to the (v2) [mobile app](https://github.com/littlebugivy/muzivisual) the two servers have to be linked via a Redis server which supports a socket.io adapter to distribute socket.io events between the two servers. This is configured in the `Global settings` as:
+- "Use Redis" (`useRedis`) - boolean
+- "Redis Host" (`redisHost`) - string, default "127.0.0.1"
+- "Redis Port" (`redisPort`) - number, default 6379
+- "Redis password" (`redisPassword`) - string, default (none)
+
+The (v2) mobile app should be controlled via `emit:` actions sent to socket.io room `mobileapp`, specifically:
+- `emit:vStart:mobileapp:{{performanceid}}:{{stagename}}`
+- `emit:vStop:mobileapp:{{performanceid}}` 
+- `emit:vStageChange:mobileapp:{{performanceid}}:{{fromstagename}}->{{tostagename}}`
+
+Note that the mobile app server will need its own configuration for the specific performance (see [working docs](https://github.com/cgreenhalgh/fast-performance-demo/blob/master/docs/appnotes.md)).

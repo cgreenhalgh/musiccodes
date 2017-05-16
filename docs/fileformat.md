@@ -191,6 +191,10 @@ Actions are URLs. By default they are loaded into an iframe when triggered.
 
 Note that simple text can be encoded using data URIs, e.g. `data:text/plain,hello`. Strictly these should be %-escaped for all characters other than letters and digits.
 
+### Socket.io emit actions
+
+A URI of the form `emit:MESSAGE:ROOM:TEXT` will result in the specified `MESSAGE` being relayed to the specified `ROOM` with the associated `TEXT`, with templating being performed on the URI in the usual way (i.e. `{{ ... }}` elements will be templated into the string).
+
 ### HTTP POST actions
 
 HTTP/HTTPS actions are done as GET by default (loaded in channel viewer). If `post` is set then HTTP POST is used. Additional options for POST are:
