@@ -151,7 +151,7 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 		var localTime = Date.now();
 		var event = { localTime: localTime, note: name, midinote: note, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
-		logger.log('midi.note', note);
+		logger.log('midi.note', event);
 		if (onNote!==null)
 			$rootScope.$apply(onNote(event));
 	}
@@ -234,6 +234,7 @@ midi.factory('midicontrols', ['midiAccess','MIDI_HEX_PREFIX','$rootScope', 'logg
 			url += (event.data[i]<16 ? '0' : '') + event.data[i].toString(16);
 		}
 		console.log('midi control message: '+url);
+		logger.log('midi.control', { localTime: Date.now(), hex: url.substring(MIDI_HEX_PREFIX.length) });
 		if (onMessage!==null)
 			onMessage(url);
 	}
@@ -335,6 +336,7 @@ midi.factory('midiout', ['midiAccess','MIDI_HEX_PREFIX','logger',function(midiAc
 			message.push(parseInt(b, 16));
 		}
 		console.log('midiSend: '+hex);
+		logger.log('midi.send', { localTime: Date.now(), hex: hex });
 		sendRaw(message);
 	};
 	

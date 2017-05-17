@@ -22,6 +22,8 @@ Event names:
 - `action.tiggered`: action triggered/broadcast
 - `midi.config.in`: change of MIDI input
 - `midi.config.out`: change of MIDI output
+- `midi.control`: control message received from MIDI (from client)
+- `midi.send`: MIDI message sent (from client)
 - `state.update`: report of experience state
 - `slave.connect`: slave view connect
 - `slave.disconnect`: slave view disconnect
@@ -52,15 +54,20 @@ Event names:
 - `room`: room name
 
 `audio.note`, `midi.note`, `key.note` event info fields:
-- `time`: time, seconds, since 'start'
+- `time`: time, seconds, since 'start' (or `localTime` for MIDI note)
 - `freq`: frequency of note, Hz
 - `velocity`: MIDI-style note velocity (volume), 0-127
-- `note`: name letter name and octave number, e.g. 'C4'
+- `note`: name letter name and octave number, e.g. 'C4' (and `midinote` number for MIDI note)
 - `off`: boolean, note off (end) as opposed to on (start)
-             
+
 `midi.config.in`, `midi.config.out` event info fields:
 - `id`: MIDI input/output port ID             
+- `name`: MIDI input/output name
 
+`midi.control`, `midi.send` event info fields:
+- `localTime`: time at client (browser)
+- `hex`: hex-encoded string of midi message bytes
+             
 `audio.record` event info fields:
 - `filename`: audio filename
 
