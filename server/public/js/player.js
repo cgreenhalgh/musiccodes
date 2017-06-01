@@ -67,13 +67,18 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			output[name] = safeEvaluate($scope.experienceState, expression, extrastate);
 			console.log('State '+name+' = '+output[name]+' = '+expression);
 		}
+		var changes = {};
+		var numChanges = 0;
 		for (var name in output) {
 			if ($scope.experienceState [name]!==output[name]) {
 				$scope.experienceState [name] = output[name];
+				changes[name] = output[name];
+				numChanges++;
 			}
 		}
 		logger.log( 'state.update', $scope.experienceState );
 		updateButtons();
+		mpmAgent.setTestPointValues(changes);
 	};
 	
 	$scope.lastGroups = {};
@@ -649,8 +654,20 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			$scope.noteGroupers[projection.id] = noteGrouperFactory.create(streamutils.extend({}, parameters, projection.filterParameters));
 		}
 		
-		if (experience.parameters.initstate!==undefined)
+		if (experience.parameters.initstate!==undefined) {
 			updateState(experience.parameters.initstate);
+			var testPoints = {};
+			for (var name in $scope.experienceState) {
+				var value = $scope.experienceState[name];
+				testPoints[name] = {name: 'state '+name, read: true, write: true, monitor:true, value: value, setter: function(name,value) {
+					console.log('MPM set testPoint (state) '+name+' -> '+JSON.stringify(value));
+					var state = {};
+					state[name] = JSON.stringify(value);
+					updateState(state);
+				}};
+			}
+			mpmAgent.addTestPoints(testPoints);
+		}
 
 		checkControl('event:load');
 	};

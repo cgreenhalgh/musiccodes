@@ -43,6 +43,11 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 	var info = {};
 	var config = {};
 	var iri = 'urn:uuid:'+uuid.v1();
+	var testPoints = {};
+	var testPointSetters = {};
+	var testPointValues = {};
+	var testPointMonitors = {};
+	var testPointMonitorCount = {};
 	console.log('MPM Agent running: '+iri);
 	var datetime =  (new Date()).toISOString();
 	if (navigator!==undefined) {
@@ -72,11 +77,50 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 				console.log('agent socket connect');
 				socket.mpmIsConnected = true;
 				report(socket);
+				// monitor changes??
 			});
 			socket.on('disconnect', function(err) {
 				console.log('agent socket disconnect');
 				socket.mpmIsConnected = false;
-			});		
+			});
+			// testPoints
+			socket.on('readTestPoint', function(req) {
+				if (iri==req.iri) {
+					console.log('agent readTestPoint '+req.iri+' '+req.id+' ('+req.request+')');
+					socket.emit('readTestPointValue', {iri:iri, id: req.id, value: testPointValues[req.id], request: req.request});
+				}
+			});
+			socket.on('monitorTestPoint', function(req) {
+				if (iri==req.iri) {
+					console.log('agent monitorTestPoint '+req.iri+' '+req.id+' ('+req.request+'): '+req.monitor);
+					var monitors = testPointMonitors[req.id];
+					if (monitors===undefined) {
+						testPointMonitors[req.id] = monitors = {};
+					}
+					monitors[req.request] = req.monitor;
+					testPointMonitorCount[req.id] = 0;
+					for (var m in monitors) {
+						var monitor = monitors[m];
+						if (monitor)
+							testPointMonitorCount[req.id]++;
+					}
+					console.log('-> monitor count = '+testPointMonitorCount[req.id]++);
+					if (req.monitor)
+						socket.emit('monitorTestPointValue', {iri:iri, id:req.id, value:testPointValues[req.id]});
+				}
+			});
+			socket.on('setTestPoint', function(req) {
+				if (iri==req.iri) {
+					console.log('agent setTestPoint '+req.iri+' '+req.id+' ('+req.request+') = '+req.value);
+					if (testPointSetters[req.id]) {
+						try {
+							testPointSetters[req.id](req.id, req.value);
+						} catch (err) {
+							console.log('error setting test point '+req.id+' to '+JSON.stringify(req.value)+': '+err.message, err);
+						}
+					}
+				}
+			});
 		}
 	}	
 	connect(DEFAULT_MPM_SERVER);
@@ -89,7 +133,7 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 		info.url = $location.absUrl();
 		return { '@id': iri, '@type':'Process', processType: 'BrowserView', title: document.title, 
 			info: info, datetime: datetime, expire: 2*MPM_REPORT_INTERVAL,
-			config: config };
+			config: config, testPoints: testPoints };
 	}
 	var timeout = null;
 	function report(socket) {
@@ -98,14 +142,7 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 		var report = makeReport();
 
 		if (socket===undefined) {
-			for (var url in sockets) {
-				var socket = sockets[url];
-				if (socket.mpmIsConnected) {
-					socket.emit('mpm-report', report);
-				} else {
-					console.log('warning: mpm-agent cannot send report - unconnected');
-				}
-			}
+			emitAll('mpm-report', report);
 			if (timeout!==null)
 				$timeout.cancel(timeout);
 			timeout = $timeout(reportTimer, getDelay());
@@ -122,7 +159,29 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 		report();
 	}
 	report();
+	function emitAll(name, msg) {
+		for (var url in sockets) {
+			var socket = sockets[url];
+			if (socket.mpmIsConnected) {
+				socket.emit(name, msg);
+			} else {
+				console.log('warning: mpm-agent cannot send '+name+' to '+url+' - unconnected');
+			}
+		}
+	}
+	function setTestPointValues(values) {
+		for (var pi in values) {
+			var value = values[pi];
+			testPointValues[pi] = value;
+			if (testPointMonitorCount[pi] && testPointMonitorCount[pi]>0) {
+				emitAll('monitorTestPointValue', {iri:iri, id:pi, value:testPointValues[pi]});
+			}
+		}
+	};
 	return {
+		getIri: function() {
+			return iri;
+		},
 		init: function(moreinfo) {
 			console.log('mpmAgent init', moreinfo);
 			for (var k in moreinfo) {
@@ -136,7 +195,20 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 				config[k] = values[k];
 			}
 			report();
-		}
+		},
+		addTestPoints: function(points) {
+			var values = {};
+			for (var pi in points) {
+				var point = points[pi];
+				testPointSetters[pi] = point.setter;
+				testPoints[pi] = {name: point.name, write: point.write, read: point.read, monitor:point.monitor};
+				console.log('added test point '+pi+': '+JSON.stringify(testPoints[pi]));
+				values[pi] = point.value;
+			}
+			report();
+			setTestPointValues(values);
+		},
+		setTestPointValues: setTestPointValues
 	};
 }]);
 
