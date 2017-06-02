@@ -107,8 +107,23 @@
 </div>
 <div ng-show="topTab==3">
 	<!-- <h4>2. Note Filter/Grouping</h4> -->
+
+	<p class>
+
+	<p class="tab-intro">Specify how notes are selected and grouped into phrases for matching:</p>
+
+	<table>
+		<tbody>
+			<tr>
+				<td><label>Max. number of notes to consider at once</label></td>
+				<td>
+					<input type="number" min="0" max="1000" ng-model="parameters.maxNoteWindow">
+				</td>
+			</tr>
+		</tbody>
+	</table>
 	
-	<p class="tab-intro">Specify how notes are selected and grouped into phrases for matching (these default values can be overridden in each profile):</p>
+	<p class="tab-intro">The following default values can be overridden in each profile:</p>
 	
     <mus-filter-parameters parameters="parameters"></mus-filter-parameters>
 		

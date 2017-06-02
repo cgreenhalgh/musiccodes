@@ -21,6 +21,7 @@ Single top-level JSON object with properties:
 - `midiControl` (string, default undefined), name of midi control input device, if any (todo)
 - `audioInput` (string, default undefined => default), name of audio input device (if not midi)
 - `audioChannel` (number, default 0), channel of audio input (if not midi)
+- `maxNoteWindow` (numner, default 100), max number of notes to consider at once
 
 In addition any/all of the `projection` `filterParameters` can be specified as global default values 
 

@@ -261,6 +261,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		enact(result.actions);
 	}
 	function checkGroup(group, projectionid) {
+		var debug = false;
 		var notes = [];
 		for (var i in $scope.notes) {
 			var note = $scope.notes[i];
@@ -272,14 +273,14 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			return;
 		}
 		// publish to partcodes view
-		console.log('update lastGroup for projection '+projectionid+' with ');
+		if(debug) console.log('update lastGroup for projection '+projectionid+' with ');
 		$scope.checkLastGroups[projectionid] = { notes: notes, closed: group.closed };
 		var code = null;
 		
 		for (var mi in $scope.markers) {
 			var marker = $scope.markers[mi];
 			if (marker.projection===undefined) {
-				console.log('ignore marker without projection: '+JSON.stringify(marker));
+				if(debug) console.log('ignore marker without projection: '+JSON.stringify(marker));
 				continue;
 			}
 			if (marker.projection.id!=projectionid)
@@ -297,11 +298,11 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (marker.projection!==undefined && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
 				if (code===null) {
 					// generate...
-					console.log('raw note: '+JSON.stringify(notes));
+					if(debug) console.log('raw note: '+JSON.stringify(notes));
 					var newNotes = proc.mapRawNotes($scope.context, notes, marker.projection);
-					console.log('context mapped: '+JSON.stringify(newNotes));
+					if(debug) console.log('context mapped: '+JSON.stringify(newNotes));
 					code = proc.projectNotes(marker.projection, newNotes);
-					console.log('projected: '+proc.notesToString(code));
+					if(debug) console.log('projected: '+proc.notesToString(code));
 				}
 				// always check code for partial feedback
 				if (code!==undefined && codeMatchers[marker.code]!==undefined &&
@@ -343,6 +344,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	}
 
 	$scope.maxTimeWindow = 30;
+	$scope.maxNoteWindow = 100;
 	
 	function checkClosedGroups(time) {
 		// check max duration
@@ -365,15 +367,18 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		// GC old notes
 		for (var i=0; i<$scope.notes.length; i++) {
 			var note = $scope.notes[i];
-			if (time-note.time > $scope.maxTimeWindow) {
+			if (time-note.time > $scope.maxTimeWindow || (!!$scope.maxNoteWindow && $scope.notes.length>$scope.maxNoteWindow)) {
 				$scope.notes.splice(i,1);
 				i--;				
+				// TODO suppress start of group matching if group shrunk?
+				for (var projectionid in note.groups) {
+					if ($scope.activeGroups[''+projectionid+':'+note.groups[projectionid]]!==undefined)
+						$scope.activeGroups[''+projectionid+':'+note.groups[projectionid]].truncated = true;
+				}
 			}
-			// TODO suppress start of group matching if group shrunk?
-			for (var projectionid in note.groups) {
-				if ($scope.activeGroups[''+projectionid+':'+note.groups[projectionid]]!==undefined)
-					$scope.activeGroups[''+projectionid+':'+note.groups[projectionid]].truncated = true;
-			}
+			//else
+				// in order?!
+				//break;
 		}
 		// GC old groups
 		for (var i=0; i<$scope.groups.length; i++) {
@@ -408,6 +413,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	// fiddle factor for ? end of note delayed
 	var AUDIO_TIME_OFFSET = 100;
 	function onNote(note) {
+		var debug = false;
 		console.log('Got note '+JSON.stringify(note)); //note.freq+','+note.velocity+' at '+note.time);
 
 		// reftime is zero for time; reftimeLocal is zero for localTime
@@ -469,7 +475,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 					note.groups[projectionid] = gid;
 					note.group = true;
 					var groups = noteGrouper.getGroups();
-					console.log('updated projection '+projectionid+' group '+gid);
+					if (debug) console.log('updated projection '+projectionid+' group '+gid);
 					for (var i in groups) {
 						var group = groups[i];
 						if (!group.closed && $scope.activeGroups[''+projectionid+':'+group.id]===undefined) {
@@ -603,6 +609,8 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		
 		var parameters = experience.parameters;
 		$scope.parameters = parameters;
+		if (typeof(parameters.maxNoteWindow)=='number' && parameters.maxNoteWindow>0)
+			$scope.maxNoteWindow = parameters.maxNoteWindow;
 		if (!$scope.parameters.streamGap)
 			$scope.parameters.streamGap = 2; // default 2s
 		if ($scope.midiInputName===undefined)
