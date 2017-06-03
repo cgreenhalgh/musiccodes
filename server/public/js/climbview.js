@@ -59,6 +59,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		
 		if (url.indexOf('.mp4')>=0 || url.indexOf('.webm')>=0) {
 			var video	= document.createElement('video');
+			video.setAttribute('crossorigin', 'anonymous');
 			video.width	= 1280;
 			video.height	= 720;
 			video.autoplay	= false;
@@ -92,7 +93,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		else {
 			// create the texture
 			var loader =  new THREE.TextureLoader();
-			loader.crossOrigin = '';
+			loader.crossOrigin = 'anonymous';
 			var texture = loader.load( url ) ;
 			textures[url] = texture;
 			console.log('loaded image '+url);
