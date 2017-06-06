@@ -2,6 +2,7 @@
 var mod = angular.module('mpm-agent', []);
 
 mod.value('DEFAULT_MPM_SERVER', 'http://localhost:3003');
+mod.value('DEFAULT_MPM_SERVER_PORT', '3003');
 
 //socket.io wrapper, exposes on() and emit()
 mod.factory('mpmAgentSocket', ['$rootScope', function ($rootScope) {
@@ -34,8 +35,8 @@ mod.factory('mpmAgentSocket', ['$rootScope', function ($rootScope) {
 	}
 }]);
 
-mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$location','mpmGetIPAddresses',
-					function(mpmAgentSocket,  DEFAULT_MPM_SERVER,  $timeout,  $location,  mpmGetIPAddresses) {
+mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER_PORT','$timeout','$location','mpmGetIPAddresses',
+					function(mpmAgentSocket,  DEFAULT_MPM_SERVER_PORT,  $timeout,  $location,  mpmGetIPAddresses) {
 	var MPM_REPORT_INTERVAL = 10;
 	var MPM_REPORT_JITTER = 4;
 	var inited = false;
@@ -70,8 +71,9 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 		}
 	});
 	function connect(url) {
-		url = url || DEFAULT_MPM_SERVER;
+		url = url || 'http://'+$location.host()+':'+DEFAULT_MPM_SERVER_PORT;
 		if (sockets[url]===undefined) {
+			console.log('agent connect to mpm server '+url);
 			var socket = sockets[url] = mpmAgentSocket.connect(url);
 			socket.on('connect', function(err) {
 				console.log('agent socket connect');
@@ -123,7 +125,7 @@ mod.factory('mpmAgent', ['mpmAgentSocket','DEFAULT_MPM_SERVER','$timeout','$loca
 			});
 		}
 	}	
-	connect(DEFAULT_MPM_SERVER);
+	connect();
 	function getDelay() {
 		return (MPM_REPORT_INTERVAL+(Math.random()-0.5)*MPM_REPORT_JITTER)*1000;
 	}
