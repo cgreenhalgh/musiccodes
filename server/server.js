@@ -552,7 +552,7 @@ app.post('/settings', function(req,res) {
 		settings.defaultAuthor = req.body.defaultAuthor;
 	//settings.defaultLogUse = (req.body.defaultLogUse!==undefined && req.body.defaultLogUse=='true');
 	settings.defaultRecordAudio = (req.body.defaultRecordAudio!==undefined && req.body.defaultRecordAudio=='true');
-	var old = {useRedis: settings.useRedis, redisHost: settings.redisHost, redisPort: settings.redisPort};
+	var old = {useRedis: settings.useRedis, redisHost: settings.redisHost, redisPort: settings.redisPort, redisPassword: settings.redisPassword};
 	settings.useRedis = (req.body.useRedis!==undefined && req.body.useRedis=='true');
 	if (req.body.redisHost!==undefined)
 		settings.redisHost= req.body.redisHost;
@@ -564,6 +564,8 @@ app.post('/settings', function(req,res) {
 			console.log('Error with redisPort '+req.body.redisPort+': '+err.message);
 		}
 	}
+	if (req.body.redisPassword!==undefined)
+		settings.redisPassword= req.body.redisPassword;
 	try {
 		fs.writeFileSync(__dirname+'/settings.json', JSON.stringify(settings), 'utf8');
 		console.log('updated settings to '+JSON.stringify(settings));
@@ -579,7 +581,7 @@ app.post('/settings', function(req,res) {
 		console.log('force restart from settings');
 		process.exit(-1);
 	}
-	if (settings.useRedis!=old.useRedis || settings.redisHost!=old.redisHost || settings.redisPort!=old.redisPort)
+	if (settings.useRedis!=old.useRedis || settings.redisHost!=old.redisHost || settings.redisPort!=old.redisPort || settings.redisPassword!=old.redisPassword)
 		handleRedisConfig(settings);
 });
 
