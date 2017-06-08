@@ -175,6 +175,10 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				usecount[url]--;
 				if (usecount[url]<=0) {
 					console.log('stop '+url);
+					if (usecount[url]<0) {
+						console.log('Programming error: usecount['+url+'] < 0!');
+						usecount[url] = 0;
+					}
 					try {
 						oldvideo.pause();
 					}
@@ -232,17 +236,17 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					
 					var video = videos[url];
 					if (video!==undefined) {
+						video.loop = !!layer.loop;
 						if (usecount[url]==0) {
 							console.log('play '+url+' loop='+layer.loop+' (readyState='+video.readyState+')');
 							if (!layer.loop)
 								video.currentTime = 0;
 							video.autoplay = true;
-							if (video.readyState==4)
+							if (video.readyState>=2)
 								video.play();
 							else
 								console.log('cannot play immediate: state = '+video.readyState);
 						}
-						video.loop = !!layer.loop;
 						usecount[url]++;
 					}
 				}
