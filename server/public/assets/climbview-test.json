@@ -14,7 +14,8 @@
     "stones.jpg",
     "path.jpg",
     "ending.jpg",
-    "https://i.imgsafe.org/c5fd4eaf6b.png"
+    "https://i.imgsafe.org/c5fd4eaf6b.png",
+    "video:{\"width\":1280,\"height\":720}"
   ],
   "layers": [
     {
@@ -23,7 +24,12 @@
       "loop": true,
       "fadeIn": 2,
       "fadeOut": 2,
-      "crossfade": false
+      "crossfade": false,
+      "defaultUrl": "video:true",
+      "insetTop": 0.1,
+      "insetBottom": 0.1,
+      "insetLeft": 0.2,
+      "insetRight": 0.2
     },
     {
       "title": "animation",

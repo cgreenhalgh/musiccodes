@@ -57,7 +57,51 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 
 		usecount[url] = 0;
 		
-		if (url.indexOf('.mp4')>=0 || url.indexOf('.webm')>=0) {
+		if (url.indexOf('video:')==0) {
+			// live video
+			var video	= document.createElement('video');
+			video.setAttribute('crossorigin', 'anonymous');
+			video.width	= 1280;
+			video.height	= 720;
+			video.autoplay	= true;
+			video.loop	= false;
+			video.preload = 'auto';
+			videos[url] = video;
+			try {
+				var constraints = {video: JSON.parse(url.substring('video:'.length))};
+				console.log('use video constraint '+JSON.stringify(constraints));
+				navigator.mediaDevices.getUserMedia(constraints)
+				.then(function(mediaStream) {
+					console.log('got live video as '+mediaStream);
+					video.srcObject = mediaStream;
+					$(video).on('canplay', function() {
+						if (usecount[url]>0) {
+							console.log('play on canplay '+url);
+							video.play();
+						}
+						else {
+							console.log('ignore canplay for currently unused video '+url);
+						}
+					});
+				})
+				.catch(function(err) { 
+					alert('Unable to get live video: '+err.message);
+					console.log('Error getting user video: '+err.name + ": " + err.message); 
+				}); // always check for errors at the end.
+			} catch (err) {
+				var msg = 'Error loading live video: '+err.message;
+				alert(msg);
+				console.log(msg, err);
+			}
+			// create the texture
+			var texture	= new THREE.VideoTexture( video );
+			texture.minFilter = THREE.LinearFilter;
+			texture.magFilter = THREE.LinearFilter;
+			texture.format = THREE.RGBAFormat;
+			textures[url] = texture;
+			console.log('loaded live video '+url);
+		}
+		else if (url.indexOf('.mp4')>=0 || url.indexOf('.webm')>=0) {
 			var video	= document.createElement('video');
 			video.setAttribute('crossorigin', 'anonymous');
 			video.width	= 1280;
@@ -118,6 +162,10 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				layer.defaultUrl = null;
 			layer.fadeIn = layer.fadeIn || 0;
 			layer.fadeOut = layer.fadeOut || 0;
+			layer.insetTop = layer.insetTop || 0;
+			layer.insetBottom = layer.insetBottom || 0;
+			layer.insetLeft = layer.insetLeft || 0;
+			layer.insetRight = layer.insetRight || 0;
 			
 			var layer_info = {};
 			console.log('build layer '+i+': '+layer.title);
@@ -132,7 +180,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			layer_info.visible = [false,false];
 			for (var to=0; to<=1; to++) {
 				
-				var geometry = new THREE.PlaneBufferGeometry( WIDTH, HEIGHT );
+				var geometry = new THREE.PlaneBufferGeometry( WIDTH*(1-layer.insetLeft-layer.insetRight), HEIGHT*(1-layer.insetTop-layer.insetBottom) );
 				geometry.rotateZ(Math.PI);
 				
 				var color = 0xffffff;//[0xff0000,0x00ff00,0xffff00,0x0000ff,0xff00ff,0xffff00,0xffffff][i];
@@ -141,6 +189,8 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				
 				var mesh = new THREE.Mesh( geometry, material );
 				mesh.position.z = to/2;
+				mesh.position.x = WIDTH/2*(layer.insetLeft-layer.insetRight);
+				mesh.position.y = HEIGHT/2*(layer.insetBottom-layer.insetTop);
 
 				layer_info.meshes[to] = mesh;
 				/*var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: false, opacity: 1, side: THREE.DoubleSide } ); //, map: videoTexture } ); //, overdraw: 0.5 
@@ -236,10 +286,12 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					
 					var video = videos[url];
 					if (video!==undefined) {
-						video.loop = !!layer.loop;
+						if (url.indexOf('video:')!=0) {
+							video.loop = !!layer.loop;
+						}
 						if (usecount[url]==0) {
 							console.log('play '+url+' loop='+layer.loop+' (readyState='+video.readyState+')');
-							if (!layer.loop)
+							if (!layer.loop && url.indexOf('video:')!=0)
 								video.currentTime = 0;
 							video.autoplay = true;
 							if (video.readyState>=2)
