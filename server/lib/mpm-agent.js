@@ -67,6 +67,14 @@ var osreport = {
 var processinfo = getProcessInfo();
 var processiri = getUuidIri();
 var config = {};
+
+var files = [];
+
+function getFilesInfo() {
+	// TODO update times, lengths, etc.
+	return files;
+}
+
 function getProcReport() {
 	return {
 		datetime: datetime(),
@@ -75,7 +83,8 @@ function getProcReport() {
 		'@type': 'Process',
 		title: process.argv[1],
 		'@id': processiri,
-		config: config
+		config: config,
+		files: getFilesInfo()
 	}
 };
 //console.log(JSON.stringify(procreport, null, 2));
@@ -242,3 +251,13 @@ module.exports.configure = function(values) {
 	report();
 }
 
+// array of {tag:, path:, useType: 'log'|...}
+module.exports.addFiles = function(newfiles) {
+	for (var fi in newfiles) {
+		var nfile = newfiles[fi];
+		// TODO length, remove old??
+		var file = {tag: nfile.tag, path: nfile.path, useType: nfile.useType, created:datetime()};
+		files.push(file);
+	}
+	report();
+}

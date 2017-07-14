@@ -655,6 +655,7 @@ function roomLogUse(room, logUse) {
 			try {
 				console.log('create log file '+log.path);
 				log.log = fs.createWriteStream(log.path, {flags:'a+',defaultEncoding:'utf8',autoClose:true,mode:0o644});
+				mpmAgent.addFiles([{ path:log.path, useType:'log', tag:'room:'+room }])
 			} catch (err) {
 				console.log('Error creating log file '+log.path+': '+err.message);
 			}
