@@ -19,17 +19,29 @@
   ],
   "layers": [
     {
+      "title": "video",
+      "channel": "v.video",
+      "loop":false,
+      "fadeIn":0,
+      "fadeOut": 0,
+      "crossfade": false,
+      "insetTop": 0.1,
+      "insetBottom": 0.1,
+      "insetLeft": 0.2,
+      "insetRight": 0.2,
+      "cropTop": 0.1,
+      "cropBottom": 0.1,
+      "cropLeft": 0.2,
+      "cropRight": 0.2,
+      "defaultUrl": "video:{\"width\":1280,\"height\":720}"
+    },
+    {
       "title": "background",
       "channel": "v.background",
       "loop": true,
       "fadeIn": 2,
       "fadeOut": 2,
-      "crossfade": false,
-      "defaultUrl": "video:true",
-      "insetTop": 0.1,
-      "insetBottom": 0.1,
-      "insetLeft": 0.2,
-      "insetRight": 0.2
+      "crossfade": false
     },
     {
       "title": "animation",

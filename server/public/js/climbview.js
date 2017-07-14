@@ -166,6 +166,10 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			layer.insetBottom = layer.insetBottom || 0;
 			layer.insetLeft = layer.insetLeft || 0;
 			layer.insetRight = layer.insetRight || 0;
+			layer.cropTop = layer.cropTop || 0;
+			layer.cropBottom = layer.cropBottom || 0;
+			layer.cropLeft = layer.cropLeft || 0;
+			layer.cropRight = layer.cropRight || 0;
 			
 			var layer_info = {};
 			console.log('build layer '+i+': '+layer.title);
@@ -182,6 +186,17 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				
 				var geometry = new THREE.PlaneBufferGeometry( WIDTH*(1-layer.insetLeft-layer.insetRight), HEIGHT*(1-layer.insetTop-layer.insetBottom) );
 				geometry.rotateZ(Math.PI);
+				var uvs = geometry.getAttribute('uv');
+				//console.log('got '+uvs.array.length+' uvs '+layer.cropLeft+'-'+layer.cropRight+'x'+layer.cropTop+'-'+layer.cropBottom+' version='+uvs.version);
+				//console.log(uvs.array);
+				for (var uvi=0; uvi<uvs.array.length; uvi+=2) {
+					// simple for rectangle ...
+					uvs.array[uvi+0] = uvs.array[uvi+0]<0.5 ? layer.cropLeft : 1-layer.cropRight;
+					uvs.array[uvi+1] = uvs.array[uvi+1]<0.5 ? layer.cropBottom : 1-layer.cropTop;
+				}
+				//console.log(uvs.array);
+				uvs.needsUpdate = true;
+				//console.log('-> version '+uvs.version);
 				
 				var color = 0xffffff;//[0xff0000,0x00ff00,0xffff00,0x0000ff,0xff00ff,0xffff00,0xffffff][i];
 				var material = new THREE.MeshBasicMaterial( { color: color/*0xffffff*/, transparent: true, opacity: 0, side: THREE.DoubleSide } ); //, map: videoTexture } ); //, overdraw: 0.5 
