@@ -192,7 +192,7 @@ function connect(url) {
 			var resp = { iri:msg.iri, path: msg.path, request: msg.request, url: msg.url, status: 'unsupported' };
 			try {
 				console.log('upload '+msg.path+' to '+msg.url);
-				fs.createReadStream(msg.path).pipe(request.post(msg.url))
+				fs.createReadStream(msg.path).pipe(request.post({url: msg.url, headers: {'Content-Type':'application/octet-stream'}}))
 				.on('response', function(httpResp ) {
 					console.log('upload response '+httpResp.status);
 					resp.statusCode = httpResp.status;
