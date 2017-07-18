@@ -7,6 +7,7 @@ var osTmpdir = require('os-tmpdir');
 var path = require('path');
 var fs = require('fs');
 var uuid = require('uuid/v1'); // MAC/timestamp based
+var request = require('request');
 
 var ioclient = require('socket.io-client');
 
@@ -184,7 +185,33 @@ function connect(url) {
 		socket.on('disconnect', function(err) {
 			console.log('agent socket disconnect');
 			socket.mpmIsConnected = false;
-		});		
+		});
+		socket.on('post', function(msg) {
+			console.log('agent post (unimplemented)', msg);
+			// TODO handle file post request
+			var resp = { iri:msg.iri, path: msg.path, request: msg.request, url: msg.url, status: 'unsupported' };
+			try {
+				console.log('upload '+msg.path+' to '+msg.url);
+				fs.createReadStream(msg.path).pipe(request.post(msg.url))
+				.on('response', function(httpResp ) {
+					console.log('upload response '+httpResp.status);
+					resp.statusCode = httpResp.status;
+					resp.status = httpResp.statusMessage;
+					socket.emit('postResponse', resp);
+				})
+				.on('error', function(err) {
+					console.log('upload error', err);
+					resp.status = 'error ('+err.message+')';
+					resp.statusCode = -1;
+					socket.emit('postResponse', resp);
+				});
+			}
+			catch (err) {
+				console.log('upload exception', err);
+				resp.status = 'error ('+err.message+')';
+				socket.emit('postResponse', resp);
+			}
+		});
 	}
 }	
 connect(DEFAULT_MPM_SERVER);
