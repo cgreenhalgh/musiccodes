@@ -57,8 +57,13 @@ socket.factory('getIPAddresses', ['$window', '$q', '$rootScope', function($windo
 }]);
 
 // socket.io wrapper, exposes on() and emit()
-socket.factory('socket', ['$rootScope', function ($rootScope) {
-	var socket = io.connect();
+socket.factory('socket', ['$rootScope', '$location', function ($rootScope, $location) {
+	var params = $location.search();
+	var socketio = params['sio']===undefined ? $location.protocol()+'://'+$location.host()+':'+$location.port() : params['sio'];
+	var path = params['siop']===undefined ? '/socket.io' : params['siop'];
+	console.log('socket.io: url='+socketio+' and path='+path);
+	var socket = io.connect(socketio, { path: path });
+//	var socket = io.connect();
 	return {
 		on: function (eventName, callback) {
 			socket.on(eventName, function () {  

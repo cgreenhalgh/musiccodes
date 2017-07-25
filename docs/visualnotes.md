@@ -119,13 +119,17 @@ Angular.js see $animate
 
 Tested [SVG](https://www.w3schools.com/graphics/svg_reference.asp) in `climbview-svg.html` - showing performance issues just from panning background image. 
 
+### Parameters
+
+- `config` - path to configuration file
+- `test` - show test dialog with layers and current files
+- `sio` - URL of socket.io server to connect to (if different from page location)
+- `siop` - socket.io path within server (if different to default `/socket.io`)
+
 ## To do
 
-- experience generator weather delays
-- experience generator weather visual events
 - mpmagent (browser) default to same server host as html page (for remote display)
 - check musicodes server support for video file incremental loading
-- climbview cross-site loading of videos??
 
 test
 ```
