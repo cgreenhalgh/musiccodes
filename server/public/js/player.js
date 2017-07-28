@@ -793,6 +793,27 @@ playerApp.factory('safeEvaluate', function() {
 		window.scriptstate['String'] = String;
 		window.scriptstate['Number'] = Number;
 		window.scriptstate['JSON'] = JSON;
+		window.scriptstate['chooseOne'] = function() {
+			var options = [];
+			for (ai=0; ai+1<arguments.length; ai+=2) {
+				// value, boolean
+				if (arguments[ai+1])
+					options.push(arguments[ai]);
+			}
+			if (options.length==0) {
+				// default
+				if (arguments.length % 2 == 1) {
+					console.log('Warning: chooseOne -> default: '+arguments[arguments.length-1]);
+					return arguments[arguments.length-1];
+				}
+				console.log('Warning: chooseOne had no default');
+				return undefined;
+			} else {
+				var i = Math.floor(Math.random()*options.length);
+				console.log('chooseOne -> '+i+' ('+options[i]+')');
+				return options[i];
+			}
+		};
 		var result = null;
 		// is expression safe? escape all names as window.scriptstate. ...
 		// allow . within expression, e.g. Math.random, params.name

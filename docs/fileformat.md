@@ -151,7 +151,15 @@ HTTP POST for input ('post:' action):
 
 ## State
 
-The state is a number of named variables, e.g. `a`, `ready`, etc., and their values, e.g. `0`, `true`, `"ready"`. Variable names must start with a letter or underscore and contain only letters, digits or underscore. Values should be numbers, true/false or strings only. State expressions, e.g. in `precondition` or `poststate` should be simple expressions involving no functions.
+The state is a number of named variables, e.g. `a`, `ready`, etc., and their values, e.g. `0`, `true`, `"ready"`. Variable names must start with a letter or underscore and contain only letters, digits or underscore. Values should be numbers, true/false or strings only. State expressions, e.g. in `precondition` or `poststate` should be simple expressions generally involving no functions.
+
+Only the following functions/objects are available to state expressions:
+- `encodeURIComponent`
+- `Math`
+- `String`
+- `Number`
+- `JSON`
+- `chooseOne` - function which takes pairs of arguments (value, boolean), and random returns one of the value for which the boolean is true. The final argument is a default value to use if all booleans are false.
 
 For example...
 
