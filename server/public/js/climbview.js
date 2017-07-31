@@ -151,6 +151,9 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 		}
 	}
 	
+	function xor(a, b) {
+		return (a && !b) || (b && !a);
+	}
 	var layer_infos = [];
 	//var layer_urls = [];
 	//var layer_materials = [];
@@ -170,6 +173,8 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 			layer.cropBottom = layer.cropBottom || 0;
 			layer.cropLeft = layer.cropLeft || 0;
 			layer.cropRight = layer.cropRight || 0;
+			layer.mirror = !!layer.mirror;
+			layer.rotate = !!layer.rotate;
 			
 			var layer_info = {};
 			console.log('build layer '+i+': '+layer.title);
@@ -191,8 +196,8 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				//console.log(uvs.array);
 				for (var uvi=0; uvi<uvs.array.length; uvi+=2) {
 					// simple for rectangle ...
-					uvs.array[uvi+0] = uvs.array[uvi+0]<0.5 ? layer.cropLeft : 1-layer.cropRight;
-					uvs.array[uvi+1] = uvs.array[uvi+1]<0.5 ? layer.cropBottom : 1-layer.cropTop;
+					uvs.array[uvi+0] = (uvs.array[uvi+0]<0.5)==xor(layer.mirror, layer.rotate) ? layer.cropLeft : 1-layer.cropRight;
+					uvs.array[uvi+1] = (uvs.array[uvi+1]<0.5)==(!layer.rotate) ? layer.cropBottom : 1-layer.cropTop;
 				}
 				//console.log(uvs.array);
 				uvs.needsUpdate = true;
@@ -205,7 +210,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				var mesh = new THREE.Mesh( geometry, material );
 				mesh.position.z = to/2;
 				mesh.position.x = WIDTH/2*(layer.insetLeft-layer.insetRight);
-				mesh.position.y = HEIGHT/2*(layer.insetBottom-layer.insetTop);
+				mesh.position.y = HEIGHT/2*(layer.insetTop-layer.insetBottom);
 
 				layer_info.meshes[to] = mesh;
 				/*var material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: false, opacity: 1, side: THREE.DoubleSide } ); //, map: videoTexture } ); //, overdraw: 0.5 
