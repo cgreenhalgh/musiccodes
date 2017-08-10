@@ -1,8 +1,8 @@
-var climbApp = angular.module('climbApp', ['ngAnimate', 'muzicodes.socket', 'muzicodes.logging', 'mpm-agent']);
+var climbApp = angular.module('climbApp', ['ngAnimate', 'muzicodes.socket', 'muzicodes.logging']);
 // main player app
-climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window', '$http', 'mpmAgent', 
+climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window', '$http',  
 								'$location', '$timeout', 'socket',
-                                    function ($scope, $interval, $document, $window, $http, mpmAgent,
+                                    function ($scope, $interval, $document, $window, $http, 
                                     		$location, $timeout, socket) {
 	console.log('url: '+$location.absUrl());
 
@@ -350,8 +350,8 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 	$http.get(configfile).then(function(res) {
 		var data = res.data;
 		console.log('read config', data);
-		mpmAgent.configure({viewconfig:{url:configfile,ok:true,loaded:(new Date().toISOString()),
-			etag:res.headers('etag'),lastModified:res.headers('last-modified'),contentLength:res.headers('content-length')}});
+		//mpmAgent.configure({viewconfig:{url:configfile,ok:true,loaded:(new Date().toISOString()),
+		//	etag:res.headers('etag'),lastModified:res.headers('last-modified'),contentLength:res.headers('content-length')}});
 		// TOODO
 		$scope.preload = data.preload;
 		//loaded(data);
@@ -378,10 +378,10 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 
 	}, function(error) {
 		if (error.status==404) {
-			mpmAgent.configure({viewconfig:{url:configfile,ok:false,error:'File not found'}});
+			//mpmAgent.configure({viewconfig:{url:configfile,ok:false,error:'File not found'}});
 			alert('Sorry, that config file doesn\'t seem to exist ('+configfile+')');
 		} else {
-			mpmAgent.configure({viewconfig:{url:configfile,ok:false,error:'Error loading config file '+$error.status}});
+			//mpmAgent.configure({viewconfig:{url:configfile,ok:false,error:'Error loading config file '+$error.status}});
 			alert('Sorry, could load that config file: '+error.statusText+' ('+configfile+')');
 		}
 	});
