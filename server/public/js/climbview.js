@@ -6,6 +6,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
                                     		$location, $timeout, socket) {
 	console.log('url: '+$location.absUrl());
 
+	var debugVideo = false;
 	var params = $location.search();
 	console.log('params', params);
 	$scope.test = params['test']!==undefined;
@@ -304,6 +305,7 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					else
 						layer_info.materials[1].opacity = 1;
 					
+					layer_info.loadingVideo1 = false;
 					var video = videos[url];
 					if (video!==undefined) {
 						if (url.indexOf('video:')!=0) {
@@ -311,13 +313,21 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 						}
 						if (usecount[url]==0) {
 							console.log('play '+url+' loop='+layer.loop+' (readyState='+video.readyState+')');
-							if (!layer.loop && url.indexOf('video:')!=0)
+							if (!layer.loop && url.indexOf('video:')!=0) {
 								video.currentTime = 0;
+							}
 							video.autoplay = true;
 							if (video.readyState>=2)
 								video.play();
 							else
 								console.log('cannot play immediate: state = '+video.readyState);
+							if (video.readyState<2) {
+								// force opacity to 0 until loaded frame?!
+								console.log('force temporary opacity on new video '+url);
+								layer_info.materials[1].opacity = 0;
+								layer_info.loadingVideo1 = true;
+								//layer_info.materials[1].map.needsUpdate = true;
+							}
 						}
 						usecount[url]++;
 					}
@@ -441,21 +451,42 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				}
 			}
 			if (layer_info.urls[1]!==null) {
+				if (layer_info.loadingVideo1) {
+					var video = videos[layer_info.urls[1]];
+					if (video.readyState>=2) {
+						layer_info.materials[1].map.needsUpdate = true;
+						layer_info.loadingVideo1 = false;
+						console.log('video loaded (texture needsUpdate): '+layer_info.urls[1]);
+					}
+				}
 				var opacity = layer_info.materials[1].opacity;
 				if (opacity<1 && (!fadingOut || layer.crossfade)) {
 					if (layer.fadeIn>0) {
 						opacity += elapsed/layer.fadeIn;
+						if (layer_info.loadingVideo1) {
+							if (debugVideo)
+								console.log('clamp opacity while loading video: '+layer_info.urls[1]);
+							opacity = 0;
+						}
 						if (opacity>1)
 							opacity = 1;
 						layer_info.materials[1].opacity = opacity;						
 					} else {
-						layer_info.materials[1].opacity = opacity = 1;					
+						opacity = 1;
+						if (layer_info.loadingVideo1) {
+							if (debugVideo)
+								console.log('clamp opacity while loading video: '+layer_info.urls[1]);
+							opacity = 0;
+						}
+						layer_info.materials[1].opacity = opacity;
 					}
 				}
 			}			
 		}
 		last = now;
 		// render
+		if (debugVideo)
+			console.log('render');
 		renderer.render(scene, camera);
 	}
 	animate();
