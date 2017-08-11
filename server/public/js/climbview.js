@@ -427,6 +427,30 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 				elapsed = 0;
 			var fadingOut = false;
 			//console.log('layer '+i+': from '+layer_info.urls[0]+' ('+layer_info.materials[0].opacity+' - '+layer.fadeOut+'/s) to '+layer_info.urls[1]+' ('+layer_info.materials[1].opacity+' + '+layer.fadeIn+'/s)');
+			if (layer_info.urls[0]!==null) {
+				var opacity = layer_info.materials[0].opacity;
+				// wait for loading video
+				if (opacity>0 && !layer_info.loadingVideo1) {
+					if (layer.fadeOut>0) {
+						opacity = opacity-elapsed/layer.fadeOut;
+						if (opacity<0)
+							opacity = 0;
+						layer_info.materials[0].opacity = opacity;						
+						fadingOut = true;
+					} else {
+						layer_info.materials[0].opacity = opacity = 0;					
+					}
+				}
+				if (opacity<=0) {
+					// gone
+					stop(layer_info.urls[0]);
+					layer_info.urls[0] = null;
+					if (layer_info.visible[0]) {
+						layer_info.group.remove(layer_info.meshes[0]);
+						layer_info.visible[0] = false;
+					}
+				}
+			}
 			if (layer_info.urls[1]!==null) {
 				if (layer_info.loadingVideo1) {
 					var video = videos[layer_info.urls[1]];
@@ -459,30 +483,6 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					}
 				}
 			}			
-			if (layer_info.urls[0]!==null) {
-				var opacity = layer_info.materials[0].opacity;
-				// wait for loading video
-				if (opacity>0 && !layer_info.loadingVideo1) {
-					if (layer.fadeOut>0) {
-						opacity = opacity-elapsed/layer.fadeOut;
-						if (opacity<0)
-							opacity = 0;
-						layer_info.materials[0].opacity = opacity;						
-						fadingOut = true;
-					} else {
-						layer_info.materials[0].opacity = opacity = 0;					
-					}
-				}
-				if (opacity<=0) {
-					// gone
-					stop(layer_info.urls[0]);
-					layer_info.urls[0] = null;
-					if (layer_info.visible[0]) {
-						layer_info.group.remove(layer_info.meshes[0]);
-						layer_info.visible[0] = false;
-					}
-				}
-			}
 		}
 		last = now;
 		// render
