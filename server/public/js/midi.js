@@ -131,7 +131,7 @@ midi.factory('midiutils', [function() {
 }]);
 
 // wrapper for midi note input. cf audio audionote
-midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAccess,$rootScope, logger) {
+midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', '$timeout', function(midiAccess,$rootScope, logger, $timeout) {
 
 	// state
 	var onNote = null;
@@ -144,6 +144,8 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 	}
 	var time0 = Date.now();
 	var notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+	var timeout = null;
+	var events = [];
 	function processMidiNote(cmd, note, vel) {
 		// note 60 is middle C, which I think plugin calls C4, freq. is nominally 261.6Hz
 		var name = notes[note % 12]+String(Math.floor(note / 12)-1);
@@ -152,8 +154,18 @@ midi.factory('midinotes', ['midiAccess','$rootScope', 'logger', function(midiAcc
 		var event = { localTime: localTime, note: name, midinote: note, freq: freq, velocity: vel, off: (vel==0) };
 		console.log('note: ', event);
 		logger.log('midi.note', event);
-		if (onNote!==null)
-			$rootScope.$apply(onNote(event));
+		if (onNote!==null) {
+			events.push(event);
+			if (!timeout)
+				timeout = $timeout(function() {
+					timeout = null;
+					var evs = events;
+					events = [];
+					for (var i in evs) {
+						onNote(evs[i]);
+					}
+				}, 0);
+		}
 	}
 	function processMidiMessage( data ) {
 		if (data.length<3)

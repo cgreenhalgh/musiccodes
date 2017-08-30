@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" ng-app="loadgenApp">
+<head>
+<meta charset="utf-8">
+<title>Muzicodes Load Generator</title>
+<link rel="stylesheet" href="/vendor/bootstrap/dist/css/bootstrap.css">
+<!-- <link rel="stylesheet" href="/css/keyboard.css">  -->
+<script src="/vendor/angular/angular.js"></script>
+<script src="/js/loadgen.js"></script>
+<script src="/js/midi.js"></script>
+<!-- ...needs... -->
+<script src="/js/logging.js"></script>
+<script src="/js/socket.js"></script>
+<script src="/vendor/socket.io-1.2.0.js"></script>
+</head>
+<body ng-controller='loadgenCtrl'>
+
+	<div class="row">
+		<div class="col-md-12">
+			<h1>MIDI Load Generator</h1>
+		</div>
+		<div class="col-md-12">
+			<label>MIDI output:</label><midi-output-selector ng-model="midiOutput"></midi-output-selector><br>
+			<label>MIDI input:</label><midi-input-selector ng-model="midiInput"></midi-input-selector>
+		</div>
+		<div class="col-md-12">
+			<label>Notes per second<input type="number" min="0" ng-model="rate"></label><span>{{feedback}}</span>
+		</div>
+	</div>
+</body>
+</html>

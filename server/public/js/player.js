@@ -25,11 +25,13 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 	$scope.channel = params['c']===undefined ? '' : params['c'];
 	$scope.midiInputName = params['i'];
 	$scope.midiOutputName = params['o'];
+	$scope.showNotes = true;
 	
 	console.log('experience='+experienceFile+', room='+$scope.room+', pin='+pin+', channel='+$scope.channel+', midiin='+$scope.midiInputName+', midiout='+$scope.midiOutputName);
 	
 	$scope.context = {};
 	$scope.notes = [];
+	$scope.recentNotes = [];
 	$scope.time = 0;
 	$scope.groups = [];
 	$scope.activeNotes = {};
@@ -298,7 +300,6 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 			if (marker.projection!==undefined && marker.code!==undefined && marker.code!==null && marker.code.length>0) {
 				if (code===null) {
 					// generate...
-					if(debug) console.log('raw note: '+JSON.stringify(notes));
 					var newNotes = proc.mapRawNotes($scope.context, notes, marker.projection);
 					if(debug) console.log('context mapped: '+JSON.stringify(newNotes));
 					code = proc.projectNotes(marker.projection, newNotes);
@@ -465,6 +466,7 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 		if (!!note.velocity){
 			note.id = $scope.nextNoteId++;
 			$scope.notes.push(note);
+			$scope.recentNotes.splice(0, 0, note);
 			note.groups = {};
 			// TODO merge active notes
 			for (var projectionid in $scope.noteGroupers) {
@@ -491,6 +493,14 @@ playerApp.controller('PlayerCtrl', ['$scope', '$http', '$location', 'socket', 'a
 				}
 			}
 			$scope.activeNotes[note.note] = note;
+		} else {
+			for (var i=0; i<$scope.recentNotes.length; i++) {
+				var n = $scope.recentNotes[i];
+				if (n.note==note.note) {
+					$scope.recentNotes.splice(i,1);
+					i--;
+				}
+			}
 		}
 		checkClosedGroups(note.time);
 		// update partmatch view

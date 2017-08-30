@@ -50,12 +50,16 @@
 		</div>
 	</div>
 	<div class="row">
-		<div class="col-md-12">
+		<div class="col-md-12" ng-if="showNotes">
 			<note-roll id='note-roll' notes="notes" time="time" groups="groups" period="maxTimeWindow-2" height="200" context="context" onselect="selectNotes(notes)"></note-roll>
+		</div>
+		<div class="col-md-12" ng-if="!showNotes">
+			Active Note(s): <span ng-repeat="note in recentNotes">{{note.note}}</span>
 		</div>
 	</div>
 	<div class="row">
 		<div  class="col-md-4">
+			<label>Show piano-roll<input type="checkbox" ng-model="showNotes"></label>
 			<mus-partcodes markers="markers" last-groups="lastGroups" experience-state="experienceState" code-matchers="codeMatchers"></mus-partcodes>
 		</div>
 		<div class="col-md-4"  id="state">
