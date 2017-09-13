@@ -5,7 +5,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
 var dateFormat = require('dateformat');
-var osc = require("osc");
+var osc = null; // Disable?! require("osc");
 var extend = require('extend');
 var adapter = require('socket.io-redis');
 var process = require('process');
@@ -202,6 +202,10 @@ function run_process(cmd, args, cwd, timeout, cont) {
 	process.on('close', function(code) {
 		console.log('process '+cmd+' exited ('+code+')');
 		cont(code, output.join(''));
+	});
+	process.on('error', function(err) {
+		console.log('process '+cmd+' error creating: '+err);
+		cont(-1000, err.message);
 	});
 	console.log('done spawn');
 }
@@ -1060,6 +1064,11 @@ Client.prototype.oscSend = function(surl) {
 	var url = require('url').parse(args[0]);
 	// protocol, hostname, port, pathname
 	var port = null;
+	if (!osc) {
+		console.log('osc not enabled: '+surl);
+		this.socket.emit('osc.error', 'osc is not enabled on this installation');
+		return;
+	}
 	if (url.protocol=='osc.udp:') {
 		if (url.hostname===undefined || url.port===undefined) {
 			console.log('osc.udp must define hostname and port: '+surl);
