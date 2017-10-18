@@ -1227,3 +1227,18 @@ io.on('connection', function(socket){
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });
+
+try {
+	console.log('read ssl.key/.crt');
+	var config = {
+		key: fs.readFileSync('ssl.key'),
+		cert: fs.readFileSync('ssl.crt')	
+	};
+	var https = require('https').Server(config, app);
+	https.listen(3443, function(){
+		console.log('https on *:3443');
+	});
+}
+catch (err) {
+	console.log('error running https server: '+err.message, err);
+}
