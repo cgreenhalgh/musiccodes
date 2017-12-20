@@ -8,6 +8,7 @@ var dateFormat = require('dateformat');
 var osc = null; // Disable?! require("osc");
 var extend = require('extend');
 var adapter = require('socket.io-redis');
+var redis = require('redis').createClient;
 var process = require('process');
 
 // MPM agent - default
@@ -1187,9 +1188,12 @@ function handleRedisConfig(settings) {
 			var redisPort = settings.redisPort ? settings.redisPort : 6379;
 			var redisPassword = settings.redisPassword ? settings.redisPassword : '';
 			console.log('set socket.io redis adapter '+redisHost+':'+redisPort);
-			var config = { host: redisHost, port: redisPort, auth_pass: redisPassword };
 			// default retry, etc.?!
-			redisAdapter = adapter(config);
+			var redisOptions = { host:redisHost, port:redisPort, auth_pass: redisPassword,
+			    retry_unfulfilled_commands: true }
+			var pub = redis(redisOptions);
+			var sub = redis(redisOptions);
+			redisAdapter = adapter({ pubClient: pub, subClient: sub })
 			function redisError(err) {
 				console.log('redis error: '+err);
 			}
