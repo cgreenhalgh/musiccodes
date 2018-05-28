@@ -55,6 +55,9 @@ VOLUME /srv/musiccodes/logs/
 # extra content files
 VOLUME /src/musiccodes/public/content/
 
+# mpm server url
+ENV DEFAULT_MPM_SERVER 'http://localhost:3003'
+
 EXPOSE 3000
 
 CMD ["node","server.js"]

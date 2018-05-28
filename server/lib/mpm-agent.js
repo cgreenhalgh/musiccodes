@@ -162,7 +162,7 @@ osreport['@id'] = environment['@id'];
 var MPM_REPORT_INTERVAL = 10;
 var MPM_REPORT_JITTER = 4;
 
-var DEFAULT_MPM_SERVER = 'http://localhost:3003';
+var DEFAULT_MPM_SERVER = process.env['DEFAULT_MPM_SERVER'] || 'http://localhost:3003';
 
 var sockets = {};
 var reportos = true;
@@ -170,6 +170,7 @@ var reportos = true;
 function connect(url) {
 	url = url || DEFAULT_MPM_SERVER;
 	if (sockets[url]===undefined) {
+	  console.log('connect to mpm on '+url);
 		var socket = sockets[url] = ioclient.connect(url);
 		socket.on('error', function(err) {
 			console.log('agent socket error: '+err);
