@@ -2,7 +2,42 @@
 
 Experimental implementation of music code system.
 
-Chris Greenhalgh, The University of Nottingham, 2015
+Chris Greenhalgh, The University of Nottingham, 2015-2018
+
+## Running in Docker
+
+Run on port 3000:
+```
+docker run --restart always -d -p 3000:3000 --name cgreenhalgh/musiccodes musiccodes
+```
+(TODO: internal network)
+
+Check:
+```
+docker ps
+docker logs musiccodes
+```
+
+To copy experiences and content in use 
+```
+docker cp XXX musiccodes:/srv/musiccodes/experiences/
+docker cp XXX musiccodes:/srv/musiccodes/pubic/content/
+```
+To copy logs out use
+```
+docker cp musiccodes:/srv/musiccodes/logs logs/
+```
+
+### Build on Docker
+
+To build image:
+```
+docker build -t musiccodes .
+docker tag musiccodes cgreenhalgh/musiccodes:20180529.1
+```
+(and docker push ... :-)
+
+## Old notes
 
 See Vagrantfile for setup/pre-requisites, e.g. 
 
