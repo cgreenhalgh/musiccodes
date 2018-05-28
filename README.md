@@ -34,6 +34,7 @@ To build image:
 ```
 docker build -t musiccodes .
 docker tag musiccodes cgreenhalgh/musiccodes:20180529.1
+docker tag musiccodes cgreenhalgh/musiccodes
 ```
 (and docker push ... :-)
 
