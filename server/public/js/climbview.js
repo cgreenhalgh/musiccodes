@@ -1,5 +1,5 @@
 var climbApp = angular.module('climbApp', ['ngAnimate', 'muzicodes.socket', 'muzicodes.logging']);
-// main player app
+// main player app. Updated 2018-06-07 .v4
 climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window', '$http',  
 								'$location', '$timeout', 'socket',
                                     function ($scope, $interval, $document, $window, $http, 
@@ -308,19 +308,28 @@ climbApp.controller('climbCtrl', ['$scope', '$interval', '$document', '$window',
 					layer_info.loadingVideo1 = false;
 					var video = videos[url];
 					if (video!==undefined) {
+					  var didLoop = video.loop;
 						if (url.indexOf('video:')!=0) {
 							video.loop = !!layer.loop;
 						}
 						if (usecount[url]==0) {
 							console.log('play '+url+' loop='+layer.loop+' (readyState='+video.readyState+')');
-							if (!layer.loop && url.indexOf('video:')!=0) {
-								video.currentTime = 0;
+							if ((!layer.loop || !didLoop) && url.indexOf('video:')!=0) {
+							  try {
+							    video.currentTime = 0;
+							  } catch (err) {
+							    console.log('error setting currentTime: '+err.message);
+							  }
 							}
 							video.autoplay = true;
-							if (video.readyState>=2)
-								video.play();
-							else
-								console.log('cannot play immediate: state = '+video.readyState);
+							try {
+							  video.play()
+							  .catch(function(err) {
+							    console.log('error playing video: '+err.message);
+							  });
+							} catch (err) {
+							  console.log('error playing video '+url+': '+err.message);
+							}
 							if (video.readyState<2) {
 								// force opacity to 0 until loaded frame?!
 								console.log('force temporary opacity on new video '+url);
