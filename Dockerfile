@@ -1,8 +1,8 @@
-FROM node:8.11.2-stretch
-
-RUN npm install -g node-gyp node-pre-gyp
+FROM node:8.16.0-stretch
 
 RUN apt-get update && apt-get install -y libsndfile1-dev
+
+RUN npm install -g node-gyp node-pre-gyp
 
 # vamp plugin SDK
 RUN curl https://code.soundsoftware.ac.uk/attachments/download/1520/vamp-plugin-sdk-2.6.tar.gz | tar zxf -
@@ -59,5 +59,8 @@ VOLUME /src/musiccodes/public/content/
 ENV DEFAULT_MPM_SERVER 'http://localhost:3003'
 
 EXPOSE 3000
+
+# hack
+RUN npm install osc
 
 CMD ["node","server.js"]
