@@ -1,10 +1,10 @@
 Vagrant.configure(2) do |config|
-    config.vm.box = "ubuntu/trusty64"
+    config.vm.box = "ubuntu/bionic64"
 
   config.vm.provider "virtualbox" do |v|
     v.memory = 1024
     # for tests (chrome)
-    v.gui = true
+    #v.gui = true
   end
 
   # node server for vamp
@@ -49,12 +49,28 @@ Vagrant.configure(2) do |config|
   SHELL
 =end
 
+  # using docker now as preferred mechanism
+  config.vm.provision "docker" do |d|
+    #d.pull_images "library/ruby:2.5-stretch"
+  end
+  
+  # docker-compose
+  #config.vm.provision "shell", inline: <<-SHELL
+  #  if [ ! -f /usr/local/bin/docker-compose ]; then
+  #    curl -L https://github.com/docker/compose/releases/download/1.21.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+  #    chmod +x /usr/local/bin/docker-compose
+  #  fi
+  #SHELL
+  
+  # so forget all the native install
+=begin
   config.vm.provision "shell", privileged: false, path:"scripts/install.sh"
   # x-windows based test stuff
   config.vm.provision "shell", privileged: false, path:"scripts/pretest.sh"
 
   # lots of trouble trying to make musiccodes start on boot... (at least in Vagrant pre-1.8.1)
   config.vm.provision "shell", run:"always", privileged: false, path:"scripts/run.sh"
+=end
 
 end
 
